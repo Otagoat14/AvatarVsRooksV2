@@ -22,60 +22,46 @@ class Avatars :
         self.tiempo_spawn = tiempo_spawn
         self.ultimo_ataque = 0
         self.personaje_vivo = True
-        self.objetivo = "Avatar" or "Rook"
+        
 
-    def moverse(self) :
 
-        self.fila -= self.velocidad
-        if self.fila <= 0 :
-            self.avatar_vivo = False
-
-    def recibir_daño (self, daño) :
-
+    def recibir_daño (self, daño):
         self.vida -= daño
+
         if self.vida <= 0 :
-            self.avatar_vivo = False
+            self.personaje_vivo = False
         print("La vida del objetivo es ", self.vida)
 
+    def disparar(self, velocidad_ataque):
+        tiempo_actual= time.time()
+        time.sleep(velocidad_ataque)
+
+        
+
+        
+
+
+        
+        
     def dibujar_avatar_pantalla (self, pantalla, avatar) :
 
-        #posición en píxeles
-        x = self.columna * TAMAÑO_CELDA
-        y = int(self.fila * TAMAÑO_CELDA)
-        
-        #El rectnagulo 
-        pygame.draw.rect(pantalla, self.color, (x + 10, y + 10, TAMAÑO_CELDA - 20, TAMAÑO_CELDA - 20), border_radius=10)
-        
-        #Barrita de vida
-        barra_ancho = TAMAÑO_CELDA - 20
-        barra_alto = 5
-        # Barra roja de fondo
-        pygame.draw.rect(pantalla, (100, 0, 0), 
-                        (x + 10, y + 5, barra_ancho, barra_alto))
-        # Barra verde que representa la vida actual
-        #En el 3 es donde va la vida del avatar como tal
-        vida_ancho = int((self.vida / self.vida) * barra_ancho)
-        pygame.draw.rect(pantalla, (0, 255, 0), (x + 10, y + 5, vida_ancho, barra_alto))
-
-
-    def atacar(self, objetivo_atacar):
-
-        tiempo_actual = time.time()
-
-        # Verificar si ya pasó el tiempo necesario
-        if tiempo_actual - self.ultimo_ataque >= self.velocidad_ataque :
-            #Aqui pienso agregar unos ifs para que ataque solo cuando esta en la misma casilla que la rook
-
-            objetivo_atacar.vida -= self.daño
-            # Actualizar el tiempo del último ataque
-            self.ultimo_ataque = tiempo_actual
-            return True
+            #posición en píxeles
+            x = self.columna * TAMAÑO_CELDA
+            y = int(self.fila * TAMAÑO_CELDA)
             
-        else:
-            # Todavía no puede atacar
-            tiempo_restante = self.velocidad_ataque - (tiempo_actual - self.ultimo_ataque)
-            return False
-        
+            #El rectnagulo 
+            pygame.draw.rect(pantalla, self.color, (x + 10, y + 10, TAMAÑO_CELDA - 20, TAMAÑO_CELDA - 20), border_radius=10)
+            
+            #Barrita de vida
+            barra_ancho = TAMAÑO_CELDA - 20
+            barra_alto = 5
+            # Barra roja de fondo
+            pygame.draw.rect(pantalla, (100, 0, 0), 
+                            (x + 10, y + 5, barra_ancho, barra_alto))
+            # Barra verde que representa la vida actual
+            #En el 3 es donde va la vida del avatar como tal
+            vida_ancho = int((self.vida / self.vida) * barra_ancho)
+            pygame.draw.rect(pantalla, (0, 255, 0), (x + 10, y + 5, vida_ancho, barra_alto))
 
 class Bala :
     def __init__(self, y_fila, x_columna):
@@ -87,14 +73,12 @@ class Bala :
         self.bala_activa = True
 
     def desplazarse(self):
-
         self.y_fila += self.velocidad_bala
+
         if self.y_fila >= FILAS :
             self.bala_activa = False
 
     def dibujar (self, pantalla) :
-
-        #posición en píxeles
         x = self.x_columna * TAMAÑO_CELDA + TAMAÑO_CELDA // 2
         y = int(self.fila * TAMAÑO_CELDA) + TAMAÑO_CELDA // 2
         
