@@ -1,6 +1,6 @@
 import time
 import pygame
-from Constantes import (TAMAÑO_CELDA, FILAS)
+from Logica_juego import (TAMAÑO_CELDA, FILAS)
 
 # Colores de prueba 
 COLOR_FONDO = (30, 30, 40)

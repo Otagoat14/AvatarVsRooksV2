@@ -1,6 +1,7 @@
 import pygame
 from sys import exit
 
+#------CONSTANTES--------
 FILAS = 9
 COLUMNAS = 5
 TAMAÑO_CELDA = 40
@@ -18,9 +19,14 @@ LINEA = (60, 60, 60)
 VACIO = 0
 OCUPADA = 1
 
+ORIGEN_X = ANCHO // 2
+ORIGEN_Y = ALTO  // 2
+
 #Matriz con None para que podamos personlizarla
-matriz = [[None for c in range(COLUMNAS)] for f in range(FILAS)]
+matriz = [[VACIO for c in range(COLUMNAS)] for f in range(FILAS)]
 print(matriz)
+
+#------------------------------
 
 
 pygame.init()
@@ -40,20 +46,12 @@ campo_matriz.fill("Red")
 #asi se annade el texto y luego en el ciclo while true
 titulo_juego = fuente_texto.render("Avatar vs rooks", False, "White")
 
-#Ciclo para que la ventana se mantenga abierta
-while True:
 
-    #Obtiene todos los pisibles eventos
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            #cierra todo literalmente, se lo vuela todo para que no consuma memoria
-            exit()
+#-------FUNCIONES PARA LA LOGICA---------
+def validar_celda(fila, columna):
+    return (0 <= fila < FILAS) and (0 <= columna < COLUMNAS)
 
-#TODO el tema del dibujado de la matriz lo veremos luego porque en todo caso iria con imagenes
-#Por el momento es para probar ya luego veremnos si lo utilizamos para otra cosa
-
-    #Dibujar la matriz
+def dibujar_matriz (pantalla) :
     for f in range(FILAS):
         for c in range(COLUMNAS):
             posicion_x = c * TAMAÑO_CELDA
@@ -68,23 +66,57 @@ while True:
             pygame.draw.rect(campo_matriz, color, (posicion_x, posicion_y, TAMAÑO_CELDA, TAMAÑO_CELDA))
 
     #Lineas verticales
-
     for c in range (COLUMNAS + 1) :
         posicion_x = c * TAMAÑO_CELDA
         pygame.draw.line(campo_matriz, LINEA, (posicion_x, 0), (posicion_x, ALTO), 1)
 
     #Lineas horizontales
-
     for f in range(FILAS + 1) :
         posicion_y = f * TAMAÑO_CELDA
         pygame.draw.line(campo_matriz, LINEA, (0, posicion_y), (ANCHO, posicion_y), 1 )
 
 
-    pantalla.blit(campo_matriz,(ANCHO//2, ALTO//2))
-    pantalla.blit(titulo_juego, (0, 0) )
+def juego():
+#Ciclo para que la ventana se mantenga abierta
+    while True:
 
-    pygame.display.update()
-    #Frames por segundo
-    reloj.tick(60)
+
+        #Obtiene todos los pisibles eventos
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                #cierra todo literalmente, se lo vuela todo para que no consuma memoria
+                exit()
+
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_x, mouse_y = pygame.mouse.get_pos()
+                local_x = mouse_x - ORIGEN_X
+                local_y = mouse_y - ORIGEN_Y
+
+                # Click dentro del rectángulo de la grilla (en coords locales)
+                if 0 <= local_x < ANCHO and 0 <= local_y < ALTO:
+                    fila = local_y // TAMAÑO_CELDA
+                    columna = local_x // TAMAÑO_CELDA
+
+                    if validar_celda(fila, columna):
+                        if event.button == 1:   # izquierdo: poner en OCUPADA
+                            matriz[fila][columna] = OCUPADA
+                        elif event.button == 3: # derecho: vaciar
+                            matriz[fila][columna] = VACIO
+                        
+
+                
+
+    #TODO el tema del dibujado de la matriz lo veremos luego porque en todo caso iria con imagenes
+    #Por el momento es para probar ya luego veremnos si lo utilizamos para otra cosa
+
+        pantalla.fill((18, 18, 18))
+        dibujar_matriz(campo_matriz)
+        pantalla.blit(campo_matriz,(ANCHO//2, ALTO//2))
+        pantalla.blit(titulo_juego, (0, 0) )
+
+        pygame.display.update()
+        #Frames por segundo
+        reloj.tick(60)
 
 
