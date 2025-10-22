@@ -13,7 +13,6 @@ COLOR_BALA = (255, 255, 100)
 class Avatars :
     def __init__(self, vida, daño, velocidad_ataque, velocidad, tiempo_spawn, y_fila, x_columna):
 
-        #Le damos un float para qeu el movimiento sea mas tipo smooth
         self.y_fila = float(y_fila)
         self.x_columna = x_columna
         self.vida = vida
@@ -22,8 +21,8 @@ class Avatars :
         self.velocidad = velocidad
         self.tiempo_spawn = tiempo_spawn
         self.ultimo_ataque = 0
-        self.avatar_vivo = True
-        self.color = COLOR_AVATAR
+        self.personaje_vivo = True
+        self.objetivo = "Avatar" or "Rook"
 
     def moverse(self) :
 
@@ -36,6 +35,7 @@ class Avatars :
         self.vida -= daño
         if self.vida <= 0 :
             self.avatar_vivo = False
+        print("La vida del objetivo es ", self.vida)
 
     def dibujar_avatar_pantalla (self, pantalla, avatar) :
 
@@ -58,7 +58,7 @@ class Avatars :
         pygame.draw.rect(pantalla, (0, 255, 0), (x + 10, y + 5, vida_ancho, barra_alto))
 
 
-    def atacar_rook (self, objetivo_atacar) :
+    def atacar(self, objetivo_atacar):
 
         tiempo_actual = time.time()
 
@@ -102,12 +102,31 @@ class Bala :
     
     
 #TIPOS DE AVATARS
-Flechero = Avatars(vida = 5, daño = 2, velocidad_ataque = 10, velocidad = 12, tiempo_spawn = 4)
+"""Flechero = Avatars(vida = 5, daño = 2, velocidad_ataque = 10, velocidad = 12, tiempo_spawn = 4)
 Escudero = Avatars(vida = 10, daño = 3, velocidad_ataque = 15, velocidad = 10, tiempo_spawn = 6)
 Leñador = Avatars(vida = 20, daño = 9, velocidad_ataque = 5, velocidad = 13, tiempo_spawn = 8)
-Canibal = Avatars(vida = 25, daño = 12, velocidad_ataque = 3, velocidad = 14, tiempo_spawn = 10)
+Canibal = Avatars(vida = 25, daño = 12, velocidad_ataque = 3, velocidad = 14, tiempo_spawn = 10)"""
 
 
 
+class Rooks(Avatars):
+    def __init__(self, vida, daño, valor, velocidad_ataque, y_fila, x_columna):
+        super().__init__(vida, daño, valor, velocidad_ataque, y_fila, x_columna, tiempo_spawn=0, velocidad=0)
 
 
+    def recibir_daño(self, daño):
+        return super().recibir_daño(daño)
+    
+    def atacar(self, objetivo_atacar):
+        return super().atacar(objetivo_atacar)
+    
+    def colocar_rook(self, y_fila, x_columna, pantalla):
+        x = self.columna * TAMAÑO_CELDA
+        y = int(self.fila * TAMAÑO_CELDA)
+         
+        pygame.draw.circle(pantalla, self.color, (x, y), 15)
+
+Arena = Rooks(vida = 4, daño = 2, valor = 50, velocidad_ataque = 8, y_fila=0, x_columna=0)
+Arena.atacar(8)
+
+    
