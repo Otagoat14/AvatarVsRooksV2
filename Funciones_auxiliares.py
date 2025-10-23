@@ -1,6 +1,74 @@
 import pygame
 import time
-from Logica_juego import (nivel_dificultad, ANCHO, ALTO)
+
+#------CONSTANTES--------
+FILAS = 9
+COLUMNAS = 5
+TAMAÑO_CELDA = 64
+
+#Practicamente para sacar el tamaño del mapa en pixeles
+ANCHO = COLUMNAS * TAMAÑO_CELDA
+ALTO = FILAS * TAMAÑO_CELDA
+
+#Colores para probar 
+CELDA_OCUPADA = "Blue"
+CELDA_VACIA = "Gray"
+LINEA = (60, 60, 60)
+
+#CELDAS OCUPADAS O VACIAS
+VACIO = 0
+OCUPADA = 1
+
+# NUEVOS TIPOS DE ROOKS 
+ROOK_TIPO_1 = 2
+ROOK_TIPO_2 = 3
+ROOK_TIPO_3 = 4
+ROOK_TIPO_4 = 5
+
+#Matriz con None para que podamos personalizarla
+matriz = [[VACIO for c in range(COLUMNAS)] for f in range(FILAS)]
+print(matriz)
+
+# ========== NUEVO: SISTEMA DE MONEDAS ==========
+# Esta variable guarda las monedas actuales del jugador
+monedas_jugador = 350  # El jugador empieza con 350 monedas
+
+
+rooks_info = [
+    {
+        "precio": 50, 
+        "color": (100, 200, 255), 
+        "tipo": ROOK_TIPO_1, 
+        "nombre": "Rook Arena",
+        "ruta_imagen": "Imagenes/rook1.jpg"  
+    },
+    {
+        "precio": 100, 
+        "color": (100, 255, 100), 
+        "tipo": ROOK_TIPO_2, 
+        "nombre": "Rook Roca",
+        "ruta_imagen": "Imagenes/rook2.jpg"  
+    },
+    {
+        "precio": 150, 
+        "color": (255, 100, 100), 
+        "tipo": ROOK_TIPO_3, 
+        "nombre": "Rook Agua",
+        "ruta_imagen": "Imagenes/rook3.jpg"  
+    },
+    {
+        "precio": 150, 
+        "color": (255, 255, 100), 
+        "tipo": ROOK_TIPO_4, 
+        "nombre": "Rook Fuego",
+        "ruta_imagen": "Imagenes/rook4.jpg"  
+    }
+]
+nivel_dificultad = "Facil"
+juego_iniciado = False
+tiempo_restante = 0
+tiempo_inicio = 0
+
 
 # Aquí cargamos las imágenes y las escalamos al tamaño de la celda
 def cargar_imagen_rook(ruta, tamaño):

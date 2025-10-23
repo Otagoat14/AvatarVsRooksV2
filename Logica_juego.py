@@ -1,40 +1,37 @@
 import pygame 
+import time
 from sys import exit
-from Funciones_auxiliares import 
+from Funciones_auxiliares import (cargar_imagen_rook, 
+                                verificar_click_boton,
+                                obtener_item_clickeado,
+                                iniciar_juego, 
+                                agregar_monedas, 
+                                rooks_info,
+                                tiempo_restante,
+                                juego_iniciado,
+                                obtener_tiempo_nivel,
+                                ANCHO,
+                                ALTO,
+                                FILAS,
+                                COLUMNAS,
+                                TAMAÑO_CELDA,
+                                matriz,
+                                VACIO,
+                                CELDA_VACIA,
+                                CELDA_OCUPADA,
+                                OCUPADA,
+                                LINEA,
+                                
 
-#------CONSTANTES--------
-FILAS = 9
-COLUMNAS = 5
-TAMAÑO_CELDA = 64
+                                )
 
-#Practicamente para sacar el tamaño del mapa en pixeles
-ANCHO = COLUMNAS * TAMAÑO_CELDA
-ALTO = FILAS * TAMAÑO_CELDA
 
-#Colores para probar 
-CELDA_OCUPADA = "Blue"
-CELDA_VACIA = "Gray"
-LINEA = (60, 60, 60)
+monedas_jugador = 350  
+nivel_dificultad = "Facil"
+juego_iniciado = False
+tiempo_restante = 0
+tiempo_inicio = 0
 
-#CELDAS OCUPADAS O VACIAS
-VACIO = 0
-OCUPADA = 1
-
-# NUEVOS TIPOS DE ROOKS 
-ROOK_TIPO_1 = 2
-ROOK_TIPO_2 = 3
-ROOK_TIPO_3 = 4
-ROOK_TIPO_4 = 5
-
-#Matriz con None para que podamos personalizarla
-matriz = [[VACIO for c in range(COLUMNAS)] for f in range(FILAS)]
-print(matriz)
-
-# ========== NUEVO: SISTEMA DE MONEDAS ==========
-# Esta variable guarda las monedas actuales del jugador
-monedas_jugador = 350  # El jugador empieza con 350 monedas
-
-#------------------------------
 
 pygame.init()
 #lo de la pantalla se puede cambiar para que quede de forma estética
@@ -55,53 +52,41 @@ ALTO_MAPA_CENTRADO = (pantalla.get_height() - ALTO) // 2
 titulo_juego = fuente_texto.render("Avatar vs rooks", False, "White")
 item_seleccionado = None
 
-nivel_dificultad = "Facil"
-juego_iniciado = False
-tiempo_restante = 0
-tiempo_inicio = 0
-
-
-
-
-
 #Esto se cambiaria con la logica de los avatars
-rooks_info = [
-    {
-        "precio": 50, 
-        "color": (100, 200, 255), 
-        "tipo": ROOK_TIPO_1, 
-        "nombre": "Rook Arena",
-        "ruta_imagen": "Imagenes/rook1.jpg"  
-    },
-    {
-        "precio": 100, 
-        "color": (100, 255, 100), 
-        "tipo": ROOK_TIPO_2, 
-        "nombre": "Rook Roca",
-        "ruta_imagen": "Imagenes/rook2.jpg"  
-    },
-    {
-        "precio": 150, 
-        "color": (255, 100, 100), 
-        "tipo": ROOK_TIPO_3, 
-        "nombre": "Rook Agua",
-        "ruta_imagen": "Imagenes/rook3.jpg"  
-    },
-    {
-        "precio": 150, 
-        "color": (255, 255, 100), 
-        "tipo": ROOK_TIPO_4, 
-        "nombre": "Rook Fuego",
-        "ruta_imagen": "Imagenes/rook4.jpg"  
-    }
-]
-
-
 for rook in rooks_info:
     rook["imagen"] = cargar_imagen_rook(rook["ruta_imagen"], TAMAÑO_CELDA - 4)
     rook["imagen_preview"] = cargar_imagen_rook(rook["ruta_imagen"], 40)
 
 #-------FUNCIONES PARA LA LOGICA---------
+def gastar_monedas(cantidad):
+    global monedas_jugador
+    
+    if monedas_jugador >= cantidad:
+        monedas_jugador -= cantidad
+        return True
+    else:
+        return False
+
+def actualizar_contador():
+    global tiempo_restante, juego_iniciado
+    
+    if juego_iniciado and tiempo_restante > 0:
+        tiempo_actual = time.time()
+        tiempo_transcurrido = int(tiempo_actual - tiempo_inicio)
+        tiempo_calculado = obtener_tiempo_nivel(nivel_dificultad) - tiempo_transcurrido
+        
+        if tiempo_calculado != tiempo_restante:
+            tiempo_restante = max(0, tiempo_calculado)
+
+        if tiempo_restante == 0:
+            print("Tiempo terminado")
+
+    
+    return tiempo_restante
+
+#-----------------------------------------------------------------
+#---------FUNCIONES DE DIBUJADO------------------------------------
+
 def dibujar_matriz(pantalla):
     for f in range(FILAS):
         for c in range(COLUMNAS):
@@ -148,7 +133,6 @@ def dibujar_matriz(pantalla):
         posicion_y = f * TAMAÑO_CELDA
         pygame.draw.line(campo_matriz, LINEA, (0, posicion_y), (ANCHO, posicion_y), 1)
 
-
 # Función para dibujar el contador en pantalla
 def dibujar_contador(pantalla, fuente, x, y):
     """Dibuja el contador en formato MM:SS"""
@@ -189,12 +173,6 @@ def dibujar_boton_iniciar(pantalla, fuente, x, y, ancho, alto):
     pantalla.blit(superficie_texto, (texto_x, texto_y))
     
     return boton_rect
-
-
-
-
-
-
 
 def dibujar_tienda():
     campo_tienda.fill("Red")
@@ -274,9 +252,8 @@ def dibujar_tienda():
         nombre_y = y + (alto_cuadro_item // 2) - (texto_nombre.get_height() // 2)
         campo_tienda.blit(texto_nombre, (nombre_x, nombre_y))
 
-
-
-
+#-------------------------------------
+#---------CICLO PRINCIPLA-------------
 
 def juego():
     global item_seleccionado
