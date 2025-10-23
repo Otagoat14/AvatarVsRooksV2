@@ -1,6 +1,6 @@
-import pygame
-import time
+import pygame 
 from sys import exit
+from Funciones_auxiliares import 
 
 #------CONSTANTES--------
 FILAS = 9
@@ -62,17 +62,7 @@ tiempo_inicio = 0
 
 
 
-# Aquí cargamos las imágenes y las escalamos al tamaño de la celda
-def cargar_imagen_rook(ruta, tamaño):
-    try:
-        imagen = pygame.image.load(ruta)
-        # convert_alpha() optimiza la imagen y mantiene la transparencia
-        imagen = imagen.convert_alpha()
-        # Escalar al tamaño deseado
-        imagen = pygame.transform.scale(imagen, (tamaño, tamaño))
-        return imagen
-    except:
-        return None
+
 
 #Esto se cambiaria con la logica de los avatars
 rooks_info = [
@@ -159,68 +149,6 @@ def dibujar_matriz(pantalla):
         pygame.draw.line(campo_matriz, LINEA, (0, posicion_y), (ANCHO, posicion_y), 1)
 
 
-
-def gastar_monedas(cantidad):
-    global monedas_jugador
-    
-    if monedas_jugador >= cantidad:
-        monedas_jugador -= cantidad
-        return True
-    else:
-        return False
-
-
-#Esto es para que cuando matemos enemigos y suelten monedas se agreguen a la cuenta
-def agregar_monedas(cantidad):
-    global monedas_jugador
-    monedas_jugador += cantidad
-
-def obtener_tiempo_nivel(nivel):
-    """
-    Retorna el tiempo en segundos según el nivel de dificultad.
-    Facil: 60 segundos (1 minuto)
-    Medio: 75 segundos (25% más que fácil)
-    Dificil: 93 segundos (25% más que medio, redondeado)
-    """
-    if nivel == "Facil":
-        return 60
-    elif nivel == "Medio":
-        return int(60 * 1.25)  # 75 segundos
-    elif nivel == "Dificil":
-        return int(60 * 1.25 * 1.25)  # 93 segundos
-    else:
-        return 60  # Por defecto
-
-# Función para iniciar el juego
-def iniciar_juego(nivel_dificultad):
-    """Inicia el contador del juego según la dificultad"""
-    global juego_iniciado, tiempo_restante, tiempo_inicio
-    
-    juego_iniciado = True
-    tiempo_restante = obtener_tiempo_nivel(nivel_dificultad)
-    tiempo_inicio = time.time()
-    print(f"Juego iniciado en nivel {nivel_dificultad}: {tiempo_restante} segundos")
-
-# Función para actualizar el contador
-def actualizar_contador():
-    """Actualiza el tiempo restante del contador"""
-    global tiempo_restante, juego_iniciado
-    
-    if juego_iniciado and tiempo_restante > 0:
-        tiempo_actual = time.time()
-        tiempo_transcurrido = int(tiempo_actual - tiempo_inicio)
-        tiempo_calculado = obtener_tiempo_nivel(nivel_dificultad) - tiempo_transcurrido
-        
-        if tiempo_calculado != tiempo_restante:
-            tiempo_restante = max(0, tiempo_calculado)
-        
-        # Si el tiempo llegó a 0, el juego termina
-        if tiempo_restante == 0:
-            print("¡Tiempo terminado!")
-            # Aquí puedes agregar lógica de fin de juego
-    
-    return tiempo_restante
-
 # Función para dibujar el contador en pantalla
 def dibujar_contador(pantalla, fuente, x, y):
     """Dibuja el contador en formato MM:SS"""
@@ -238,17 +166,16 @@ def dibujar_contador(pantalla, fuente, x, y):
     superficie_tiempo = fuente.render(texto_tiempo, False, color)
     pantalla.blit(superficie_tiempo, (x, y))
 
-# Función para dibujar el botón de iniciar
+
 def dibujar_boton_iniciar(pantalla, fuente, x, y, ancho, alto):
-    """Dibuja el botón de iniciar"""
     boton_rect = pygame.Rect(x, y, ancho, alto)
     
     # Color del botón
     if not juego_iniciado:
-        color_boton = (50, 200, 50)  # Verde
+        color_boton = (50, 200, 50)  
         texto = "INICIAR JUEGO"
     else:
-        color_boton = (100, 100, 100)  # Gris (deshabilitado)
+        color_boton = (100, 100, 100)  
         texto = "EN JUEGO"
     
     # Dibujar el botón
@@ -263,10 +190,7 @@ def dibujar_boton_iniciar(pantalla, fuente, x, y, ancho, alto):
     
     return boton_rect
 
-# Función para verificar si se hizo clic en el botón
-def verificar_click_boton(boton_rect, mouse_x, mouse_y):
-    """Verifica si se hizo clic dentro del botón"""
-    return boton_rect.collidepoint(mouse_x, mouse_y)
+
 
 
 
@@ -351,36 +275,7 @@ def dibujar_tienda():
         campo_tienda.blit(texto_nombre, (nombre_x, nombre_y))
 
 
-def obtener_item_clickeado(mouse_x, mouse_y):
-    # Primero convertimos las coordenadas del mouse a coordenadas locales de campo_tienda
-    # campo_tienda está dibujado en la posición: (((ANCHO * 2) + 400) - ANCHO, 0)
-    posicion_tienda_x = ((ANCHO * 2) + 400) - ANCHO
-    posicion_tienda_y = 0
-    
-    # Coordenadas locales dentro de campo_tienda
-    local_x = mouse_x - posicion_tienda_x
-    local_y = mouse_y - posicion_tienda_y
-    
-    # Si el click no está dentro de campo_tienda
-    if local_x < 0 or local_x > ANCHO or local_y < 0 or local_y > ALTO * 2:
-        return None
-    
-    # Ahora verificamos en cuál de los 4 items clickeamos
-    espacio_x = 20
-    inicio_y = 360
-    ancho_cuadro_item = ANCHO - (espacio_x * 2)
-    alto_cuadro_item = 128
-    espaciado = 24
-    
-    for i in range(4):
-        y = inicio_y + i * (alto_cuadro_item + espaciado)
-        
-        # Verificamos si el click está dentro de este item
-        if (espacio_x <= local_x <= espacio_x + ancho_cuadro_item and 
-            y <= local_y <= y + alto_cuadro_item):
-            return i  
-    
-    return None  
+
 
 
 def juego():
@@ -420,7 +315,7 @@ def juego():
                         print(f"¡No tienes suficientes monedas para seleccionar {rooks_info[item_clickeado]['nombre']}!")
                         print(f"Necesitas ${precio}, tienes ${monedas_jugador}")
                 
-                # ========== CLICK EN LA MATRIZ ==========
+               
                 local_x_campo_matriz = mouse_x - 180
                 local_y_campo_matriz = mouse_y - ALTO_MAPA_CENTRADO
                 
@@ -432,23 +327,20 @@ def juego():
                     # Click izquierdo: colocar rook
                     if event.button == 1:
                         if item_seleccionado is not None:
-                            # ========== NUEVO: GASTAR MONEDAS AL COLOCAR ==========
+
                             precio = rooks_info[item_seleccionado]["precio"]
                             
                             # Intentar gastar las monedas
                             if gastar_monedas(precio):
                                 # Si se pudo gastar, colocar el rook
                                 matriz[fila][columna] = rooks_info[item_seleccionado]["tipo"]
-                                print(f"Rook colocado en fila {fila}, columna {columna}")
-                            else:
-                                print("¡No se pudo colocar el rook! No tienes suficientes monedas")
+                            
                         else:
                             # Si no hay nada seleccionado, ponemos OCUPADA sin costo
                             matriz[fila][columna] = OCUPADA
                     
                     # Click derecho: borrar
                     elif event.button == 3:
-                        # ========== NUEVO: DEVOLVER MONEDAS AL BORRAR UN ROOK ==========
                         valor_celda = matriz[fila][columna]
                         
                         # Si hay un rook en esta celda, devolver sus monedas

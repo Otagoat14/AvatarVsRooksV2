@@ -1,0 +1,108 @@
+import pygame
+import time
+from Logica_juego import (nivel_dificultad, ANCHO, ALTO)
+
+# Aquí cargamos las imágenes y las escalamos al tamaño de la celda
+def cargar_imagen_rook(ruta, tamaño):
+    try:
+        imagen = pygame.image.load(ruta)
+        # convert_alpha() optimiza la imagen y mantiene la transparencia
+        imagen = imagen.convert_alpha()
+        # Escalar al tamaño deseado
+        imagen = pygame.transform.scale(imagen, (tamaño, tamaño))
+        return imagen
+    except:
+        return None
+    
+
+def gastar_monedas(cantidad):
+    global monedas_jugador
+    
+    if monedas_jugador >= cantidad:
+        monedas_jugador -= cantidad
+        return True
+    else:
+        return False
+
+
+#Esto es para que cuando matemos enemigos y suelten monedas se agreguen a la cuenta
+def agregar_monedas(cantidad):
+    global monedas_jugador
+    monedas_jugador += cantidad
+
+def obtener_tiempo_nivel(nivel):
+    if nivel == "Facil":
+        return 60
+    elif nivel == "Medio":
+        return int(60 * 1.25)  
+    elif nivel == "Dificil":
+        return int(60 * 1.25 * 1.25)  
+    else:
+        return 60  
+
+# Función para iniciar el juego
+def iniciar_juego(nivel_dificultad):
+    """Inicia el contador del juego según la dificultad"""
+    global juego_iniciado, tiempo_restante, tiempo_inicio
+    
+    juego_iniciado = True
+    tiempo_restante = obtener_tiempo_nivel(nivel_dificultad)
+    tiempo_inicio = time.time()
+    print(f"Juego iniciado en nivel {nivel_dificultad}: {tiempo_restante} segundos")
+
+
+# Función para actualizar el contador
+def actualizar_contador():
+    """Actualiza el tiempo restante del contador"""
+    global tiempo_restante, juego_iniciado
+    
+    if juego_iniciado and tiempo_restante > 0:
+        tiempo_actual = time.time()
+        tiempo_transcurrido = int(tiempo_actual - tiempo_inicio)
+        tiempo_calculado = obtener_tiempo_nivel(nivel_dificultad) - tiempo_transcurrido
+        
+        if tiempo_calculado != tiempo_restante:
+            tiempo_restante = max(0, tiempo_calculado)
+        
+        # Si el tiempo llegó a 0, el juego termina
+        if tiempo_restante == 0:
+            print("¡Tiempo terminado!")
+            # Aquí puedes agregar lógica de fin de juego
+    
+    return tiempo_restante
+
+# Función para verificar si se hizo clic en el botón
+def verificar_click_boton(boton_rect, mouse_x, mouse_y):
+    return boton_rect.collidepoint(mouse_x, mouse_y)
+
+
+def obtener_item_clickeado(mouse_x, mouse_y):
+    # Primero convertimos las coordenadas del mouse a coordenadas locales de campo_tienda
+    # campo_tienda está dibujado en la posición: (((ANCHO * 2) + 400) - ANCHO, 0)
+    posicion_tienda_x = ((ANCHO * 2) + 400) - ANCHO
+    posicion_tienda_y = 0
+    
+    # Coordenadas locales dentro de campo_tienda
+    local_x = mouse_x - posicion_tienda_x
+    local_y = mouse_y - posicion_tienda_y
+    
+    # Si el click no está dentro de campo_tienda
+    if local_x < 0 or local_x > ANCHO or local_y < 0 or local_y > ALTO * 2:
+        return None
+    
+    # Ahora verificamos en cuál de los 4 items clickeamos
+    espacio_x = 20
+    inicio_y = 360
+    ancho_cuadro_item = ANCHO - (espacio_x * 2)
+    alto_cuadro_item = 128
+    espaciado = 24
+    
+    for i in range(4):
+        y = inicio_y + i * (alto_cuadro_item + espaciado)
+        
+        # Verificamos si el click está dentro de este item
+        if (espacio_x <= local_x <= espacio_x + ancho_cuadro_item and 
+            y <= local_y <= y + alto_cuadro_item):
+            return i  
+    
+    return None  
