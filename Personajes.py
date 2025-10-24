@@ -9,8 +9,8 @@ COLOR_ROOK = (100, 200, 255)
 COLOR_AVATAR = (255, 100, 100)
 COLOR_BALA = (255, 255, 100)
 
-#Manejo de los Avatars
-class Avatars :
+#Manejo de los Personajes
+class Personajes :
     def __init__(self, vida, daño, velocidad_ataque, velocidad, tiempo_spawn, y_fila, x_columna):
 
         self.y_fila = float(y_fila)
@@ -22,6 +22,7 @@ class Avatars :
         self.tiempo_spawn = tiempo_spawn
         self.ultimo_ataque = 0
         self.personaje_vivo = True
+        self.balas = []
         
 
 
@@ -32,18 +33,31 @@ class Avatars :
             self.personaje_vivo = False
         print("La vida del objetivo es ", self.vida)
 
-    def disparar(self, velocidad_ataque):
-        tiempo_actual= time.time()
-        time.sleep(velocidad_ataque)
+    def disparar(self):
+        tiempo_actual = time.time()
+        tiempo_transcurrido = tiempo_actual - self.ultimo_ataque
+
+        if tiempo_transcurrido >= self.velocidad_ataque:
+            nueva_bala = Bala(self.y_fila, self.x_columna)
+            self.balas.append(nueva_bala)
+            
+            self.ultimo_ataque = time.time()
+            return nueva_bala
 
         
+    def actualizar_balas(self):
+        for bala in self.balas:
+            bala.desplazarse()
+        
+        self.balas = [bala for bala in self.balas if bala.bala_activa]
+
+    def dibujar_balas(self, pantalla):
+        for bala in self.balas:
+            bala.dibujar(pantalla)
 
         
-
-
         
-        
-    def dibujar_avatar_pantalla (self, pantalla, avatar) :
+    def dibujar_personaje(self, pantalla, avatar) :
 
             #posición en píxeles
             x = self.columna * TAMAÑO_CELDA
@@ -85,15 +99,15 @@ class Bala :
         pygame.draw.circle(pantalla, self.color, (x, y), 8)
     
     
-#TIPOS DE AVATARS
-"""Flechero = Avatars(vida = 5, daño = 2, velocidad_ataque = 10, velocidad = 12, tiempo_spawn = 4)
-Escudero = Avatars(vida = 10, daño = 3, velocidad_ataque = 15, velocidad = 10, tiempo_spawn = 6)
-Leñador = Avatars(vida = 20, daño = 9, velocidad_ataque = 5, velocidad = 13, tiempo_spawn = 8)
-Canibal = Avatars(vida = 25, daño = 12, velocidad_ataque = 3, velocidad = 14, tiempo_spawn = 10)"""
+#TIPOS DE Personajes
+"""Flechero = Personajes(vida = 5, daño = 2, velocidad_ataque = 10, velocidad = 12, tiempo_spawn = 4)
+Escudero = Personajes(vida = 10, daño = 3, velocidad_ataque = 15, velocidad = 10, tiempo_spawn = 6)
+Leñador = Personajes(vida = 20, daño = 9, velocidad_ataque = 5, velocidad = 13, tiempo_spawn = 8)
+Canibal = Personajes(vida = 25, daño = 12, velocidad_ataque = 3, velocidad = 14, tiempo_spawn = 10)"""
 
 
 
-class Rooks(Avatars):
+class Rooks(Personajes):
     def __init__(self, vida, daño, valor, velocidad_ataque, y_fila, x_columna):
         super().__init__(vida, daño, valor, velocidad_ataque, y_fila, x_columna, tiempo_spawn=0, velocidad=0)
 
