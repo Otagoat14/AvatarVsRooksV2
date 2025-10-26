@@ -1,130 +1,105 @@
 import time
 import pygame
-from Constantes import (TAMAÑO_CELDA, FILAS)
 
-# Colores de prueba 
+# Constantes
+TAMAÑO_CELDA = 50  # tamaño de cada celda en la grilla
+FILAS = 9  # número de filas
+
+# Colores de prueba
 COLOR_FONDO = (30, 30, 40)
 COLOR_GRID = (60, 60, 80)
 COLOR_ROOK = (100, 200, 255)
 COLOR_AVATAR = (255, 100, 100)
 COLOR_BALA = (255, 255, 100)
 
-#Manejo de los Personajes
-class Personajes :
-    def __init__(self, vida, daño, velocidad_ataque, velocidad, tiempo_spawn, y_fila, x_columna):
 
-        self.y_fila = float(y_fila)
+# Clase Personaje
+class Personaje:
+    def __init__(self, vida, daño, velocidad_ataque, velocidad, y_fila, x_columna):
+        self.y_fila = y_fila
         self.x_columna = x_columna
         self.vida = vida
         self.daño = daño
         self.velocidad_ataque = velocidad_ataque
         self.velocidad = velocidad
-        self.tiempo_spawn = tiempo_spawn
         self.ultimo_ataque = 0
         self.personaje_vivo = True
         self.balas = []
-        
 
-
-    def recibir_daño (self, daño):
+    def recibir_daño(self, daño):
         self.vida -= daño
-
-        if self.vida <= 0 :
+        if self.vida <= 0:
             self.personaje_vivo = False
-        print("La vida del objetivo es ", self.vida)
+        print("La vida del personaje es:", self.vida)
 
     def disparar(self):
         tiempo_actual = time.time()
-        tiempo_transcurrido = tiempo_actual - self.ultimo_ataque
-
-        if tiempo_transcurrido >= self.velocidad_ataque:
+        if tiempo_actual - self.ultimo_ataque >= self.velocidad_ataque:
             nueva_bala = Bala(self.y_fila, self.x_columna)
             self.balas.append(nueva_bala)
-            
-            self.ultimo_ataque = time.time()
+            self.ultimo_ataque = tiempo_actual
             return nueva_bala
 
-        
     def actualizar_balas(self):
         for bala in self.balas:
             bala.desplazarse()
-        
+
         self.balas = [bala for bala in self.balas if bala.bala_activa]
 
     def dibujar_balas(self, pantalla):
         for bala in self.balas:
             bala.dibujar(pantalla)
 
-        
-        
-    def dibujar_personaje(self, pantalla, avatar) :
 
-            #posición en píxeles
-            x = self.columna * TAMAÑO_CELDA
-            y = int(self.fila * TAMAÑO_CELDA)
-            
-            #El rectnagulo 
-            pygame.draw.rect(pantalla, self.color, (x + 10, y + 10, TAMAÑO_CELDA - 20, TAMAÑO_CELDA - 20), border_radius=10)
-            
-            #Barrita de vida
-            barra_ancho = TAMAÑO_CELDA - 20
-            barra_alto = 5
-            # Barra roja de fondo
-            pygame.draw.rect(pantalla, (100, 0, 0), 
-                            (x + 10, y + 5, barra_ancho, barra_alto))
-            # Barra verde que representa la vida actual
-            #En el 3 es donde va la vida del avatar como tal
-            vida_ancho = int((self.vida / self.vida) * barra_ancho)
-            pygame.draw.rect(pantalla, (0, 255, 0), (x + 10, y + 5, vida_ancho, barra_alto))
-
-class Bala :
-    def __init__(self, y_fila, x_columna):
-
-        self.y_fila = float(y_fila)
+class Bala:
+    def __init__(self, y_fila, x_columna, direccion='arriba'):
+        self.y_fila = y_fila
         self.x_columna = x_columna
+        self.direccion = direccion
         self.velocidad_bala = 0.1
         self.color = COLOR_BALA
         self.bala_activa = True
 
     def desplazarse(self):
-        self.y_fila += self.velocidad_bala
+        if self.direccion == 'arriba':
+            self.y_fila -= self.velocidad_bala
+        else:
+            self.y_fila += self.velocidad_bala
 
-        if self.y_fila >= FILAS :
+        if self.y_fila < 0 or self.y_fila >= FILAS:
             self.bala_activa = False
 
-    def dibujar (self, pantalla) :
+    def dibujar(self, pantalla):
         x = self.x_columna * TAMAÑO_CELDA + TAMAÑO_CELDA // 2
-        y = int(self.fila * TAMAÑO_CELDA) + TAMAÑO_CELDA // 2
-        
+        y = int(self.y_fila * TAMAÑO_CELDA) + TAMAÑO_CELDA // 2
         pygame.draw.circle(pantalla, self.color, (x, y), 8)
-    
-    
-#TIPOS DE Personajes
-"""Flechero = Personajes(vida = 5, daño = 2, velocidad_ataque = 10, velocidad = 12, tiempo_spawn = 4)
-Escudero = Personajes(vida = 10, daño = 3, velocidad_ataque = 15, velocidad = 10, tiempo_spawn = 6)
-Leñador = Personajes(vida = 20, daño = 9, velocidad_ataque = 5, velocidad = 13, tiempo_spawn = 8)
-Canibal = Personajes(vida = 25, daño = 12, velocidad_ataque = 3, velocidad = 14, tiempo_spawn = 10)"""
+
+
+class Rooks(Personaje):
+    def __init__(self, vida, daño, velocidad_ataque, y_fila, x_columna):
+        super().__init__(vida, daño, velocidad_ataque, velocidad=0, y_fila=y_fila, x_columna=x_columna)
+
+    def dibujar(self, pantalla):
+        x = self.x_columna * TAMAÑO_CELDA
+        y = self.y_fila * TAMAÑO_CELDA
+        pygame.draw.circle(pantalla, COLOR_ROOK, (x + TAMAÑO_CELDA // 2, y + TAMAÑO_CELDA // 2), 15)
+
+
+class Avatar(Personaje):
+    def __init__(self, vida, daño, velocidad_ataque, y_fila, x_columna, velocidad_movimiento):
+        super().__init__(vida, daño, velocidad_ataque, velocidad=0, y_fila=y_fila, x_columna=x_columna)
+        self.velocidad_movimiento = velocidad_movimiento
+
+    def mover(self):
+        if self.y_fila > 1:
+            self.y_fila -= self.velocidad_movimiento
+        else:
+            self.y_fila = 1  
+
+    def colocar_avatar(self, pantalla):
+        x = self.x_columna * TAMAÑO_CELDA
+        y = self.y_fila * TAMAÑO_CELDA
+        pygame.draw.rect(pantalla, COLOR_AVATAR, (x + 10, y + 10, TAMAÑO_CELDA - 20, TAMAÑO_CELDA - 20), border_radius=10)
 
 
 
-class Rooks(Personajes):
-    def __init__(self, vida, daño, valor, velocidad_ataque, y_fila, x_columna):
-        super().__init__(vida, daño, valor, velocidad_ataque, y_fila, x_columna, tiempo_spawn=0, velocidad=0)
-
-
-    def recibir_daño(self, daño):
-        return super().recibir_daño(daño)
-    
-    def atacar(self, objetivo_atacar):
-        return super().atacar(objetivo_atacar)
-    
-    def colocar_rook(self, y_fila, x_columna, pantalla):
-        x = self.columna * TAMAÑO_CELDA
-        y = int(self.fila * TAMAÑO_CELDA)
-         
-        pygame.draw.circle(pantalla, self.color, (x, y), 15)
-
-Arena = Rooks(vida = 4, daño = 2, valor = 50, velocidad_ataque = 8, y_fila=0, x_columna=0)
-Arena.atacar(8)
-
-    
