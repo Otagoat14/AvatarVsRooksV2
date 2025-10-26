@@ -112,7 +112,7 @@ for rook in rooks_info:
     rook["imagen_preview"] = cargar_imagen_rook(rook["ruta_imagen"], 40)
 
 #-------FUNCIONES PARA LA LOGICA---------
-def dibujar_matriz(pantalla):
+def dibujar_matriz(superficie):  # Cambié 'pantalla' por 'superficie'
     for f in range(FILAS):
         for c in range(COLUMNAS):
             posicion_x = c * TAMAÑO_CELDA
@@ -126,37 +126,32 @@ def dibujar_matriz(pantalla):
             elif valor_celda == OCUPADA:
                 color = CELDA_OCUPADA
             else:
-                # Para las celdas con rooks, usamos un color neutro de fondo
                 color = CELDA_VACIA
             
-            pygame.draw.rect(pantalla, color, (posicion_x, posicion_y, TAMAÑO_CELDA, TAMAÑO_CELDA))
+            pygame.draw.rect(superficie, color, (posicion_x, posicion_y, TAMAÑO_CELDA, TAMAÑO_CELDA))
             
             if valor_celda != VACIO and valor_celda != OCUPADA:
-                # buscar qué rook es
                 for rook in rooks_info:
                     if rook["tipo"] == valor_celda:
-                        # si tiene imagen la dibuja
                         if rook["imagen"] is not None:
-                            # centrar la imagen en la celda
                             img_x = posicion_x + 2  
                             img_y = posicion_y + 2
-                            pantalla.blit(rook["imagen"], (img_x, img_y))
+                            superficie.blit(rook["imagen"], (img_x, img_y))
                         else:
-                            # si no se cargó la imagen dibujar el color de respaldo
-                            pygame.draw.rect(pantalla, rook["color"], 
+                            pygame.draw.rect(superficie, rook["color"], 
                                            (posicion_x + 5, posicion_y + 5, 
                                             TAMAÑO_CELDA - 10, TAMAÑO_CELDA - 10))
                         break
 
-    #Lineas verticales
+    # Líneas verticales
     for c in range(COLUMNAS + 1):
         posicion_x = c * TAMAÑO_CELDA
-        pygame.draw.line(campo_matriz, LINEA, (posicion_x, 0), (posicion_x, ALTO), 1)
+        pygame.draw.line(superficie, LINEA, (posicion_x, 0), (posicion_x, ALTO), 1)
 
-    #Lineas horizontales
+    # Líneas horizontales
     for f in range(FILAS + 1):
         posicion_y = f * TAMAÑO_CELDA
-        pygame.draw.line(campo_matriz, LINEA, (0, posicion_y), (ANCHO, posicion_y), 1)
+        pygame.draw.line(superficie, LINEA, (0, posicion_y), (ANCHO, posicion_y), 1)
 
 
 def gastar_monedas(cantidad):
@@ -195,7 +190,7 @@ def iniciar_juego(nivel_dificultad):
 
 # Función para actualizar el contador
 def actualizar_contador():
-    global tiempo_restante, juego_iniciado
+    global tiempo_restante, juego_iniciado, tiempo_inicio, matriz, monedas_jugador, item_seleccionado
     
     if juego_iniciado and tiempo_restante > 0:
         tiempo_actual = time.time()
@@ -206,8 +201,17 @@ def actualizar_contador():
             tiempo_restante = max(0, tiempo_calculado)
         
         # Si el tiempo llegó a 0, el juego termina
-        if tiempo_restante == 0:
-            print("¡Tiempo terminado!")
+        if tiempo_restante == 0 :
+            juego_iniciado = False
+            tiempo_restante = 0
+            tiempo_inicio = 0
+            item_seleccionado = None
+            
+            # Reiniciar la matriz
+            matriz = [[VACIO for c in range(COLUMNAS)] for f in range(FILAS)]
+            
+            # Reiniciar monedas
+            monedas_jugador = 350
             # Aquí se agrea la logica de cuando finaliza el tiempo si gano o perdio
     
     return tiempo_restante
@@ -251,6 +255,7 @@ def dibujar_boton_iniciar(pantalla, fuente, x, y, ancho, alto):
     pantalla.blit(superficie_texto, (texto_x, texto_y))
     
     return boton_rect
+
 
 # Función para verificar si se hizo clic en el botón
 def verificar_click_boton(boton_rect, mouse_x, mouse_y):
@@ -388,59 +393,54 @@ def juego():
                     boton_rect = pygame.Rect(boton_x, boton_y, boton_ancho, boton_alto)
                     if verificar_click_boton(boton_rect, mouse_x, mouse_y) and not juego_iniciado:
                         iniciar_juego(nivel_dificultad)
-                
-                #click tienda
-                item_clickeado = obtener_item_clickeado(mouse_x, mouse_y)
-                if item_clickeado is not None:
-                
-                    precio = rooks_info[item_clickeado]["precio"]
-                    if monedas_jugador >= precio:
-                        item_seleccionado = item_clickeado
+                # Click tienda
+                if not juego_iniciado:
+                    item_clickeado = obtener_item_clickeado(mouse_x, mouse_y)
+                    if item_clickeado is not None:
+                        precio = rooks_info[item_clickeado]["precio"]
+                        if monedas_jugador >= precio:
+                            item_seleccionado = item_clickeado
 
-                
-                #click matriz
-                local_x_campo_matriz = mouse_x - 180
-                local_y_campo_matriz = mouse_y - ALTO_MAPA_CENTRADO
-                
-                # Click dentro del rectángulo para la matriz
-                if 0 <= local_x_campo_matriz < ANCHO and 0 <= local_y_campo_matriz < ALTO:
-                    fila = local_y_campo_matriz // TAMAÑO_CELDA
-                    columna = local_x_campo_matriz // TAMAÑO_CELDA
+                    # Click matriz
+                    local_x_campo_matriz = mouse_x - 180
+                    local_y_campo_matriz = mouse_y - ALTO_MAPA_CENTRADO
+                    
+                    if 0 <= local_x_campo_matriz < ANCHO and 0 <= local_y_campo_matriz < ALTO:
+                        fila = local_y_campo_matriz // TAMAÑO_CELDA
+                        columna = local_x_campo_matriz // TAMAÑO_CELDA
 
-                    # Click izquierdo: colocar rook
-                    if event.button == 1:
-                        if item_seleccionado is not None:
-                            precio = rooks_info[item_seleccionado]["precio"]
-                            
-                            # Intentar gastar las monedas
-                            if matriz[fila][columna] == VACIO :
+                        # Click izquierdo: colocar rook
+                        if event.button == 1:
+                            if item_seleccionado is not None:
+                                precio = rooks_info[item_seleccionado]["precio"]
+                                
+                                if matriz[fila][columna] == VACIO:
                                     if gastar_monedas(precio):
-                                # Si se pudo gastar, colocar el rook
                                         matriz[fila][columna] = rooks_info[item_seleccionado]["tipo"]
                                         print(f"Rook colocado en fila {fila}, columna {columna}")
                                     else:
                                         print("¡No se pudo colocar el rook! No tienes suficientes monedas")
-                        else:
-                            matriz[fila][columna] = OCUPADA
-                    
-                    # Click derecho: borrar
-                    elif event.button == 3:
-                        valor_celda = matriz[fila][columna]
-                        if valor_celda != VACIO and valor_celda != OCUPADA:
-                            for rook in rooks_info:
-                                if rook["tipo"] == valor_celda:
-                                    agregar_monedas(rook["precio"])
-                                    print(f"Rook removido. Monedas devueltas: ${rook['precio']}")
-                                    break
+                            else:
+                                matriz[fila][columna] = OCUPADA
                         
-                        matriz[fila][columna] = VACIO
-        if juego_iniciado :
+                        # Click derecho: borrar
+                        elif event.button == 3:
+                            valor_celda = matriz[fila][columna]
+                            if valor_celda != VACIO and valor_celda != OCUPADA:
+                                for rook in rooks_info:
+                                    if rook["tipo"] == valor_celda:
+                                        agregar_monedas(rook["precio"])
+                                        print(f"Rook removido. Monedas devueltas: ${rook['precio']}")
+                                        break
+                            
+                            matriz[fila][columna] = VACIO
+        
+        if juego_iniciado:
             actualizar_contador()
-            
-
 
         pantalla.fill((18, 18, 18))
 
+        # IMPORTANTE: Aquí está el cambio principal - pasar campo_matriz en lugar de pantalla
         dibujar_matriz(campo_matriz)
         pantalla.blit(campo_matriz, (180, ALTO_MAPA_CENTRADO))
         
@@ -451,13 +451,10 @@ def juego():
 
         boton_rect = dibujar_boton_iniciar(pantalla, fuente_texto, boton_x, boton_y, boton_ancho, boton_alto)
 
-        #No se porque no funcion si lo pomgo con el actualizar contador de arriba pero bueno
-        if juego_iniciado :
+        if juego_iniciado:
             dibujar_contador(pantalla, fuente_texto, boton_x, boton_y + 80)
 
-            
         pygame.display.update()
         reloj.tick(60)
-
 
 juego()
