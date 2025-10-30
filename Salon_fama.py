@@ -3,6 +3,8 @@ import json
 import os
 import pygame
 from datetime import datetime
+from traductor_pygame import t
+from Traductor import dic_idiomas
 
 
 class SalonFama:
@@ -140,14 +142,14 @@ class InterfazSalonFama:
         self.pantalla.blit(overlay, (0, 0))
 
         # Título
-        titulo = self.fuente_titulo.render("SALÓN DE LA FAMA", False, self.COLOR_TITULO)
+        titulo = self.fuente_titulo.render(t("SALÓN DE LA FAMA"), False, self.COLOR_TITULO) 
         titulo_rect = titulo.get_rect(center=(ancho // 2, 80))
         self.pantalla.blit(titulo, titulo_rect)
 
         # Top
         top_puntajes = self.salon.obtener_top(10)
         if not top_puntajes:
-            vacio = self.fuente_texto.render("No hay puntajes registrados", False, self.COLOR_TEXTO)
+            vacio = self.fuente_texto.render(t("No hay puntajes registrados"), False, self.COLOR_TEXTO) 
             self.pantalla.blit(vacio, vacio.get_rect(center=(ancho // 2, alto // 2)))
             return
 
@@ -193,7 +195,7 @@ class InterfazSalonFama:
             )
 
         # Pie
-        texto_volver = self.fuente_texto.render("Presiona ESC para volver", False, self.COLOR_TEXTO)
+        texto_volver = self.fuente_texto.render(t("Presiona ESC para volver"), False, self.COLOR_TEXTO) 
         self.pantalla.blit(texto_volver, texto_volver.get_rect(center=(ancho // 2, alto - 50)))
 
 

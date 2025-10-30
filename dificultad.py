@@ -7,6 +7,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from perfiles import cargar_perfil
 from Clases_auxiliares.musica import MUSICA
+from traductor_pygame import t, configurar_idioma
 from Traductor import dic_idiomas
 
 class PantallaDificultad:
@@ -14,11 +15,8 @@ class PantallaDificultad:
         self.username = username
         self.lang = lang
         self.tema = self._cargar_tema_usuario()
-        
-        # Función de traducción
-        def t(key):
-            return dic_idiomas.get(self.lang, dic_idiomas["es"]).get(key, key)
-        self.t = t
+
+        configurar_idioma(lang)
         
         # Inicializar Pygame
         pygame.init()
@@ -121,20 +119,20 @@ class PantallaDificultad:
         self.botones = {
             "facil": {
                 "rect": pygame.Rect(center_x - btn_width//2, center_y - 80, btn_width, btn_height),
-                "texto": "🎮 " + self.t("FÁCIL"),
-                "descripcion": self.t("Perfecto para principiantes"),
+                "texto": "🎮 " + t("FÁCIL"),
+                "descripcion": t("Perfecto para principiantes"),
                 "hover": False
             },
             "medio": {
                 "rect": pygame.Rect(center_x - btn_width//2, center_y + 40, btn_width, btn_height),
-                "texto": "⚔️ " + self.t("MEDIO"),
-                "descripcion": self.t("Desafío equilibrado"),
+                "texto": "⚔️ " + t("MEDIO"),
+                "descripcion": t("Desafío equilibrado"),
                 "hover": False
             },
             "dificil": {
                 "rect": pygame.Rect(center_x - btn_width//2, center_y + 160, btn_width, btn_height),
-                "texto": "🔥 " + self.t("DIFÍCIL"),
-                "descripcion": self.t("Para expertos en busca de reto"),
+                "texto": "🔥 " + t("DIFÍCIL"),
+                "descripcion": t("Para expertos en busca de reto"),
                 "hover": False
             }
         }
@@ -223,7 +221,7 @@ class PantallaDificultad:
                        panel_rect, width=4, border_radius=25)
         
         # Título
-        titulo_surface = self.fuente_titulo.render(self.t("SELECCIONA LA DIFICULTAD"), True, self.col_texto)
+        titulo_surface = self.fuente_titulo.render(t("SELECCIONA LA DIFICULTAD"), True, self.col_texto)
         titulo_rect = titulo_surface.get_rect(center=(self.WIN_W//2, self.WIN_H//2 - 200))
         self.screen.blit(titulo_surface, titulo_rect)
         
@@ -232,7 +230,7 @@ class PantallaDificultad:
             self._dibujar_boton(boton, dificultad)
         
         # Instrucciones
-        instrucciones = self.t("Presiona ESC para salir • 1=Fácil • 2=Medio • 3=Difícil")
+        instrucciones = t("Presiona ESC para salir • 1=Fácil • 2=Medio • 3=Difícil")
         inst_surface = self.fuente_desc.render(instrucciones, True, self._ajustar_color(self.col_texto, 0.6))
         inst_rect = inst_surface.get_rect(center=(self.WIN_W//2, self.WIN_H - 40))
         self.screen.blit(inst_surface, inst_rect)
@@ -260,7 +258,9 @@ def main(username: str, lang: str = "es"):
             
             # Importar y ejecutar el juego
             from Interfaz_Juego import Interfaz
-            juego = Interfaz(dificultad=dificultad) 
+            
+            # Solo pasar dificultad y lang, NO username
+            juego = Interfaz(dificultad=dificultad, lang=lang)
             
             juego.ejecutar()
             

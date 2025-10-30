@@ -105,7 +105,58 @@ dic_idiomas = {
         "No hay pista seleccionada": "No hay pista seleccionada",
         "No hay dispositivos activos o no es Premium": "No hay dispositivos activos o no es Premium",
         "Reproduciendo": "Reproduciendo",
-        "No se pudo reproducir": "No se pudo reproducir"
+        "No se pudo reproducir": "No se pudo reproducir",
+
+        # Juego - Dificultad
+        "SELECCIONA LA DIFICULTAD": "SELECCIONA LA DIFICULTAD",
+        "FÁCIL": "FÁCIL",
+        "MEDIO": "MEDIO", 
+        "DIFÍCIL": "DIFÍCIL",
+        "Perfecto para principiantes": "Perfecto para principiantes",
+        "Desafío equilibrado": "Desafío equilibrado",
+        "Para expertos en busca de reto": "Para expertos en busca de reto",
+        "Presiona ESC para salir • 1=Fácil • 2=Medio • 3=Difícil": "Presiona ESC para salir • 1=Fácil • 2=Medio • 3=Difícil",
+
+        # Juego - Interfaz
+        "Avatar vs rooks": "Avatar vs rooks",
+        "TIENDA - ROOKS": "TIENDA - ROOKS",
+        "MONEDAS: $": "MONEDAS: $",
+        "COLOCA TUS ROOKS": "COLOCA TUS ROOKS",
+        "Tiempo:": "Tiempo:",
+        "Puntaje:": "Puntaje:",
+        "Avatars eliminados:": "Avatars eliminados:",
+        "Dificultad:": "Dificultad:",
+        "Vida:": "Vida:",
+        "Daño:": "Daño:",
+        "segundos restantes!": "segundos restantes!",
+
+        # Juego - Final
+        "GAME OVER": "GAME OVER",
+        "¡VICTORIA!": "¡VICTORIA!",
+        "Los avatares llegaron a la base": "Los avatares llegaron a la base",
+        "Sobreviviste el tiempo con tus rooks": "Sobreviviste el tiempo con tus rooks",
+        "Puntaje Final:": "Puntaje Final:",
+        "Presiona R para reiniciar": "Presiona R para reiniciar",
+        "Presiona F para ver el Salón de la Fama": "Presiona F para ver el Salón de la Fama",
+        "¡NUEVO RÉCORD!": "¡NUEVO RÉCORD!",
+        "¡TOP 10 - Posición #": "¡TOP 10 - Posición #",
+        "Posición: #": "Posición: #",
+
+        # Salón de la Fama
+        "SALÓN DE LA FAMA": "SALÓN DE LA FAMA",
+        "No hay puntajes registrados": "No hay puntajes registrados",
+        "Presiona ESC para volver": "Presiona ESC para volver",
+
+        # Animaciones
+        "¡GAME OVER!": "¡GAME OVER!",
+        "Has perdido. ¡Intenta de nuevo!": "Has perdido. ¡Intenta de nuevo!",
+        "Reiniciar": "Reiniciar",
+        "Menú Principal": "Menú Principal",
+        "¡YOU WIN!": "¡YOU WIN!",
+        "¡Felicidades, has ganado el juego!": "¡Felicidades, has ganado el juego!",
+        "¡¡¡Has entrado al SALÓN DE LA FAMA!!!": "¡¡¡Has entrado al SALÓN DE LA FAMA!!!",
+        "Ver": "Ver",
+        "Bonus! +100 monedas por 3 flecheros eliminados": "¡Bonus! +100 monedas por 3 flecheros eliminados"
     },
     "en": {
         "Inicio de sesión": "Login",
@@ -212,7 +263,58 @@ dic_idiomas = {
         "No hay pista seleccionada": "No track selected",
         "No hay dispositivos activos o no es Premium": "No active devices or not Premium",
         "Reproduciendo": "Playing",
-        "No se pudo reproducir": "Could not play"
+        "No se pudo reproducir": "Could not play",
+
+        # Juego - Dificultad
+        "SELECCIONA LA DIFICULTAD": "SELECT DIFFICULTY",
+        "FÁCIL": "EASY",
+        "MEDIO": "MEDIUM", 
+        "DIFÍCIL": "HARD",
+        "Perfecto para principiantes": "Perfect for beginners",
+        "Desafío equilibrado": "Balanced challenge",
+        "Para expertos en busca de reto": "For experts seeking challenge",
+        "Presiona ESC para salir • 1=Fácil • 2=Medio • 3=Difícil": "Press ESC to exit • 1=Easy • 2=Medium • 3=Hard",
+
+        # Juego - Interfaz
+        "Avatar vs rooks": "Avatar vs rooks",
+        "TIENDA - ROOKS": "SHOP - ROOKS",
+        "MONEDAS: $": "COINS: $",
+        "COLOCA TUS ROOKS": "PLACE YOUR ROOKS",
+        "Tiempo:": "Time:",
+        "Puntaje:": "Score:",
+        "Avatars eliminados:": "Avatars eliminated:",
+        "Dificultad:": "Difficulty:",
+        "Vida:": "Health:",
+        "Daño:": "Damage:",
+        "segundos restantes!": "seconds remaining!",
+
+        # Juego - Final
+        "GAME OVER": "GAME OVER",
+        "¡VICTORIA!": "VICTORY!",
+        "Los avatares llegaron a la base": "Avatars reached the base",
+        "Sobreviviste el tiempo con tus rooks": "You survived the time with your rooks",
+        "Puntaje Final:": "Final Score:",
+        "Presiona R para reiniciar": "Press R to restart",
+        "Presiona F para ver el Salón de la Fama": "Press F to view Hall of Fame",
+        "¡NUEVO RÉCORD!": "NEW RECORD!",
+        "¡TOP 10 - Posición #": "TOP 10 - Position #",
+        "Posición: #": "Position: #",
+
+        # Salón de la Fama
+        "SALÓN DE LA FAMA": "HALL OF FAME",
+        "No hay puntajes registrados": "No scores registered",
+        "Presiona ESC para volver": "Press ESC to return",
+
+        # Animaciones
+        "¡GAME OVER!": "GAME OVER!",
+        "Has perdido. ¡Intenta de nuevo!": "You lost. Try again!",
+        "Reiniciar": "Restart",
+        "Menú Principal": "Main Menu",
+        "¡YOU WIN!": "YOU WIN!",
+        "¡Felicidades, has ganado el juego!": "Congratulations, you won the game!",
+        "¡¡¡Has entrado al SALÓN DE LA FAMA!!!": "You entered the HALL OF FAME!!!",
+        "Ver": "View",
+        "Bonus! +100 monedas por 3 flecheros eliminados": "Bonus! +100 coins for 3 archers eliminated"
     },
     "hu": {
         "Inicio de sesión": "Bejelentkezés",
@@ -260,7 +362,7 @@ dic_idiomas = {
         "Seleccionar imagen": "Kép kiválasztása",
         "Imagen seleccionada:": "Kiválasztott kép:",
         "Pregunta de seguridad": "Biztonsági kérdés",
-        "Seleccione la pregunta de segurança": "Válassza ki a biztonsági kérdést",
+        "Seleccione la pregunta de seguridad": "Válassza ki a biztonsági kérdést",
         "¿Cuál es el mejor equipo de fútbol en Costa Rica?": "Mi a legjobb labdarúgócsapat Costa Ricában?",
         "¿Cuál es la mejor carrera universitaria del mundo?": "Mi a legjobb egyetemi karrier a világon?",
         "¿Profesor favorito de la universidad?": "Kedvenc egyetemi professzor?",
@@ -319,7 +421,58 @@ dic_idiomas = {
         "No hay pista seleccionada": "Nincs kiválasztott szám",
         "No hay dispositivos activos o no es Premium": "Nincs aktív eszköz vagy nem Premium",
         "Reproduciendo": "Lejátszás",
-        "No se pudo reproducir": "Nem sikerült lejátszani"
+        "No se pudo reproducir": "Nem sikerült lejátszani",
+
+        # Juego - Dificultad
+        "SELECCIONA LA DIFICULTAD": "VÁLASZD KI A NEHÉZSÉGI SZINTET",
+        "FÁCIL": "KÖNNYŰ",
+        "MEDIO": "KÖZEPES", 
+        "DIFÍCIL": "NEHÉZ",
+        "Perfecto para principiantes": "Tökéletes kezdőknek",
+        "Desafío equilibrado": "Kiegyensúlyozott kihívás",
+        "Para expertos en busca de reto": "Szakértőknek, akik kihívást keresnek",
+        "Presiona ESC para salir • 1=Fácil • 2=Medio • 3=Difícil": "Nyomj ESC-t a kilépéshez • 1=Könnyű • 2=Közepes • 3=Nehéz",
+
+        # Juego - Interfaz
+        "Avatar vs rooks": "Avatar vs rooks",
+        "TIENDA - ROOKS": "BOLT - ROOKS",
+        "MONEDAS: $": "ÉRMÉK: $",
+        "COLOCA TUS ROOKS": "HELYEZD EL A ROOKJAIDAT",
+        "Tiempo:": "Idő:",
+        "Puntaje:": "Pontszám:",
+        "Avatars eliminados:": "Avatarok eltávolítva:",
+        "Dificultad:": "Nehézség:",
+        "Vida:": "Életerő:",
+        "Daño:": "Sebzés:",
+        "segundos restantes!": "másodperc maradt!",
+
+        # Juego - Final
+        "GAME OVER": "JÁTÉK VÉGE",
+        "¡VICTORIA!": "GYŐZELEM!",
+        "Los avatares llegaron a la base": "Az avatarok elérték a bázist",
+        "Sobreviviste el tiempo con tus rooks": "Túlélted az időt a rookjaiddal",
+        "Puntaje Final:": "Végső pontszám:",
+        "Presiona R para reiniciar": "Nyomj R-t az újraindításhoz",
+        "Presiona F para ver el Salón de la Fama": "Nyomj F-et a Dicsőség Csarnok megtekintéséhez",
+        "¡NUEVO RÉCORD!": "ÚJ REKORD!",
+        "¡TOP 10 - Posición #": "TOP 10 - # helyezés",
+        "Posición: #": "Helyezés: #",
+
+        # Salón de la Fama
+        "SALÓN DE LA FAMA": "DICSŐSÉG CSARNOK",
+        "No hay puntajes registrados": "Nincsenek regisztrált pontszámok",
+        "Presiona ESC para volver": "Nyomj ESC-t a visszatéréshez",
+
+        # Animaciones
+        "¡GAME OVER!": "JÁTÉK VÉGE!",
+        "Has perdido. ¡Intenta de nuevo!": "Vesztettél. Próbáld újra!",
+        "Reiniciar": "Újraindítás",
+        "Menú Principal": "Főmenü",
+        "¡YOU WIN!": "GYŐZTÉL!",
+        "¡Felicidades, has ganado el juego!": "Gratulálunk, megnyerted a játékot!",
+        "¡¡¡Has entrado al SALÓN DE LA FAMA!!!": "Beléptél a DICSŐSÉG CSARNOKÁBA!!!",
+        "Ver": "Megtekintés",
+        "Bonus! +100 monedas por 3 flecheros eliminados": "Bónusz! +100 érme 3 íjász eltávolításáért"
     },
     "ar": {
         "Inicio de sesión": "تسجيل الدخول",
@@ -426,7 +579,58 @@ dic_idiomas = {
         "No hay pista seleccionada": "لا توجد أغنية محددة",
         "No hay dispositivos activos o no es Premium": "لا توجد أجهزة نشطة أو ليس حساب بريميوم",
         "Reproduciendo": "جاري التشغيل",
-        "No se pudo reproducir": "تعذر التشغيل"
+        "No se pudo reproducir": "تعذر التشغيل",
+
+        # Juego - Dificultad
+        "SELECCIONA LA DIFICULTAD": "اختر مستوى الصعوبة",
+        "FÁCIL": "سهل",
+        "MEDIO": "متوسط", 
+        "DIFÍCIL": "صعب",
+        "Perfecto para principiantes": "مثالي للمبتدئين",
+        "Desafío equilibrado": "تحدي متوازن",
+        "Para expertos في busca de reto": "للمحترفين الباحثين عن التحدي",
+        "Presiona ESC para salir • 1=Fácil • 2=Medio • 3=Difícil": "اضغط ESC للخروج • 1=سهل • 2=متوسط • 3=صعب",
+
+        # Juego - Interfaz
+        "Avatar vs rooks": "أفتار ضد الروكس",
+        "TIENDA - ROOKS": "المتجر - الروكس",
+        "MONEDAS: $": "العملات: $",
+        "COLOCA TUS ROOKS": "ضع الروكس الخاصة بك",
+        "Tiempo:": "الوقت:",
+        "Puntaje:": "النقاط:",
+        "Avatars eliminados:": "الآفتارات المزالة:",
+        "Dificultad:": "الصعوبة:",
+        "Vida:": "الصحة:",
+        "Daño:": "الضرر:",
+        "segundos restantes!": "ثانية متبقية!",
+
+        # Juego - Final
+        "GAME OVER": "انتهت اللعبة",
+        "¡VICTORIA!": "انتصار!",
+        "Los avatares llegaron a la base": "وصلت الآفتارات إلى القاعدة",
+        "Sobreviviste el tiempo con tus rooks": "لقد نجوت من الوقت مع الروكس الخاصة بك",
+        "Puntaje Final:": "النقاط النهائية:",
+        "Presiona R para reiniciar": "اضغط R لإعادة التشغيل",
+        "Presiona F para ver el Salón de la Fama": "اضغط F لعرض قاعة المشاهير",
+        "¡NUEVO RÉCORD!": "رقم قياسي جديد!",
+        "¡TOP 10 - Posición #": "أفضل 10 - المركز #",
+        "Posición: #": "المركز: #",
+
+        # Salón de la Fama
+        "SALÓN DE LA FAMA": "قاعة المشاهير",
+        "No hay puntajes registrados": "لا توجد نقاط مسجلة",
+        "Presiona ESC para volver": "اضغط ESC للعودة",
+
+        # Animaciones
+        "¡GAME OVER!": "انتهت اللعبة!",
+        "Has perdido. ¡Intenta de nuevo!": "لقد خسرت. حاول مرة أخرى!",
+        "Reiniciar": "إعادة التشغيل",
+        "Menú Principal": "القائمة الرئيسية",
+        "¡YOU WIN!": "لقد فزت!",
+        "¡Felicidades, has ganado el juego!": "مبروك، لقد فزت في اللعبة!",
+        "¡¡¡Has entrado al SALÓN DE LA FAMA!!!": "لقد دخلت قاعة المشاهير!!!",
+        "Ver": "عرض",
+        "Bonus! +100 monedas por 3 flecheros eliminados": "مكافأة! +100 عملة لإزالة 3 رماة"
     },
     "hi": {
         "Inicio de sesión": "लॉगिन",
@@ -533,6 +737,57 @@ dic_idiomas = {
         "No hay pista seleccionada": "कोई ट्रैक चयनित नहीं है",
         "No hay dispositivos activos o no es Premium": "कोई सक्रिय डिवाइस नहीं है या प्रीमियम नहीं है",
         "Reproduciendo": "चल रहा है",
-        "No se pudo reproducir": "चलाया नहीं जा सका"
+        "No se pudo reproducir": "चलाया नहीं जा सका",
+
+        # Juego - Dificultad
+        "SELECCIONA LA DIFICULTAD": "कठिनाई स्तर चुनें",
+        "FÁCIL": "आसान",
+        "MEDIO": "मध्यम", 
+        "DIFÍCIL": "कठिन",
+        "Perfecto para principiantes": "शुरुआती लोगों के लिए बिल्कुल सही",
+        "Desafío equilibrado": "संतुलित चुनौती",
+        "Para expertos en busca de reto": "चुनौती की तलाश में विशेषज्ञों के लिए",
+        "Presiona ESC para salir • 1=Fácil • 2=Medio • 3=Difícil": "बाहर निकलने के लिए ESC दबाएं • 1=आसान • 2=मध्यम • 3=कठिन",
+
+        # Juego - Interfaz
+        "Avatar vs rooks": "अवतार बनाम रूक्स",
+        "TIENDA - ROOKS": "दुकान - रूक्स",
+        "MONEDAS: $": "सिक्के: $",
+        "COLOCA TUS ROOKS": "अपने रूक्स रखें",
+        "Tiempo:": "समय:",
+        "Puntaje:": "स्कोर:",
+        "Avatars eliminados:": "अवतार हटाए गए:",
+        "Dificultad:": "कठिनाई:",
+        "Vida:": "स्वास्थ्य:",
+        "Daño:": "क्षति:",
+        "segundos restantes!": "सेकंड शेष!",
+
+        # Juego - Final
+        "GAME OVER": "खेल समाप्त",
+        "¡VICTORIA!": "विजय!",
+        "Los avatares llegaron a la base": "अवतार आधार तक पहुँच गए",
+        "Sobreviviste el tiempo con tus rooks": "आप अपने रूक्स के साथ समय तक जीवित रहे",
+        "Puntaje Final:": "अंतिम स्कोर:",
+        "Presiona R para reiniciar": "पुनः आरंभ करने के लिए R दबाएं",
+        "Presiona F para ver el Salón de la Fama": "हॉल ऑफ फेम देखने के लिए F दबाएं",
+        "¡NUEVO RÉCORD!": "नया रिकॉर्ड!",
+        "¡TOP 10 - Posición #": "टॉप 10 - स्थान #",
+        "Posición: #": "स्थान: #",
+
+        # Salón de la Fama
+        "SALÓN DE LA FAMA": "हॉल ऑफ फेम",
+        "No hay puntajes registrados": "कोई स्कोर पंजीकृत नहीं है",
+        "Presiona ESC para volver": "वापस जाने के लिए ESC दबाएं",
+
+        # Animaciones
+        "¡GAME OVER!": "खेल समाप्त!",
+        "Has perdido. ¡Intenta de nuevo!": "आप हार गए। फिर से कोशिश करें!",
+        "Reiniciar": "पुनः आरंभ करें",
+        "Menú Principal": "मुख्य मेनू",
+        "¡YOU WIN!": "आप जीत गए!",
+        "¡Felicidades, has ganado el juego!": "बधाई हो, आपने खेल जीत लिया!",
+        "¡¡¡Has entrado al SALÓN DE LA FAMA!!!": "आप हॉल ऑफ फेम में प्रवेश कर गए!!!",
+        "Ver": "देखें",
+        "Bonus! +100 monedas por 3 flecheros eliminados": "बोनस! 3 आर्चर हटाने के लिए +100 सिक्के"
     }
 }

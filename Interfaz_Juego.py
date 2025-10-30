@@ -8,6 +8,8 @@ from Animaciones.gameOverAnimado import VentanaGameOver
 from Animaciones.salon_fama import VentanaSalonFama
 from Animaciones.win import VentanaWin
 import sys
+from traductor_pygame import t, configurar_idioma
+from Traductor import dic_idiomas
 
 
 # Constantes visuales
@@ -24,17 +26,17 @@ COLOR_AVATAR = (255, 100, 100)
 COLOR_BALA = (255, 255, 100)
 
 
-# En Interfaz_Juego.py, modifica la clase Interfaz:
-
 class Interfaz:
-    def __init__(self, dificultad="facil"):  # ← Agregar parámetro de dificultad
+    def __init__(self, dificultad="facil", lang="es"):  
         pygame.init()
         info = pygame.display.Info()
         self.ANCHO_PANTALLA = info.current_w
         self.ALTO_PANTALLA = info.current_h
         
+        configurar_idioma(lang)
+
         self.pantalla = pygame.display.set_mode((self.ANCHO_PANTALLA, self.ALTO_PANTALLA), pygame.FULLSCREEN)
-        pygame.display.set_caption("Avatar vs Rooks")
+        pygame.display.set_caption(t("Avatar vs Rooks"))
         self.reloj = pygame.time.Clock()
         self.fuente_texto = pygame.font.Font("Fuentes/super_sliced.otf", 20)
         
@@ -64,7 +66,9 @@ class Interfaz:
 
         # IMPORTANTE: Cargar usuario actual desde el login !!!!!!!!
         # Reemplaza "Jugador" con el nombre real del usuario logueado
-        self.usuario_actual = "Jugador"  
+        from Clases_auxiliares.credenciales import cargar_credenciales
+        usuario, _ = cargar_credenciales()
+        self.usuario_actual = usuario if usuario else "Jugador"  
         self.item_seleccionado = None
         
         # Cargar imágenes
@@ -293,7 +297,7 @@ class Interfaz:
         self.campo_tienda.fill("Red")
         
         # Título
-        titulo_tienda = self.fuente_texto.render("TIENDA - ROOKS", False, "White")
+        titulo_tienda = self.fuente_texto.render(t("TIENDA - ROOKS", False, "White"))
         self.campo_tienda.blit(titulo_tienda, (ANCHO // 2 - titulo_tienda.get_width() // 2, 20))
 
         # Panel de monedas
@@ -301,11 +305,11 @@ class Interfaz:
         pygame.draw.rect(self.campo_tienda, (40, 40, 40), fondo_monedas)
         pygame.draw.rect(self.campo_tienda, (200, 200, 200), fondo_monedas, 3)
         
-        texto_monedas = self.fuente_texto.render(f"MONEDAS: ${self.juego.monedas_jugador}", False, (255, 215, 0))
+        texto_monedas = self.fuente_texto.render(t(f"MONEDAS: ${self.juego.monedas_jugador}", False, (255, 215, 0)))
         self.campo_tienda.blit(texto_monedas, (ANCHO // 2 - texto_monedas.get_width() // 2, 65))
 
         # Instrucción
-        texto_leyenda = self.fuente_texto.render("COLOCA TUS ROOKS", False, "White")
+        texto_leyenda = self.fuente_texto.render(t("COLOCA TUS ROOKS", False, "White"))
         self.campo_tienda.blit(texto_leyenda, (ANCHO // 2 - texto_leyenda.get_width() // 2, 140))
 
         # Items de la tienda
@@ -363,13 +367,13 @@ class Interfaz:
                 fuente_pequeña = pygame.font.Font("Fuentes/super_sliced.otf", 16)
                 
                 # Vida
-                texto_vida = fuente_pequeña.render(f"Vida: {rook_info['vida']}", False, (100, 255, 100))
+                texto_vida = fuente_pequeña.render(t(f"Vida: {rook_info['vida']}", False, (100, 255, 100)))
                 vida_x = nombre_x
                 vida_y = nombre_y + texto_nombre.get_height() + 8
                 self.campo_tienda.blit(texto_vida, (vida_x, vida_y))
                 
                 # Daño
-                texto_daño = fuente_pequeña.render(f"Daño: {rook_info['daño']}", False, (255, 100, 100))
+                texto_daño = fuente_pequeña.render(t(f"Daño: {rook_info['daño']}", False, (255, 100, 100)))
                 daño_x = vida_x + texto_vida.get_width() + 15
                 daño_y = vida_y
                 self.campo_tienda.blit(texto_daño, (daño_x, daño_y))
@@ -379,24 +383,24 @@ class Interfaz:
         puntaje_actual = self.juego.obtener_puntaje_actual()
         
         # Puntaje principal
-        texto_puntaje = f"Puntaje: {puntaje_actual}"
+        texto_puntaje = t("Puntaje: ") + str(puntaje_actual)
         superficie_puntaje = self.fuente_texto.render(texto_puntaje, False, (255, 215, 0))
         self.pantalla.blit(superficie_puntaje, (50, 180))
         
         # Estadísticas adicionales
         fuente_pequena = pygame.font.Font("Fuentes/super_sliced.otf", 16)
         
-        stats_text = f"Avatars eliminados: {self.juego.total_avatars_matados}"
+        stats_text = t("Avatars eliminados: ") + str(self.juego.total_avatars_matados)
         stats_surface = fuente_pequena.render(stats_text, False, (200, 200, 200))
         self.pantalla.blit(stats_surface, (50, 210))
 
     def dibujar_ui(self):
         # Título
-        titulo_juego = self.fuente_texto.render("Avatar vs rooks", False, "White")
+        titulo_juego = self.fuente_texto.render(t("Avatar vs rooks"), False, "White")
         self.pantalla.blit(titulo_juego, (50, 50))
         
         # Información de dificultad
-        dificultad_texto = self.fuente_texto.render(f"Dificultad: {self.dificultad.upper()}", False, "White")
+        dificultad_texto = self.fuente_texto.render(t("Dificultad: ") + self.dificultad.upper(), False, "White") 
         self.pantalla.blit(dificultad_texto, (50, 85))
         
         # Contador de tiempo
@@ -409,7 +413,7 @@ class Interfaz:
 
     def dibujar_contador_tiempo(self):
         mins, secs = divmod(self.juego.tiempo_restante, 60)
-        texto_tiempo = f"Tiempo: {mins:02d}:{secs:02d}"
+        texto_tiempo = t("Tiempo: ") + f"{mins:02d}:{secs:02d}"
         
         # Cambiar color cuando queda poco tiempo
         if self.juego.tiempo_restante > 30:
@@ -425,7 +429,7 @@ class Interfaz:
         # Mostrar mensaje especial cuando el tiempo está por acabarse
         if self.juego.tiempo_restante <= 10 and self.juego.tiempo_restante > 0:
             fuente_alerta = pygame.font.Font("Fuentes/super_sliced.otf", 16)
-            texto_alerta = f"¡{self.juego.tiempo_restante} segundos restantes!"
+            texto_alerta = f"¡{self.juego.tiempo_restante} " + t("segundos restantes!")
             alerta_surface = fuente_alerta.render(texto_alerta, False, (255, 100, 100))
             self.pantalla.blit(alerta_surface, (50, 150))
 
@@ -468,15 +472,15 @@ class Interfaz:
         detalles = self.juego.obtener_detalles_puntaje()
         
         if self.juego.game_over:
-            texto = fuente_grande.render("GAME OVER", False, (255, 50, 50))
-            texto2 = fuente_pequeña.render("Los avatares llegaron a la base", False, (255, 255, 255))
+            texto = fuente_grande.render(t("GAME OVER"), False, (255, 50, 50))  
+            texto2 = fuente_pequeña.render(t("Los avatares llegaron a la base"), False, (255, 255, 255))  
         else:  # victoria
-            texto = fuente_grande.render("¡VICTORIA!", False, (50, 255, 50))
-            texto2 = fuente_pequeña.render("Sobreviviste el tiempo con tus rooks", False, (255, 255, 255))
+            texto = fuente_grande.render(t("¡VICTORIA!"), False, (50, 255, 50))  
+            texto2 = fuente_pequeña.render(t("Sobreviviste el tiempo con tus rooks"), False, (255, 255, 255))
 
-        texto_puntaje = fuente_mediana.render(f"Puntaje Final: {puntaje_final}", False, (255, 215, 0))
+        texto_puntaje = fuente_mediana.render(t("Puntaje Final: ") + str(puntaje_final), False, (255, 215, 0))
         texto_avatars = fuente_pequeña.render(
-            f"Avatars eliminados: {detalles['avatars_matados']}", 
+            t("Avatars eliminados: ") + str(detalles['avatars_matados']), 
             False, (200, 200, 200))
         
         texto_rect = texto.get_rect(center=(self.ANCHO_PANTALLA // 2, self.ALTO_PANTALLA // 2 - 50))
@@ -484,13 +488,13 @@ class Interfaz:
         puntaje_rect = texto_puntaje.get_rect(center=(self.ANCHO_PANTALLA // 2, self.ALTO_PANTALLA // 2 + 60))
         avatars_rect = texto_avatars.get_rect(center=(self.ANCHO_PANTALLA // 2, self.ALTO_PANTALLA // 2 + 90))
         
-        texto3 = fuente_pequeña.render("Presiona R para reiniciar", False, (200, 200, 200))
+        texto3 = fuente_pequeña.render(t("Presiona R para reiniciar"), False, (200, 200, 200))
         texto3_rect = texto3.get_rect(center=(self.ANCHO_PANTALLA // 2, self.ALTO_PANTALLA // 2 + 140))
 
         # Mostrar información del salón de la fama
         if self.info_resultado:
             texto_salon = fuente_pequeña.render(
-                "Presiona F para ver el Salón de la Fama", 
+                t("Presiona F para ver el Salón de la Fama"),  
                 False, (200, 200, 200)
             )
             salon_rect = texto_salon.get_rect(
@@ -501,16 +505,16 @@ class Interfaz:
             # Si es récord o top 10, mostrar mensaje especial
             if self.info_resultado['es_record']:
                 texto_especial = fuente_mediana.render(
-                    "¡NUEVO RÉCORD!", False, (255, 215, 0)
+                    t("¡NUEVO RÉCORD!"), False, (255, 215, 0) 
                 )
             elif self.info_resultado['es_top']:
                 texto_especial = fuente_mediana.render(
-                    f"¡TOP 10 - Posición #{self.info_resultado['posicion']}!", 
+                    t("¡TOP 10 - Posición #") + str(self.info_resultado['posicion']) + "!",  
                     False, (100, 200, 255)
                 )
             else:
                 texto_especial = fuente_pequeña.render(
-                    f"Posición: #{self.info_resultado['posicion']}", 
+                    t("Posición: #") + str(self.info_resultado['posicion']), 
                     False, (150, 150, 150)
                 )
             
@@ -552,9 +556,10 @@ class Interfaz:
         self.juego.juego_iniciado = False 
         
         if tipo == "victoria":
-            accion = VentanaSalonFama(self.pantalla).run()  
+            accion = VentanaSalonFama(self.pantalla, self.lang).run() 
+             
         else:
-            accion = VentanaGameOver(self.pantalla).run()  
+            accion = VentanaGameOver(self.pantalla, self.lang).run()
 
         if accion == "reiniciar":
             self.juego.reiniciar_juego()

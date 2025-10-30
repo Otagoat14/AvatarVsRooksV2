@@ -2,6 +2,8 @@ import pygame
 import sys
 import math
 import random
+from traductor_pygame import t  
+from Traductor import dic_idiomas
 
 # ===== Colores =====
 PALETA = {
@@ -24,9 +26,13 @@ VENT_ANCHO, VENT_ALTO = 800, 500
 
 
 class VentanaGameOver:
-    def __init__(self, main_surface):
+    def __init__(self, main_surface, lang="es"):  # ← AGREGAR lang
         pygame.init()
         pygame.mixer.init()
+        
+        # Configurar idioma
+        from traductor_pygame import configurar_idioma
+        configurar_idioma(lang)  # ← NUEVO
         
         # === Guardar referencia a la ventana principal ===
         self.main_surface = main_surface
@@ -152,13 +158,16 @@ class VentanaGameOver:
             # === Texto principal ===
             self.time += 0.05
             scale = 1 + math.sin(self.time * 4) * 0.05
+            
+            # CAMBIADO: Usar t() para traducción
             titulo = pygame.transform.scale(
-                self.font_titulo.render("¡GAME OVER!", True, COLOR_TEXT_TITU),
+                self.font_titulo.render(t("¡GAME OVER!"), True, COLOR_TEXT_TITU),  # ← CAMBIADO
                 (int(420 * scale), int(80 * scale))
             )
             self.modal_surface.blit(titulo, (card_rect.centerx - titulo.get_width() // 2, card_rect.y + 40))
 
-            subt = self.font_texto.render("Has perdido. ¡Intenta de nuevo!", True, COLOR_TEXT_CUER)
+            # CAMBIADO: Usar t() para traducción
+            subt = self.font_texto.render(t("Has perdido. ¡Intenta de nuevo!"), True, COLOR_TEXT_CUER)  # ← CAMBIADO
             self.modal_surface.blit(subt, (card_rect.centerx - subt.get_width() // 2, card_rect.y + 150))
 
             # === Botones ===
@@ -182,7 +191,8 @@ class VentanaGameOver:
         modal_mouse_x = mouse_x - self.modal_x
         modal_mouse_y = mouse_y - self.modal_y
         
-        for idx, (rect, texto) in enumerate([(self.btn_reiniciar, "Reiniciar"), (self.btn_menu, "Menú Principal")]):
+        # CAMBIADO: Usar t() para las traducciones de botones
+        for idx, (rect, texto) in enumerate([(self.btn_reiniciar, t("Reiniciar")), (self.btn_menu, t("Menú Principal"))]):  # ← CAMBIADO
             hover = rect.collidepoint(modal_mouse_x, modal_mouse_y)
             color = HOVER if hover else COLOR_BOTONES
             scale_btn = 1.06 if hover else 1
@@ -205,14 +215,3 @@ class VentanaGameOver:
                 rect.centerx - label.get_width() // 2,
                 rect.centery - label.get_height() // 2
             ))
-
-
-# === Prueba directa ===
-if __name__ == "__main__":
-    pygame.init()
-    pantalla_principal = pygame.display.set_mode((1000, 700))
-    pantalla_principal.fill((20, 30, 40))
-    pygame.display.flip()
-
-    accion = VentanaGameOver(pantalla_principal).run()
-    print(f"El usuario eligió: {accion}")

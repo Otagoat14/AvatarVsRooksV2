@@ -2,6 +2,8 @@ import pygame
 import sys
 import math
 import random
+from traductor_pygame import t, configurar_idioma  
+from Traductor import dic_idiomas
 
 # ===== Colores =====
 PALETA = {
@@ -24,9 +26,12 @@ VENT_ANCHO, VENT_ALTO = 800, 500
 
 
 class VentanaSalonFama:
-    def __init__(self, main_surface):
+    def __init__(self, main_surface, lang="es"):  # ← AGREGAR lang
         pygame.init()
         pygame.mixer.init()
+        
+        # Configurar idioma
+        configurar_idioma(lang)  # ← NUEVO
         
         # === Guardar referencia a la ventana principal ===
         self.main_surface = main_surface
@@ -187,15 +192,17 @@ class VentanaSalonFama:
             # Título animado
             self.time += 0.08
             scale = 1 + math.sin(self.time * 7) * 0.10
-            titulo_surf = self.font_titulo.render("¡YOU WIN!", True, COLOR_TEXT_TITU)
+            
+            # CAMBIADO: Usar t() para traducción
+            titulo_surf = self.font_titulo.render(t("¡YOU WIN!"), True, COLOR_TEXT_TITU)  # ← CAMBIADO
             titulo_surf = pygame.transform.scale(
                 titulo_surf,
                 (int(titulo_surf.get_width() * scale), int(titulo_surf.get_height() * scale))
             )
             self.modal_surface.blit(titulo_surf, (card_rect.centerx - titulo_surf.get_width()//2, self.panel_y + 35))
 
-            # Subtítulo
-            subt_surf = self.font_texto.render("¡¡¡Has entrado al SALÓN DE LA FAMA!!!", True, COLOR_TEXT_CUER)
+            # Subtítulo - CAMBIADO: Usar t() para traducción
+            subt_surf = self.font_texto.render(t("¡¡¡Has entrado al SALÓN DE LA FAMA!!!"), True, COLOR_TEXT_CUER)  # ← CAMBIADO
             subt_x = card_rect.centerx - subt_surf.get_width()//2
             subt_y = self.panel_y + 145
             self.modal_surface.blit(subt_surf, (subt_x, subt_y))
@@ -242,7 +249,9 @@ class VentanaSalonFama:
         color = HOVER if hover else COLOR_BOTONES
 
         pygame.draw.rect(self.modal_surface, color, self.btn_ver, border_radius=12)
-        label = self.font_boton.render("Ver", True, COLOR_TEXT_TITU)
+        
+        # CAMBIADO: Usar t() para traducción
+        label = self.font_boton.render(t("Ver"), True, COLOR_TEXT_TITU)  # ← CAMBIADO
         self.modal_surface.blit(label, (
             self.btn_ver.centerx - label.get_width() // 2,
             self.btn_ver.centery - label.get_height() // 2
@@ -254,7 +263,8 @@ class VentanaSalonFama:
         modal_mouse_x = mouse_x - self.modal_x
         modal_mouse_y = mouse_y - self.modal_y
         
-        botones = [(self.btn_reiniciar, "Reiniciar"), (self.btn_menu, "Menú Principal")]
+        # CAMBIADO: Usar t() para las traducciones de botones
+        botones = [(self.btn_reiniciar, t("Reiniciar")), (self.btn_menu, t("Menú Principal"))]  # ← CAMBIADO
 
         for rect, txt in botones:
             hover = rect.collidepoint(modal_mouse_x, modal_mouse_y)
@@ -277,14 +287,3 @@ class VentanaSalonFama:
                 rect.centerx - label.get_width() // 2,
                 rect.centery - label.get_height() // 2
             ))
-
-
-# === Prueba directa ===
-if __name__ == "__main__":
-    pygame.init()
-    pantalla_principal = pygame.display.set_mode((1000, 700))
-    pantalla_principal.fill((20, 30, 40))
-    pygame.display.flip()
-
-    accion = VentanaSalonFama(pantalla_principal).run()
-    print(f"El usuario eligió: {accion}")

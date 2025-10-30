@@ -2,6 +2,8 @@ import pygame
 import sys
 import math
 import random
+from traductor_pygame import t, configurar_idioma  
+from Traductor import dic_idiomas
 
 # ===== Colores =====
 PALETA = {
@@ -24,13 +26,18 @@ VENT_ANCHO, VENT_ALTO = 800, 500
 
 
 class VentanaWin:
-    def __init__(self):
+    def __init__(self, lang="es"):  # ← AGREGAR lang
         pygame.init()
         pygame.mixer.init()
         pygame.mixer.set_num_channels(20)
 
+        # Configurar idioma
+        configurar_idioma(lang)  # ← NUEVO
+
         self.screen = pygame.display.set_mode((VENT_ANCHO, VENT_ALTO))
-        pygame.display.set_caption("¡Victoria!")
+        
+        # CAMBIADO: Usar t() para el título de la ventana
+        pygame.display.set_caption(t("¡Victoria!"))  # ← CAMBIADO
 
         # ===== Sonidos =====
         self.sonido_victoria = pygame.mixer.Sound("musica/victory.wav")
@@ -139,8 +146,10 @@ class VentanaWin:
             # Título animado
             self.time += 0.05
             scale = 1 + math.sin(self.time * 4) * 0.05
+            
+            # CAMBIADO: Usar t() para traducción
             titulo = pygame.transform.scale(
-                self.font_titulo.render("¡YOU WIN!", True, COLOR_TEXT_TITU),
+                self.font_titulo.render(t("¡YOU WIN!"), True, COLOR_TEXT_TITU),  # ← CAMBIADO
                 (int(420 * scale), int(80 * scale))
             )
             titulo_x = card_rect.centerx - titulo.get_width()//2
@@ -163,14 +172,14 @@ class VentanaWin:
                                      (*cf[4], alpha),
                                      (cf[0], cf[1], 6, 10))
 
-            # Subtítulo
-            subt = self.font_texto.render("¡Felicidades, has ganado el juego!",
+            # Subtítulo - CAMBIADO: Usar t() para traducción
+            subt = self.font_texto.render(t("¡Felicidades, has ganado el juego!"),  # ← CAMBIADO
                                           True, COLOR_TEXT_CUER)
             self.screen.blit(subt, (card_rect.centerx - subt.get_width()//2,
                                     self.panel_y + 140))
 
-            # Botones
-            botones = [(self.btn_reiniciar, "Reiniciar"), (self.btn_menu, "Menú Principal")]
+            # Botones - CAMBIADO: Usar t() para las traducciones
+            botones = [(self.btn_reiniciar, t("Reiniciar")), (self.btn_menu, t("Menú Principal"))]  # ← CAMBIADO
 
             for idx, (rect, txt) in enumerate(botones):
                 mouse = pygame.mouse.get_pos()
@@ -208,9 +217,3 @@ class VentanaWin:
 
         pygame.quit()
         sys.exit()
-
-
-
-# ===== Ejecutar para probar =====
-if __name__ == "__main__":
-    VentanaWin().run()
