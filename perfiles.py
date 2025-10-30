@@ -1,8 +1,13 @@
 # perfiles.py
 import os, json
+<<<<<<< HEAD
 from Clases_auxiliares.config import CARPETA_ARCHIVOS
 
 BASE_DIR = os.path.join(CARPETA_ARCHIVOS, "usuarios")
+=======
+
+BASE_DIR = "users_lbph"
+>>>>>>> feature/personalizacion
 
 def _user_dir(username: str) -> str:
     return os.path.join(BASE_DIR, username.strip().lower())
@@ -33,4 +38,8 @@ def marcar_personalizacion(username: str, tema_colores: dict, musica_uri: str | 
     guardar_perfil(username, data)
 
 def ruta_tema_json(username: str) -> str:
+<<<<<<< HEAD
     return os.path.join(_user_dir(username), "tema.json")
+=======
+    return os.path.join(_user_dir(username), "tema.json")
+>>>>>>> feature/personalizacion

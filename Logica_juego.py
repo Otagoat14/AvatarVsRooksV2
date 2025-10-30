@@ -142,11 +142,10 @@ class Juego:
                             x_columna=columna_aleatoria,
                             velocidad_movimiento=avatar_info["velocidad"],
                             tipo_avatar=avatar_info["tipo"],
-                            valor_monedas = 0
+                            valor_monedas=0
                         )
                         self.avatares_activos.append(nuevo_avatar)
                         avatar_colocado = True
-                        print(f"Avatar {avatar_info['tipo']} spawn en columna {columna_aleatoria}")
                     
                     intentos += 1
                 
@@ -226,50 +225,20 @@ class Juego:
                 bala.bala_activa = False
                 
                 if not avatar.personaje_vivo:
-                    # SOLO CONTAR FLEGUEROS PARA EL BONUS - ELIMINAR MONEDAS POR AVATAR NORMAL
                     if avatar.tipo_avatar == "Flechero":
                         self.flecheros_muertos += 1
-                        print(f"Flechero muerto! Total: {self.flecheros_muertos}/3")
-                        
-                        # Cada 3 flecheros muertos, dar 100 monedas
-                        if self.flecheros_muertos >= 3:
-                            self.monedas_jugador += 100
-                            self.ultima_notificacion = "¡Bonus! +100 monedas por 3 flecheros eliminados"
-                            self.tiempo_notificacion = time.time()
-                            self.flecheros_muertos = 0  # Reiniciar contador
-                            print(self.ultima_notificacion)
-                    
-                    # ELIMINAR ESTA LÍNEA: self.agregar_monedas(avatar.valor_monedas)
-                    # Ya no se agregan monedas por avatar normal
-                    
-                return self.colision_balas_rooks_recursivo(i_rook, 0, i_bala + 1)
-        
-        self.colision_balas_rooks_recursivo(i_rook, i_avatar + 1, i_bala)
-        
-        if avatar.personaje_vivo:
-            if (abs(bala.x_columna - avatar.x_columna) < 0.5 and
-                abs(bala.y_fila - avatar.y_fila) < 0.5):
-                
-                avatar.recibir_daño(rook.daño)
-                bala.bala_activa = False
-                
-                if not avatar.personaje_vivo:
-                    if avatar.tipo_avatar == "Flechero":
-                        self.flecheros_muertos += 1
-                        print(f"Flechero muerto! Total: {self.flecheros_muertos}/3")
                         
                         if self.flecheros_muertos >= 3:
                             self.monedas_jugador += 100
                             self.ultima_notificacion = "¡Bonus! +100 monedas por 3 flecheros eliminados"
                             self.tiempo_notificacion = time.time()
-                            self.flecheros_muertos = 0
+                            self.flecheros_muertos = 0 
                             print(self.ultima_notificacion)
                     
-                    self.agregar_monedas(avatar.valor_monedas)
-                
                 return self.colision_balas_rooks_recursivo(i_rook, 0, i_bala + 1)
         
         self.colision_balas_rooks_recursivo(i_rook, i_avatar + 1, i_bala)
+        
 
     def colision_balas_avatares_recursivo(self, i_avatar=0, i_rook=0, i_bala=0):
         if i_avatar >= len(self.avatares_activos):
