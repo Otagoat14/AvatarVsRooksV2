@@ -6,6 +6,7 @@ from Personajes import TAMAÑO_CELDA
 from gameOverAnimado import VentanaGameOver
 from salon_fama import VentanaSalonFama
 from win import VentanaWin
+import sys
 
 
 # Constantes visuales
@@ -402,25 +403,33 @@ class Interfaz:
         
         return None
     
+    # En el método mostrar_animacion_fin, cambiar las llamadas:
     def mostrar_animacion_fin(self, tipo="derrota"):
-        """Muestra la animación de victoria o derrota y devuelve acción del usuario"""
-        self.juego.juego_iniciado = False  
-
+        """Muestra la animación de victoria o derrota y maneja la acción del usuario"""
+        self.juego.juego_iniciado = False  # Pausar el juego
+        
         if tipo == "victoria":
-            accion = VentanaSalonFama().run()
+            print("🎉 Mostrando animación de victoria...")
+            accion = VentanaSalonFama(self.pantalla).run()  # Pasar self.pantalla
         else:
-            accion = VentanaGameOver().run()
+            print("💀 Mostrando animación de game over...")
+            accion = VentanaGameOver(self.pantalla).run()  # Pasar self.pantalla
 
-        # Dependiendo de lo que el jugador haga:
+        # Manejar la acción del usuario
         if accion == "reiniciar":
             print("🔁 Reiniciando juego...")
             self.juego.reiniciar_juego()
         elif accion == "menu":
             print("🏠 Volviendo al menú principal...")
-            # aquí puedes abrir otra ventana o cerrar el juego
             pygame.quit()
             sys.exit()
         elif accion == "salir":
+            print("👋 Saliendo del juego...")
+            pygame.quit()
+            sys.exit()
+        elif accion == "ver":
+            print("📊 Mostrando estadísticas...")
+            # Por ahora, también cerramos el juego
             pygame.quit()
             sys.exit()
 
@@ -480,8 +489,6 @@ class Interfaz:
 
             # Actualizar lógica del juego
             self.juego.actualizar()
-            # === DEBUG: ver cuántos avatares hay activos ===
-            print("Avatares activos:", len(self.juego.avatares_activos))
 
             # Dibujar
             self.pantalla.fill(COLOR_FONDO)
@@ -502,16 +509,12 @@ class Interfaz:
             # Dibujar UI
             self.dibujar_ui()
 
-            # Mensajes de fin de juego
-            #if self.juego.game_over or self.juego.victoria:
-            #    self.dibujar_mensaje_fin_juego()
-
+            # Verificar fin del juego y mostrar animaciones
             if self.juego.victoria:
                 self.mostrar_animacion_fin("victoria")
 
             elif self.juego.game_over:
                 self.mostrar_animacion_fin("derrota")
-
 
             pygame.display.update()
             self.reloj.tick(60)

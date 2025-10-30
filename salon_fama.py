@@ -24,28 +24,34 @@ VENT_ANCHO, VENT_ALTO = 800, 500
 
 
 class VentanaSalonFama:
-    def __init__(self):
+    def __init__(self, main_surface):
         pygame.init()
         pygame.mixer.init()
-        pygame.mixer.set_num_channels(10)
-
-        # === Guardar la ventana principal actual (del juego)
-        self.main_surface = pygame.display.get_surface()
-
-        # === Crear subventana sin cerrar la principal ===
-        self.window = pygame.display.set_mode((VENT_ANCHO, VENT_ALTO))
-        pygame.display.set_caption("Salón de la Fama")
+        
+        # === Guardar referencia a la ventana principal ===
+        self.main_surface = main_surface
+        self.original_caption = pygame.display.get_caption()
+        
+        # === Crear superficie para la ventana modal ===
+        self.modal_surface = pygame.Surface((VENT_ANCHO, VENT_ALTO), pygame.SRCALPHA)
 
         # === Sonidos ===
-        self.sonido_victoria = pygame.mixer.Sound("aplausos.wav")
-        self.sonido_click = pygame.mixer.Sound("click.wav")
-        self.sonido_victoria.set_volume(1.0)
-        self.sonido_click.set_volume(1.0)
-        self.sonido_victoria.play()
+        try:
+            self.sonido_victoria = pygame.mixer.Sound("aplausos.wav")
+            self.sonido_click = pygame.mixer.Sound("click.wav")
+            self.sonido_victoria.set_volume(1.0)
+            self.sonido_click.set_volume(1.0)
+            self.sonido_victoria.play()
+        except:
+            print("⚠️ No se pudieron cargar los sonidos del Salón de la Fama")
 
         # 🏆 Imagen del trofeo 
-        self.img_trofeo = pygame.image.load("trofeo.png").convert_alpha()
-        self.img_trofeo = pygame.transform.scale(self.img_trofeo, (64, 64))
+        try:
+            self.img_trofeo = pygame.image.load("trofeo.png").convert_alpha()
+            self.img_trofeo = pygame.transform.scale(self.img_trofeo, (64, 64))
+        except:
+            print("⚠️ No se pudo cargar la imagen del trofeo")
+            self.img_trofeo = None
 
         # === Fuentes ===
         self.font_titulo = pygame.font.SysFont("Segoe UI", 64, True)
@@ -59,6 +65,7 @@ class VentanaSalonFama:
         self.target_y = 65
         self.time = 0
         self.running = True
+        self.accion_usuario = None
 
         # === Botones ===
         self.btn_w, self.btn_h = 260, 55
@@ -80,6 +87,11 @@ class VentanaSalonFama:
         ]
         self.particulas = [self.Particula() for _ in range(70)]
         self.confetti_lifetime = 200
+        
+        # === Posición de la ventana modal (centrada) ===
+        screen_width, screen_height = self.main_surface.get_size()
+        self.modal_x = (screen_width - VENT_ANCHO) // 2
+        self.modal_y = (screen_height - VENT_ALTO) // 2
 
     # ===== Clase Partículas =====
     class Particula:
@@ -102,54 +114,75 @@ class VentanaSalonFama:
             surf.fill((*self.color, self.alpha))
             scr.blit(surf, (self.x, self.y))
 
-    # ===== Ventana principal =====
+    # ===== Ventana modal superpuesta =====
     def run(self):
         while self.running:
             for e in pygame.event.get():
                 if e.type == pygame.QUIT:
+                    self.accion_usuario = "salir"
                     self.running = False
                 elif e.type == pygame.KEYDOWN and e.key == pygame.K_ESCAPE:
+                    self.accion_usuario = "salir"
                     self.running = False
                 elif e.type == pygame.MOUSEBUTTONDOWN and e.button == 1:
-                    if self.btn_reiniciar.collidepoint(e.pos):
-                        self.sonido_click.play()
+                    # Ajustar coordenadas del mouse a la ventana modal
+                    mouse_x, mouse_y = pygame.mouse.get_pos()
+                    modal_mouse_x = mouse_x - self.modal_x
+                    modal_mouse_y = mouse_y - self.modal_y
+                    
+                    if self.btn_reiniciar.collidepoint(modal_mouse_x, modal_mouse_y):
+                        try:
+                            self.sonido_click.play()
+                        except:
+                            pass
                         pygame.time.delay(300)
+                        self.accion_usuario = "reiniciar"
                         self.running = False
-                    elif self.btn_menu.collidepoint(e.pos):
-                        self.sonido_click.play()
+                    elif self.btn_menu.collidepoint(modal_mouse_x, modal_mouse_y):
+                        try:
+                            self.sonido_click.play()
+                        except:
+                            pass
                         pygame.time.delay(300)
+                        self.accion_usuario = "menu"
                         self.running = False
-                    elif self.btn_ver.collidepoint(e.pos):
-                        self.sonido_click.play()
+                    elif self.btn_ver.collidepoint(modal_mouse_x, modal_mouse_y):
+                        try:
+                            self.sonido_click.play()
+                        except:
+                            pass
                         pygame.time.delay(300)
+                        self.accion_usuario = "ver"
                         self.running = False
 
-            self.window.fill(FONDO_PANTALLA)
+            # === Dibujar en la superficie modal ===
+            self.modal_surface.fill((0, 0, 0, 0))  # Limpiar con transparencia
 
             # ✨ Fondo partículas
             for p in self.particulas:
                 p.update()
-                p.draw(self.window)
+                p.draw(self.modal_surface)
 
             # Fade
             if self.opacity < 200:
                 self.opacity += 4
             fade = pygame.Surface((VENT_ANCHO, VENT_ALTO), pygame.SRCALPHA)
             fade.fill((0, 0, 0, self.opacity))
-            self.window.blit(fade, (0, 0))
+            self.modal_surface.blit(fade, (0, 0))
 
             # Panel principal descendente
             if self.panel_y < self.target_y:
                 self.panel_y += (self.target_y - self.panel_y) * 0.18
 
             card_rect = pygame.Rect(50, self.panel_y, VENT_ANCHO - 100, VENT_ALTO - 150)
-            pygame.draw.rect(self.window, CARD_BG, card_rect, border_radius=14)
-            pygame.draw.rect(self.window, CARD_BORDER, card_rect, 4, border_radius=14)
+            pygame.draw.rect(self.modal_surface, CARD_BG, card_rect, border_radius=14)
+            pygame.draw.rect(self.modal_surface, CARD_BORDER, card_rect, 4, border_radius=14)
 
             # 🏆 Trofeos flotando
-            offset_y = math.sin(self.time * 3) * 5
-            self.window.blit(self.img_trofeo, (card_rect.x - 10, card_rect.y - 10 + offset_y))
-            self.window.blit(self.img_trofeo, (card_rect.right - 54, card_rect.bottom - 54 - offset_y))
+            if self.img_trofeo:
+                offset_y = math.sin(self.time * 3) * 5
+                self.modal_surface.blit(self.img_trofeo, (card_rect.x - 10, card_rect.y - 10 + offset_y))
+                self.modal_surface.blit(self.img_trofeo, (card_rect.right - 54, card_rect.bottom - 54 - offset_y))
 
             # Título animado
             self.time += 0.08
@@ -159,13 +192,13 @@ class VentanaSalonFama:
                 titulo_surf,
                 (int(titulo_surf.get_width() * scale), int(titulo_surf.get_height() * scale))
             )
-            self.window.blit(titulo_surf, (card_rect.centerx - titulo_surf.get_width()//2, self.panel_y + 35))
+            self.modal_surface.blit(titulo_surf, (card_rect.centerx - titulo_surf.get_width()//2, self.panel_y + 35))
 
             # Subtítulo
             subt_surf = self.font_texto.render("¡¡¡Has entrado al SALÓN DE LA FAMA!!!", True, COLOR_TEXT_CUER)
             subt_x = card_rect.centerx - subt_surf.get_width()//2
             subt_y = self.panel_y + 145
-            self.window.blit(subt_surf, (subt_x, subt_y))
+            self.modal_surface.blit(subt_surf, (subt_x, subt_y))
 
             # Botón "Ver"
             self._dibujar_boton_ver(subt_y + 60)
@@ -178,14 +211,16 @@ class VentanaSalonFama:
             # Botones inferiores
             self._dibujar_botones()
 
+            # === Dibujar la modal sobre el juego principal ===
+            self.main_surface.blit(self.modal_surface, (self.modal_x, self.modal_y))
             pygame.display.flip()
+            
             self.clock.tick(60)
 
-        # === Restaurar la ventana principal cuando se cierra ===
-        if self.main_surface:
-            ancho, alto = self.main_surface.get_size()
-            pygame.display.set_mode((ancho, alto), pygame.FULLSCREEN)
-            pygame.display.set_caption("Avatar vs Rooks")
+        # === Restaurar el título original ===
+        pygame.display.set_caption(self.original_caption[0])
+        
+        return self.accion_usuario
 
     # ===== Funciones auxiliares =====
     def _dibujar_confetti(self):
@@ -194,27 +229,35 @@ class VentanaSalonFama:
             cf[1] += cf[3]
             cf[3] += 0.38
             alpha = max(120, min(255, self.confetti_lifetime * 2))
-            pygame.draw.rect(self.window, (*cf[4], alpha), (cf[0], cf[1], 8, 13))
+            pygame.draw.rect(self.modal_surface, (*cf[4], alpha), (cf[0], cf[1], 8, 13))
 
     def _dibujar_boton_ver(self, y_pos):
         self.btn_ver.y = y_pos
-        mouse = pygame.mouse.get_pos()
-        hover = self.btn_ver.collidepoint(mouse)
+        # Ajustar coordenadas del mouse a la ventana modal
+        mouse_x, mouse_y = pygame.mouse.get_pos()
+        modal_mouse_x = mouse_x - self.modal_x
+        modal_mouse_y = mouse_y - self.modal_y
+        
+        hover = self.btn_ver.collidepoint(modal_mouse_x, modal_mouse_y)
         color = HOVER if hover else COLOR_BOTONES
 
-        pygame.draw.rect(self.window, color, self.btn_ver, border_radius=12)
+        pygame.draw.rect(self.modal_surface, color, self.btn_ver, border_radius=12)
         label = self.font_boton.render("Ver", True, COLOR_TEXT_TITU)
-        self.window.blit(label, (
+        self.modal_surface.blit(label, (
             self.btn_ver.centerx - label.get_width() // 2,
             self.btn_ver.centery - label.get_height() // 2
         ))
 
     def _dibujar_botones(self):
-        mouse = pygame.mouse.get_pos()
+        # Ajustar coordenadas del mouse a la ventana modal
+        mouse_x, mouse_y = pygame.mouse.get_pos()
+        modal_mouse_x = mouse_x - self.modal_x
+        modal_mouse_y = mouse_y - self.modal_y
+        
         botones = [(self.btn_reiniciar, "Reiniciar"), (self.btn_menu, "Menú Principal")]
 
         for rect, txt in botones:
-            hover = rect.collidepoint(mouse)
+            hover = rect.collidepoint(modal_mouse_x, modal_mouse_y)
             base_color = HOVER if hover else COLOR_BOTONES
             alpha = int(max(140, min(255, 200 + math.sin(self.time * 8) * 60))) if rect == self.btn_reiniciar else 255
             r, g, b = base_color
@@ -224,13 +267,13 @@ class VentanaSalonFama:
 
             scale_btn = 1.10 if hover else 1
             btn_scaled = pygame.transform.scale(btn_surf, (int(rect.w * scale_btn), int(rect.h * scale_btn)))
-            self.window.blit(btn_scaled, (
+            self.modal_surface.blit(btn_scaled, (
                 rect.centerx - btn_scaled.get_width() // 2,
                 rect.centery - btn_scaled.get_height() // 2
             ))
 
             label = self.font_boton.render(txt, True, COLOR_TEXT_TITU)
-            self.window.blit(label, (
+            self.modal_surface.blit(label, (
                 rect.centerx - label.get_width() // 2,
                 rect.centery - label.get_height() // 2
             ))
@@ -239,8 +282,9 @@ class VentanaSalonFama:
 # === Prueba directa ===
 if __name__ == "__main__":
     pygame.init()
-    pantalla_principal = pygame.display.set_mode((1000, 700))  # simula juego
+    pantalla_principal = pygame.display.set_mode((1000, 700))
     pantalla_principal.fill((20, 30, 40))
     pygame.display.flip()
 
-    VentanaSalonFama().run()
+    accion = VentanaSalonFama(pantalla_principal).run()
+    print(f"El usuario eligió: {accion}")
