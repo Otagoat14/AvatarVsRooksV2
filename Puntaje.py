@@ -92,10 +92,10 @@ class CalculadorPuntaje:
     
     def obtener_detalles(self):
         return {
-            'puntaje_final': self.calcular_puntaje(),
-            'tempo': self.tempo,
-            'popularidad': self.popularidad,
-            'avatars_matados': self.avatars_matados,
-            'puntos_avatars': self.puntos_totales_avatars
+            "puntaje_final": self.calcular_puntaje(),
+            "tempo": self.tempo,
+            "popularidad": self.popularidad,
+            "avatars_matados": self.avatars_matados,
+            "puntos_avatars": self.puntos_totales_avatars
         }
 

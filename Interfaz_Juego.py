@@ -3,6 +3,7 @@ import time
 from sys import exit
 from Logica_juego import Juego, FILAS, COLUMNAS, VACIO, OCUPADA
 from Personajes import TAMAÑO_CELDA
+from Salon_fama import SalonFama, IntegradorJuego, InterfazSalonFama
 
 
 # Constantes visuales
@@ -34,6 +35,22 @@ class Interfaz:
         self.campo_tienda = pygame.Surface((ANCHO, ALTO * 2))
         
         self.juego = Juego()
+
+        # Sistema de Salón de la Fama
+        self.salon_fama = SalonFama(max_registros=10)
+        self.interfaz_salon = InterfazSalonFama(
+            self.pantalla,
+            pygame.font.Font("Fuentes/super_sliced.otf", 40), 
+            self.fuente_texto,
+            self.salon_fama
+        )
+        self.mostrar_salon = False
+        self.puntaje_registrado = False
+        self.info_resultado = None
+
+        # IMPORTANTE: Cargar usuario actual desde el login !!!!!!!!
+        # Reemplaza "Jugador" con el nombre real del usuario logueado
+        self.usuario_actual = "Jugador"  
         self.item_seleccionado = None
         
         # Cargar imágenes
@@ -290,6 +307,18 @@ class Interfaz:
         self.pantalla.blit(texto_surface, (x, y))
 
     def dibujar_mensaje_fin_juego(self):
+
+        #SALON DE LA FAMA
+        # Registrar puntaje una sola vez cuando termina el juego
+        if not self.puntaje_registrado:
+            self.info_resultado = IntegradorJuego.registrar_partida(
+                self.salon_fama,
+                self.usuario_actual,
+                self.juego
+            )
+            self.puntaje_registrado = True
+            
+
         overlay = pygame.Surface((self.pantalla.get_width(), self.pantalla.get_height()))
         overlay.set_alpha(200)
         overlay.fill((0, 0, 0))
@@ -321,7 +350,39 @@ class Interfaz:
         
         texto3 = fuente_pequeña.render("Presiona R para reiniciar", False, (200, 200, 200))
         texto3_rect = texto3.get_rect(center=(self.ANCHO_PANTALLA // 2, self.ALTO_PANTALLA // 2 + 80))
-        
+
+        # Mostrar información del salón de la fama
+        if self.info_resultado:
+            texto_salon = fuente_pequeña.render(
+                "Presiona F para ver el Salón de la Fama", 
+                False, (200, 200, 200)
+            )
+            salon_rect = texto_salon.get_rect(
+                center=(self.ANCHO_PANTALLA // 2, self.ALTO_PANTALLA // 2 + 120)
+            )
+            self.pantalla.blit(texto_salon, salon_rect)
+            
+            # Si es récord o top 10, mostrar mensaje especial
+            if self.info_resultado['es_record']:
+                texto_especial = fuente_mediana.render(
+                    "¡NUEVO RÉCORD!", False, (255, 215, 0)
+                )
+            elif self.info_resultado['es_top']:
+                texto_especial = fuente_mediana.render(
+                    f"¡TOP 10 - Posición #{self.info_resultado['posicion']}!", 
+                    False, (100, 200, 255)
+                )
+            else:
+                texto_especial = fuente_pequeña.render(
+                    f"Posición: #{self.info_resultado['posicion']}", 
+                    False, (150, 150, 150)
+                )
+            
+            especial_rect = texto_especial.get_rect(
+                center=(self.ANCHO_PANTALLA // 2, self.ALTO_PANTALLA // 2 + 150)
+            )
+            self.pantalla.blit(texto_especial, especial_rect)
+            
         self.pantalla.blit(texto, texto_rect)
         self.pantalla.blit(texto2, texto2_rect)
         self.pantalla.blit(texto_puntaje, puntaje_rect)
@@ -368,9 +429,18 @@ class Interfaz:
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_r and (self.juego.game_over or self.juego.victoria):
                         self.juego.reiniciar_juego()
+                        #PUNTAJE SALON
+                        self.puntaje_registrado = False 
+                        self.info_resultado = None
+
+                    elif event.key == pygame.K_f :
+                        self.mostrar_salon = not self.mostrar_salon
                     elif event.key == pygame.K_ESCAPE:
-                        pygame.quit()
-                        exit()
+                        if self.mostrar_salon:
+                            self.mostrar_salon = False
+                        else:
+                            pygame.quit()
+                            exit()
 
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     mouse_x, mouse_y = pygame.mouse.get_pos()
@@ -426,6 +496,13 @@ class Interfaz:
             # Mensajes de fin de juego
             if self.juego.game_over or self.juego.victoria:
                 self.dibujar_mensaje_fin_juego()
+
+            if self.mostrar_salon:
+                self.interfaz_salon.dibujar_salon_completo(
+                    self.ANCHO_PANTALLA,
+                    self.ALTO_PANTALLA,
+                    self.usuario_actual
+                )
 
             pygame.display.update()
             self.reloj.tick(60)
