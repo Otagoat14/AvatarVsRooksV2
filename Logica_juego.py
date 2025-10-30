@@ -142,6 +142,7 @@ class Juego:
                             x_columna=columna_aleatoria,
                             velocidad_movimiento=avatar_info["velocidad"],
                             tipo_avatar=avatar_info["tipo"],
+                            valor_monedas = 0
                         )
                         self.avatares_activos.append(nuevo_avatar)
                         avatar_colocado = True
