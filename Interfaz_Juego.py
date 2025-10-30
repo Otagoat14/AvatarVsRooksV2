@@ -4,9 +4,9 @@ from sys import exit
 from Logica_juego import Juego, FILAS, COLUMNAS, VACIO, OCUPADA
 from Personajes import TAMAÑO_CELDA
 from Salon_fama import SalonFama, IntegradorJuego, InterfazSalonFama
-from Animaciones.gameOverAnimado import VentanaGameOver
-from Animaciones.salon_fama import VentanaSalonFama
-from Animaciones.win import VentanaWin
+from Animaciones.animacion_game_over import VentanaGameOver
+from Animaciones.animacion_salon_fama import VentanaSalonFama
+from Animaciones.animacion_win import VentanaWin
 import sys
 
 
@@ -560,16 +560,20 @@ class Interfaz:
             self.juego.reiniciar_juego()
 
         elif accion == "menu":
-            pygame.quit()
-            sys.exit()
+            self.mostrar_selector = True
+            # (opcional) limpiar estados de fin de partida
+            self.juego.game_over = False
+            self.juego.victoria = False
+            
 
         elif accion == "salir":
             pygame.quit()
             sys.exit()
 
         elif accion == "ver":
-            pygame.quit()
-            sys.exit()
+            self.mostrar_salon = True
+            self.juego.game_over = False
+            self.juego.victoria = False
 
 
 

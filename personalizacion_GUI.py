@@ -505,5 +505,3 @@ def main(username: str, lang: str = "es"):
 
     pygame.quit()
 
-if __name__ == "__main__":
-    main("usuario_test")

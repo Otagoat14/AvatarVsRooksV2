@@ -1,0 +1,50 @@
+{
+  "colores": {
+    "fondo": {
+      "hex": "#FF0000",
+      "rgb": [
+        255,
+        0,
+        0
+      ],
+      "intensidad": 1
+    },
+    "texto": {
+      "hex": "#FFFFFF",
+      "rgb": [
+        255,
+        255,
+        255
+      ],
+      "intensidad": 1
+    },
+    "ventana": {
+      "hex": "#FF6811",
+      "rgb": [
+        255,
+        104,
+        17
+      ],
+      "intensidad": 2
+    },
+    "btn_primario": {
+      "hex": "#B44444",
+      "rgb": [
+        180,
+        68,
+        68
+      ],
+      "intensidad": 1
+    },
+    "btn_secundario": {
+      "hex": "#44444C",
+      "rgb": [
+        68,
+        68,
+        76
+      ],
+      "intensidad": 1
+    }
+  },
+  "musica": "spotify:track:4GCGH6TJ69neckwITeBFXK"
+}
