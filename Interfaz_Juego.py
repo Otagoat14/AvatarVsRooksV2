@@ -349,7 +349,7 @@ class Interfaz:
         avatars_rect = texto_avatars.get_rect(center=(self.ANCHO_PANTALLA // 2, self.ALTO_PANTALLA // 2 + 90))
         
         texto3 = fuente_pequeña.render("Presiona R para reiniciar", False, (200, 200, 200))
-        texto3_rect = texto3.get_rect(center=(self.ANCHO_PANTALLA // 2, self.ALTO_PANTALLA // 2 + 80))
+        texto3_rect = texto3.get_rect(center=(self.ANCHO_PANTALLA // 2, self.ALTO_PANTALLA // 2 + 140))
 
         # Mostrar información del salón de la fama
         if self.info_resultado:
@@ -358,7 +358,7 @@ class Interfaz:
                 False, (200, 200, 200)
             )
             salon_rect = texto_salon.get_rect(
-                center=(self.ANCHO_PANTALLA // 2, self.ALTO_PANTALLA // 2 + 120)
+                center=(self.ANCHO_PANTALLA // 2, self.ALTO_PANTALLA // 2 + 170)
             )
             self.pantalla.blit(texto_salon, salon_rect)
             
@@ -379,7 +379,7 @@ class Interfaz:
                 )
             
             especial_rect = texto_especial.get_rect(
-                center=(self.ANCHO_PANTALLA // 2, self.ALTO_PANTALLA // 2 + 150)
+                center=(self.ANCHO_PANTALLA // 2, self.ALTO_PANTALLA // 2 + 200)
             )
             self.pantalla.blit(texto_especial, especial_rect)
             
