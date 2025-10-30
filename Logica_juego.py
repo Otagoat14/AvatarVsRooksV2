@@ -1,0 +1,432 @@
+import time
+import random
+from Personajes import Rooks, Avatar, FILAS, COLUMNAS
+
+# Constantes lógicas
+VACIO = 0
+OCUPADA = 1
+ROOK_TIPO_1 = 2
+ROOK_TIPO_2 = 3
+ROOK_TIPO_3 = 4
+ROOK_TIPO_4 = 5
+
+class Juego:
+    def __init__(self):
+        self.matriz = [[VACIO for c in range(COLUMNAS)] for f in range(FILAS)]
+        self.monedas_jugador = 350
+        self.rooks_activos = []     
+        self.avatares_activos = []  
+        self.flecheros_muertos = 0 
+        self.ultimo_spawn = {}
+        self.juego_iniciado = False
+        self.game_over = False
+        self.victoria = False
+        self.tiempo_restante = 0
+        self.tiempo_inicio = 0
+        self.ultima_notificacion = ""
+        self.tiempo_notificacion = 0
+        
+        # Inicializar último spawn
+        for avatar_info in self.obtener_avatares_info():
+            self.ultimo_spawn[avatar_info["tipo"]] = 0
+
+    def obtener_rooks_info(self):
+        return [
+            {
+                "precio": 50, 
+                "tipo": ROOK_TIPO_1, 
+                "nombre": "Rook Arena",
+                "vida": 4, "daño": 2, "velocidad_ataque": 8.0
+            },
+            {
+                "precio": 100, 
+                "tipo": ROOK_TIPO_2, 
+                "nombre": "Rook Roca",
+                "vida": 6, "daño": 4, "velocidad_ataque": 10.0
+            },
+            {
+                "precio": 150, 
+                "tipo": ROOK_TIPO_3, 
+                "nombre": "Rook Agua",
+                "vida": 9, "daño": 17, "velocidad_ataque": 15.0
+            },
+            {
+                "precio": 150, 
+                "tipo": ROOK_TIPO_4, 
+                "nombre": "Rook Fuego",
+                "vida": 12, "daño": 16, "velocidad_ataque": 12.0
+            }
+        ]
+
+    def obtener_avatares_info(self):
+        return [
+            {
+                "tipo": "Flechero",
+                "vida": 5, "daño": 2, "velocidad": 12.0,
+                "velocidad_ataque": 10.0, "probabilidad_spawn": 0.3,
+                "intervalo_spawn": 4.0
+            },
+            {
+                "tipo": "Escudero",
+                "vida": 10, "daño": 3, "velocidad": 10.0,
+                "velocidad_ataque": 15.0, "probabilidad_spawn": 0.2,
+                "intervalo_spawn": 6.0
+            },
+            {
+                "tipo": "Leñador",
+                "vida": 20, "daño": 9, "velocidad": 13.0,
+                "velocidad_ataque": 5.0, "probabilidad_spawn": 0.15,
+                "intervalo_spawn": 8.0
+            },
+            {
+                "tipo": "Caníbal",
+                "vida": 25, "daño": 12, "velocidad": 14.0,
+                "velocidad_ataque": 3.0, "probabilidad_spawn": 0.1,
+                "intervalo_spawn": 10.0
+            }
+        ]
+
+    def casilla_ocupada_por_avatar(self, fila, columna):
+        for avatar in self.avatares_activos:
+            if avatar.personaje_vivo:
+                avatar_fila_actual = int(avatar.y_fila)
+                avatar_fila_objetivo = int(avatar.y_fila_objetivo)
+                avatar_columna = avatar.x_columna
+                
+                if (avatar_fila_actual == fila and avatar_columna == columna) or \
+                   (avatar_fila_objetivo == fila and avatar_columna == columna and avatar.en_movimiento):
+                    return True
+        return False
+
+    def casilla_ocupada_por_rook(self, fila, columna):
+        for rook in self.rooks_activos:
+            if rook.personaje_vivo:
+                rook_fila = int(rook.y_fila)
+                rook_columna = rook.x_columna
+                if rook_fila == fila and rook_columna == columna:
+                    return True
+        return False
+
+    def casilla_libre(self, fila, columna):
+        return (not self.casilla_ocupada_por_rook(fila, columna) and 
+                not self.casilla_ocupada_por_avatar(fila, columna) and
+                self.matriz[fila][columna] == VACIO)
+
+
+    def spawn_avatares_recursivo(self, indice=0):
+        if indice >= len(self.obtener_avatares_info()):
+            return
+        
+        avatar_info = self.obtener_avatares_info()[indice]
+        tiempo_actual = time.time()
+        tiempo_desde_ultimo = tiempo_actual - self.ultimo_spawn[avatar_info["tipo"]]
+        
+        if tiempo_desde_ultimo >= avatar_info["intervalo_spawn"]:
+            if random.random() < avatar_info["probabilidad_spawn"]:
+                columnas_disponibles = list(range(COLUMNAS))
+                random.shuffle(columnas_disponibles)
+                
+                avatar_colocado = False
+                intentos = 0
+                max_intentos = COLUMNAS * 2
+                
+                while not avatar_colocado and intentos < max_intentos:
+                    columna_aleatoria = random.randint(0, COLUMNAS - 1)
+                    
+                    if not self.casilla_ocupada_por_avatar(FILAS - 1, columna_aleatoria):
+                        nuevo_avatar = Avatar(
+                            vida=avatar_info["vida"],
+                            daño=avatar_info["daño"],
+                            velocidad_ataque=avatar_info["velocidad_ataque"],
+                            y_fila=FILAS - 1,
+                            x_columna=columna_aleatoria,
+                            velocidad_movimiento=avatar_info["velocidad"],
+                            tipo_avatar=avatar_info["tipo"],
+                            valor_monedas = 0
+                        )
+                        self.avatares_activos.append(nuevo_avatar)
+                        avatar_colocado = True
+                        print(f"Avatar {avatar_info['tipo']} spawn en columna {columna_aleatoria}")
+                    
+                    intentos += 1
+                
+                if not avatar_colocado:
+                    print(f"No se pudo spawnear {avatar_info['tipo']} después de {max_intentos} intentos")
+            
+            self.ultimo_spawn[avatar_info["tipo"]] = tiempo_actual
+
+        self.spawn_avatares_recursivo(indice + 1)
+
+    def actualizar_rooks_recursivo(self, indice=0):
+        if indice >= len(self.rooks_activos):
+            return
+        
+        rook = self.rooks_activos[indice]
+        
+        if rook.personaje_vivo:
+            rook.disparar()
+            rook.actualizar_balas()
+        
+        self.actualizar_rooks_recursivo(indice + 1)
+
+    def actualizar_avatares_recursivo(self, indice=0):
+        if indice >= len(self.avatares_activos):
+            return
+        
+        avatar = self.avatares_activos[indice]
+        
+        if avatar.personaje_vivo:
+            fila_actual = int(avatar.y_fila)
+            fila_objetivo = int(avatar.y_fila_objetivo)
+            
+            if fila_objetivo != fila_actual and not avatar.en_movimiento:
+                if not self.casilla_ocupada_por_avatar(fila_objetivo, avatar.x_columna) and \
+                   not self.casilla_ocupada_por_rook(fila_objetivo, avatar.x_columna):
+                    llego_a_cero = avatar.mover()
+                else:
+                    avatar.y_fila_objetivo = avatar.y_fila
+                    avatar.en_movimiento = False
+                    llego_a_cero = False
+            else:
+                llego_a_cero = avatar.mover()
+            
+            if llego_a_cero:
+                self.game_over = True
+                return
+            
+            avatar.disparar()
+            avatar.actualizar_balas()
+        
+        self.actualizar_avatares_recursivo(indice + 1)
+
+    def colision_balas_rooks_recursivo(self, i_rook=0, i_avatar=0, i_bala=0):
+        if i_rook >= len(self.rooks_activos):
+            return
+        
+        rook = self.rooks_activos[i_rook]
+        
+        if i_bala >= len(rook.balas):
+            return self.colision_balas_rooks_recursivo(i_rook + 1, 0, 0)
+        
+        bala = rook.balas[i_bala]
+        
+        if not bala.bala_activa:
+            return self.colision_balas_rooks_recursivo(i_rook, i_avatar, i_bala + 1)
+        
+        if i_avatar >= len(self.avatares_activos):
+            return self.colision_balas_rooks_recursivo(i_rook, 0, i_bala + 1)
+        
+        avatar = self.avatares_activos[i_avatar]
+        
+        if avatar.personaje_vivo:
+            if (abs(bala.x_columna - avatar.x_columna) < 0.5 and
+                abs(bala.y_fila - avatar.y_fila) < 0.5):
+                
+                avatar.recibir_daño(rook.daño)
+                bala.bala_activa = False
+                
+                if not avatar.personaje_vivo:
+                    # SOLO CONTAR FLEGUEROS PARA EL BONUS - ELIMINAR MONEDAS POR AVATAR NORMAL
+                    if avatar.tipo_avatar == "Flechero":
+                        self.flecheros_muertos += 1
+                        print(f"Flechero muerto! Total: {self.flecheros_muertos}/3")
+                        
+                        # Cada 3 flecheros muertos, dar 100 monedas
+                        if self.flecheros_muertos >= 3:
+                            self.monedas_jugador += 100
+                            self.ultima_notificacion = "¡Bonus! +100 monedas por 3 flecheros eliminados"
+                            self.tiempo_notificacion = time.time()
+                            self.flecheros_muertos = 0  # Reiniciar contador
+                            print(self.ultima_notificacion)
+                    
+                    # ELIMINAR ESTA LÍNEA: self.agregar_monedas(avatar.valor_monedas)
+                    # Ya no se agregan monedas por avatar normal
+                    
+                return self.colision_balas_rooks_recursivo(i_rook, 0, i_bala + 1)
+        
+        self.colision_balas_rooks_recursivo(i_rook, i_avatar + 1, i_bala)
+        
+        if avatar.personaje_vivo:
+            if (abs(bala.x_columna - avatar.x_columna) < 0.5 and
+                abs(bala.y_fila - avatar.y_fila) < 0.5):
+                
+                avatar.recibir_daño(rook.daño)
+                bala.bala_activa = False
+                
+                if not avatar.personaje_vivo:
+                    if avatar.tipo_avatar == "Flechero":
+                        self.flecheros_muertos += 1
+                        print(f"Flechero muerto! Total: {self.flecheros_muertos}/3")
+                        
+                        if self.flecheros_muertos >= 3:
+                            self.monedas_jugador += 100
+                            self.ultima_notificacion = "¡Bonus! +100 monedas por 3 flecheros eliminados"
+                            self.tiempo_notificacion = time.time()
+                            self.flecheros_muertos = 0
+                            print(self.ultima_notificacion)
+                    
+                    self.agregar_monedas(avatar.valor_monedas)
+                
+                return self.colision_balas_rooks_recursivo(i_rook, 0, i_bala + 1)
+        
+        self.colision_balas_rooks_recursivo(i_rook, i_avatar + 1, i_bala)
+
+    def colision_balas_avatares_recursivo(self, i_avatar=0, i_rook=0, i_bala=0):
+        if i_avatar >= len(self.avatares_activos):
+            return
+        
+        avatar = self.avatares_activos[i_avatar]
+        
+        if i_bala >= len(avatar.balas):
+            return self.colision_balas_avatares_recursivo(i_avatar + 1, 0, 0)
+        
+        bala = avatar.balas[i_bala]
+        
+        if not bala.bala_activa:
+            return self.colision_balas_avatares_recursivo(i_avatar, i_rook, i_bala + 1)
+        
+        if i_rook >= len(self.rooks_activos):
+            return self.colision_balas_avatares_recursivo(i_avatar, 0, i_bala + 1)
+        
+        rook = self.rooks_activos[i_rook]
+        
+        if rook.personaje_vivo:
+            if (abs(bala.x_columna - rook.x_columna) < 0.5 and
+                abs(bala.y_fila - rook.y_fila) < 0.5):
+                
+                rook.recibir_daño(avatar.daño)
+                bala.bala_activa = False
+
+                if not rook.personaje_vivo:
+                    self.matriz[int(rook.y_fila)][rook.x_columna] = VACIO
+            
+                return self.colision_balas_avatares_recursivo(i_avatar, 0, i_bala + 1)
+        
+        self.colision_balas_avatares_recursivo(i_avatar, i_rook + 1, i_bala)
+
+    def limpiar_entidades_muertas_recursivo_rooks(self, indice=0):
+        if indice >= len(self.rooks_activos):
+            return
+        
+        if not self.rooks_activos[indice].personaje_vivo:
+            self.rooks_activos.pop(indice)
+            return self.limpiar_entidades_muertas_recursivo_rooks(indice)
+        
+        self.limpiar_entidades_muertas_recursivo_rooks(indice + 1)
+
+    def limpiar_entidades_muertas_recursivo_avatares(self, indice=0):
+        if indice >= len(self.avatares_activos):
+            return
+        
+        if not self.avatares_activos[indice].personaje_vivo:
+            self.avatares_activos.pop(indice)
+            return self.limpiar_entidades_muertas_recursivo_avatares(indice)
+        
+        self.limpiar_entidades_muertas_recursivo_avatares(indice + 1)
+
+    def verificar_victoria(self):
+        return len([r for r in self.rooks_activos if r.personaje_vivo]) > 0
+
+    def gastar_monedas(self, cantidad):
+        if self.monedas_jugador >= cantidad:
+            self.monedas_jugador -= cantidad
+            return True
+        return False
+
+    def agregar_monedas(self, cantidad):
+        self.monedas_jugador += cantidad
+
+    def colocar_rook(self, fila, columna, tipo_rook_index):
+        if not self.casilla_libre(fila, columna):
+            return False, "Casilla ocupada"
+        
+        rook_info = self.obtener_rooks_info()[tipo_rook_index]
+        if not self.gastar_monedas(rook_info["precio"]):
+            return False, "Monedas insuficientes"
+        
+        self.matriz[fila][columna] = rook_info["tipo"]
+        
+        nuevo_rook = Rooks(
+            vida=rook_info["vida"],
+            daño=rook_info["daño"],
+            velocidad_ataque=rook_info["velocidad_ataque"],
+            y_fila=fila,
+            x_columna=columna,
+            tipo_rook=rook_info["tipo"]
+        )
+        self.rooks_activos.append(nuevo_rook)
+        return True, "Rook colocado"
+
+    def remover_rook(self, fila, columna):
+        valor_celda = self.matriz[fila][columna]
+        if valor_celda != VACIO and valor_celda != OCUPADA:
+            for i, rook in enumerate(self.rooks_activos):
+                if int(rook.y_fila) == fila and rook.x_columna == columna:
+                    for rook_info in self.obtener_rooks_info():
+                        if rook_info["tipo"] == valor_celda:
+                            self.agregar_monedas(rook_info["precio"])
+                            break
+                    self.rooks_activos.pop(i)
+                    break
+            self.matriz[fila][columna] = VACIO
+            return True
+        return False
+
+    def verificar_victoria(self):
+        rooks_vivos = len([r for r in self.rooks_activos if r.personaje_vivo])
+        return rooks_vivos > 0
+
+    def actualizar_tiempo(self):
+        if self.juego_iniciado and self.tiempo_restante > 0:
+            tiempo_actual = time.time()
+            tiempo_transcurrido = int(tiempo_actual - self.tiempo_inicio)
+            self.tiempo_restante = max(0, 60 - tiempo_transcurrido)
+
+            if self.tiempo_restante == 0 and not self.game_over:
+                if self.verificar_victoria():
+                    self.victoria = True
+                    print("¡VICTORIA! Sobreviviste el tiempo con rooks vivos")
+                else:
+                    self.game_over = True
+                    print("DERROTA - No quedan rooks vivos")
+
+    def iniciar_juego(self):
+        self.juego_iniciado = True
+        self.game_over = False
+        self.victoria = False
+        self.tiempo_restante = 60
+        self.tiempo_inicio = time.time()
+        
+        tiempo_actual = time.time()
+        for avatar_info in self.obtener_avatares_info():
+            self.ultimo_spawn[avatar_info["tipo"]] = tiempo_actual
+
+    def reiniciar_juego(self):
+        self.matriz = [[VACIO for c in range(COLUMNAS)] for f in range(FILAS)]
+        self.monedas_jugador = 350
+        self.rooks_activos = []
+        self.avatares_activos = []
+        self.flecheros_muertos = 0
+        self.juego_iniciado = True
+        self.game_over = False
+        self.victoria = False
+        self.tiempo_restante = 60
+        self.tiempo_inicio = time.time()
+        
+        tiempo_actual = time.time()
+        for avatar_info in self.obtener_avatares_info():
+            self.ultimo_spawn[avatar_info["tipo"]] = tiempo_actual
+
+    def actualizar(self):
+        if self.juego_iniciado and not self.game_over and not self.victoria:
+            self.actualizar_tiempo()  
+            
+    
+            if not self.game_over and not self.victoria:
+                self.spawn_avatares_recursivo()
+                self.actualizar_rooks_recursivo()
+                self.actualizar_avatares_recursivo()
+                self.colision_balas_rooks_recursivo()
+                self.colision_balas_avatares_recursivo()
+                self.limpiar_entidades_muertas_recursivo_rooks()
+                self.limpiar_entidades_muertas_recursivo_avatares()
