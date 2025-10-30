@@ -315,14 +315,12 @@ def main(username: str, lang: str = "es"):
             if event.type == pygame.USEREVENT:
                 if event.user_type == pygame_gui.UI_BUTTON_PRESSED:
                     if event.ui_element == btn_aplicar:
-                        # >>>>> GUARDAR PERSONALIZACIÓN POR USUARIO <<<<<
                         from perfiles import marcar_personalizacion, ruta_tema_json
                         musica_uri = spotify.last_track[2] if spotify.last_track else None
                         ruta = ruta_tema_json(username)
                         os.makedirs(os.path.dirname(ruta), exist_ok=True)
-                        # Guardar archivo de tema para el usuario
                         state.aplicar_archivo(ruta, musica=musica_uri)
-                        # Estructura resumida para el perfil
+                        
                         tema_dict = {
                             k: {
                                 "hex": rgb_to_hex(v["rgb"]),
@@ -331,10 +329,14 @@ def main(username: str, lang: str = "es"):
                             }
                             for k, v in state.estilos.items()
                         }
-                        # Marcar que ya completó personalización
+                        
                         marcar_personalizacion(username, tema_dict, musica_uri)
-                        # Cerrar pantalla de personalización
+                        
                         running = False
+                        pygame.quit()
+                        
+                        import dificultad
+                        dificultad_seleccionada = dificultad.main(username, lang)
 
                     elif event.ui_element == btn_cancel:
                         running = False

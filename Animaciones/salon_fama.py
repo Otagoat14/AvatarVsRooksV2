@@ -37,8 +37,8 @@ class VentanaSalonFama:
 
         # === Sonidos ===
         try:
-            self.sonido_victoria = pygame.mixer.Sound("aplausos.wav")
-            self.sonido_click = pygame.mixer.Sound("click.wav")
+            self.sonido_victoria = pygame.mixer.Sound("musica/aplausos.wav")
+            self.sonido_click = pygame.mixer.Sound("musica/click.wav")
             self.sonido_victoria.set_volume(1.0)
             self.sonido_click.set_volume(1.0)
             self.sonido_victoria.play()
@@ -47,7 +47,7 @@ class VentanaSalonFama:
 
         # 🏆 Imagen del trofeo 
         try:
-            self.img_trofeo = pygame.image.load("trofeo.png").convert_alpha()
+            self.img_trofeo = pygame.image.load("imagenes/trofeo.png").convert_alpha()
             self.img_trofeo = pygame.transform.scale(self.img_trofeo, (64, 64))
         except:
             print("⚠️ No se pudo cargar la imagen del trofeo")

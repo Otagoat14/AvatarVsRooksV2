@@ -37,8 +37,8 @@ class VentanaGameOver:
         
         # === Sonidos ===
         try:
-            self.sonido_gameover = pygame.mixer.Sound("gameover.wav")
-            self.sonido_click = pygame.mixer.Sound("click.wav")
+            self.sonido_gameover = pygame.mixer.Sound("musica/gameover.wav")
+            self.sonido_click = pygame.mixer.Sound("musica/click.wav")
             self.sonido_gameover.set_volume(0.9)
             self.sonido_click.set_volume(1.0)
             self.sonido_gameover.play()

@@ -76,10 +76,7 @@ def cargar_icono_tintado(path: str, size: tuple[int, int], hex_color: str) -> CT
         coloreado = _icono_placeholder(size, hex_color)
     return CTkImage(light_image=coloreado, size=size)
 
-<<<<<<< HEAD
-=======
 # === Input con icono a la izquierda y subrayado ===
->>>>>>> feature/personalizacion
 def crear_fila_entrada(
     parent,
     ruta_icono: str,
@@ -88,10 +85,7 @@ def crear_fila_entrada(
     height: int = 34,
     tam_icono: tuple[int, int] = (22, 22),
     show: str | None = None,
-<<<<<<< HEAD
     read_only: bool = False,   # <<< nuevo parámetro
-=======
->>>>>>> feature/personalizacion
 ):
     fila = ctk.CTkFrame(parent, fg_color="transparent")
     fila.pack(anchor="center", pady=(8, 6))
@@ -104,30 +98,22 @@ def crear_fila_entrada(
     lbl_icono.image = icono_img
     lbl_icono.pack(side="left", padx=(0, 10))
 
-<<<<<<< HEAD
     estado = "disabled" if read_only else "normal"
 
-=======
->>>>>>> feature/personalizacion
     entry = ctk.CTkEntry(
         h, width=width, height=height,
         corner_radius=0, fg_color="transparent", border_width=0,
         text_color=PALETA["snow"],
         placeholder_text=placeholder,
         placeholder_text_color=PALETA["taupe"],
-<<<<<<< HEAD
         show=show or "",
         state=estado
-=======
-        show=show or ""
->>>>>>> feature/personalizacion
     )
     entry.pack(side="left")
 
     subrayado = ctk.CTkFrame(fila, height=2, width=width + tam_icono[0] + 10, fg_color=PALETA["snow"])
     subrayado.pack(anchor="center", pady=(4, 0))
 
-<<<<<<< HEAD
     # Solo bindear focus si NO es read_only (para que el subrayado no reaccione al disabled)
     if not read_only:
         def on_focus_in(_):  subrayado.configure(fg_color=PALETA["vermilion"])
@@ -138,15 +124,6 @@ def crear_fila_entrada(
     return fila, entry
 
 
-=======
-    def on_focus_in(_):  subrayado.configure(fg_color=PALETA["vermilion"])
-    def on_focus_out(_): subrayado.configure(fg_color=PALETA["snow"])
-    entry.bind("<FocusIn>", on_focus_in)
-    entry.bind("<FocusOut>", on_focus_out)
-
-    return fila, entry
-
->>>>>>> feature/personalizacion
 # === Input con icono izq + botón icono der (OJITO) ===
 def crear_fila_entrada_con_boton_derecha(
     parent,
@@ -160,11 +137,7 @@ def crear_fila_entrada_con_boton_derecha(
     show: str | None = None,
 ):
     """
-<<<<<<< HEAD
     Mantiene el MISMO ancho visual que crear_fila_entrada:
-=======
-    Mantiene el MISMO ancho visual que `crear_fila_entrada`:
->>>>>>> feature/personalizacion
     - El subrayado mide: width + tam_icono[0] + 10   (igual que la fila normal)
     - Para compensar el botón de la derecha, el Entry se hace más corto internamente.
     """
@@ -269,7 +242,6 @@ def crear_enlace_label(parent, texto: str, comando=None):
     return lbl
 
 # === Bandera (con fallback dibujado) ===
-<<<<<<< HEAD
 # === Bandera (con fallback dibujado) ===
 def cargar_icono_bandera(codigo_idioma: str, size: tuple[int, int] = (28, 28)) -> CTkImage:
     # CORRECCIÓN MÁS ROBUSTA: Validar que codigo_idioma no sea None o vacío
@@ -281,11 +253,6 @@ def cargar_icono_bandera(codigo_idioma: str, size: tuple[int, int] = (28, 28)) -
     
     mapa_archivos = {"es": "flag_es.png", "en": "flag_en.png", "hu": "flag_hu.png", "ar": "flag_ar.png", "hi": "flag_hi.png"}
     nombre = mapa_archivos.get(codigo_idioma)
-=======
-def cargar_icono_bandera(codigo_idioma: str, size: tuple[int, int] = (28, 28)) -> CTkImage:
-    mapa_archivos = {"es": "flag_es.png", "en": "flag_en.png", "hu": "flag_hu.png"}
-    nombre = mapa_archivos.get(codigo_idioma.lower())
->>>>>>> feature/personalizacion
     if nombre:
         posible = _resolver_asset(os.path.join("imagenes", nombre))
         if posible and os.path.exists(posible):
@@ -294,7 +261,6 @@ def cargar_icono_bandera(codigo_idioma: str, size: tuple[int, int] = (28, 28)) -
 
     # Fallback dibujado
     w, h = size
-<<<<<<< HEAD
     patrones = {
         "es": ["#AA151B", "#F1BF00", "#AA151B"],  # Rojo, Amarillo, Rojo (España)
         "en": ["#012169", "#C8102E", "#FFFFFF"],  # Azul, Rojo, Blanco (UK)
@@ -336,19 +302,6 @@ def cargar_icono_bandera(codigo_idioma: str, size: tuple[int, int] = (28, 28)) -
     tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
     d.text(((w - tw) / 2, (h - th) / 2), letras, fill=PALETA["white"], font=font, stroke_fill=PALETA["ink"], stroke_width=1)
     
-=======
-    img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
-    d.ellipse((1, 1, w - 1, h - 1), fill=PALETA["snow"])
-    letras = {"es": "ES", "en": "EN", "hu": "HU"}.get(codigo_idioma.lower(), codigo_idioma.upper()[:2])
-    try:
-        font = ImageFont.truetype("arial.ttf", size=min(w, h) // 2)
-    except Exception:
-        font = ImageFont.load_default()
-    bbox = d.textbbox((0, 0), letras, font=font)
-    tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
-    d.text(((w - tw) / 2, (h - th) / 2), letras, fill=PALETA["ink"], font=font)
->>>>>>> feature/personalizacion
     return CTkImage(light_image=img, dark_image=img, size=size)
 
 # === Botón sólo icono (para Ayuda/Créditos) ===
@@ -362,8 +315,4 @@ def crear_boton_icono(parent, ruta_icono: str, comando=None, tamaño: tuple[int,
         hover_color="#202428",
         corner_radius=8,
         command=comando
-<<<<<<< HEAD
     )
-=======
-    )
->>>>>>> feature/personalizacion

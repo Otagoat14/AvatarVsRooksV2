@@ -1,6 +1,6 @@
 # google_auth.py
 # Módulo para autenticación con Google
-''' Falta implementar
+#Falta implementar
 from google_auth_oauthlib.flow import Flow
 from google.auth.transport.requests import Request
 import webbrowser
@@ -220,4 +220,3 @@ def obtener_credenciales():
         Credenciales de Google o None
     """
     return credenciales
-'''

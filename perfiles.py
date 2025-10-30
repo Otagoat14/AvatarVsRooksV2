@@ -1,45 +1,45 @@
-# perfiles.py
-import os, json
-<<<<<<< HEAD
-from Clases_auxiliares.config import CARPETA_ARCHIVOS
+import json
+import os
 
-BASE_DIR = os.path.join(CARPETA_ARCHIVOS, "usuarios")
-=======
+def ruta_perfil_usuario(username):
+    return f"perfiles/{username}_perfil.json"
 
-BASE_DIR = "users_lbph"
->>>>>>> feature/personalizacion
+def ruta_tema_json(username):
+    return f"perfiles/{username}_tema.json"
 
-def _user_dir(username: str) -> str:
-    return os.path.join(BASE_DIR, username.strip().lower())
+def personalizacion_ya_hecha(username):
+    ruta = ruta_perfil_usuario(username)
+    return os.path.exists(ruta)
 
-def _profile_path(username: str) -> str:
-    return os.path.join(_user_dir(username), "perfil.json")
+def marcar_personalizacion(username, tema_dict, musica_uri=None):
+    ruta = ruta_perfil_usuario(username)
+    os.makedirs(os.path.dirname(ruta), exist_ok=True)
+    
+    perfil = {
+        "usuario": username,
+        "personalizado": True,
+        "tema": tema_dict,
+        "musica": musica_uri
+    }
+    
+    with open(ruta, 'w', encoding='utf-8') as f:
+        json.dump(perfil, f, indent=2, ensure_ascii=False)
 
-def cargar_perfil(username: str) -> dict:
-    path = _profile_path(username)
-    if not os.path.exists(path):
-        return {"personalizacion_completada": False, "tema": None, "spotify_uri": None}
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
+def cargar_personalizacion(username):
+    try:
+        ruta = ruta_perfil_usuario(username)
+        if os.path.exists(ruta):
+            with open(ruta, 'r', encoding='utf-8') as f:
+                return json.load(f)
+    except Exception as e:
+        print(f"Error cargando personalización de {username}: {e}")
+    return None
 
-def guardar_perfil(username: str, data: dict) -> None:
-    os.makedirs(_user_dir(username), exist_ok=True)
-    with open(_profile_path(username), "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+def cargar_perfil(username):
+    return cargar_personalizacion(username)
 
-def personalizacion_ya_hecha(username: str) -> bool:
-    return bool(cargar_perfil(username).get("personalizacion_completada"))
-
-def marcar_personalizacion(username: str, tema_colores: dict, musica_uri: str | None) -> None:
-    data = cargar_perfil(username)
-    data["personalizacion_completada"] = True
-    data["tema"] = tema_colores
-    data["spotify_uri"] = musica_uri
-    guardar_perfil(username, data)
-
-def ruta_tema_json(username: str) -> str:
-<<<<<<< HEAD
-    return os.path.join(_user_dir(username), "tema.json")
-=======
-    return os.path.join(_user_dir(username), "tema.json")
->>>>>>> feature/personalizacion
+def cargar_tema_usuario(username):
+    perfil = cargar_personalizacion(username)
+    if perfil and 'tema' in perfil:
+        return perfil['tema']
+    return None

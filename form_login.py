@@ -145,13 +145,17 @@ class PantallaLogin:
         except Exception:
             pass
         MUSICA.detener()
+        
+        # Si NO ha hecho personalización, ir a esa pantalla
         if not personalizacion_ya_hecha(username):
             import personalizacion_GUI
-            print(f"🔧 DEBUG: Pasando idioma '{self.lang}' a personalización")
             personalizacion_GUI.main(username, self.lang)
         else:
-            from tkinter import messagebox
-            messagebox.showinfo("Listo", f"Bienvenido {username}. Personalización ya configurada.")
+            # Si YA personalizó, ir directo a dificultad
+            import dificultad
+            dificultad_seleccionada = dificultad.main(username, self.lang)
+            # Aquí puedes continuar con tu aplicación principal
+            print(f"Usuario {username} continuará con dificultad: {dificultad_seleccionada}")
 
     def t(self, key): 
         return dic_idiomas.get(self.lang, dic_idiomas["es"]).get(key, key)

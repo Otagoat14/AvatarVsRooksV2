@@ -33,8 +33,8 @@ class VentanaWin:
         pygame.display.set_caption("¡Victoria!")
 
         # ===== Sonidos =====
-        self.sonido_victoria = pygame.mixer.Sound("victory.wav")
-        self.sonido_click = pygame.mixer.Sound("click.wav")
+        self.sonido_victoria = pygame.mixer.Sound("musica/victory.wav")
+        self.sonido_click = pygame.mixer.Sound("musica/click.wav")
         self.sonido_victoria.set_volume(0.9)
         self.sonido_click.set_volume(1.0)
 
