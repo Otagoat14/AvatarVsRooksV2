@@ -14,6 +14,8 @@ import sys
 ANCHO = COLUMNAS * TAMAÑO_CELDA
 ALTO = FILAS * TAMAÑO_CELDA
 
+
+
 # Colores
 COLOR_FONDO = (18, 18, 18)
 CELDA_VACIA = "Gray"
@@ -45,8 +47,10 @@ class Interfaz:
         self.reloj = pygame.time.Clock()
         self.fuente_texto = pygame.font.Font("Fuentes/super_sliced.otf", 20)
         
-        # Guardar dificultad
-        self.dificultad = dificultad
+        # Sistema de niveles progresivos
+        self.dificultad_actual = dificultad
+        self.niveles = ["facil", "medio", "dificil"]
+        self.nivel_actual_index = self.niveles.index(dificultad)
         
         # CARGAR PERSONALIZACIÓN DEL USUARIO
         self.cargar_personalizacion()
@@ -123,6 +127,20 @@ class Interfaz:
             print("No se pudo reproducir la canción del usuario:", e)
 
 
+    def avanzar_nivel(self):
+        """Avanza al siguiente nivel si es posible"""
+        if self.nivel_actual_index < len(self.niveles) - 1:
+            self.nivel_actual_index += 1
+            self.dificultad_actual = self.niveles[self.nivel_actual_index]
+            return True
+        return False  # No hay más niveles
+
+    def reiniciar_nivel_actual(self):
+        """Reinicia el nivel actual"""
+        self.juego = Juego(dificultad=self.dificultad_actual)
+        self.juego.iniciar_juego()
+        self.puntaje_registrado = False
+        self.info_resultado = None
 
     def cargar_personalizacion(self):
         try:
@@ -444,9 +462,9 @@ class Interfaz:
         titulo_juego = self.fuente_texto.render("Avatar vs rooks", False, "White")
         self.pantalla.blit(titulo_juego, (50, 50))
         
-        # Información de dificultad
-        dificultad_texto = self.fuente_texto.render(f"Dificultad: {self.dificultad.upper()}", False, "White")
-        self.pantalla.blit(dificultad_texto, (50, 85))
+        # Información de dificultad y nivel
+        nivel_texto = self.fuente_texto.render(f"Nivel: {self.dificultad_actual.upper()}", False, "White")
+        self.pantalla.blit(nivel_texto, (50, 85))
         
         # Contador de tiempo
         self.dibujar_contador_tiempo()
@@ -601,7 +619,21 @@ class Interfaz:
         self.juego.juego_iniciado = False 
         
         if tipo == "victoria":
-            accion = VentanaSalonFama(self.pantalla).run()  
+            # Usar VentanaWin modificada para progresión de niveles
+            accion = self.mostrar_ventana_victoria()
+            
+            if accion == "continuar":
+                if self.avanzar_nivel():
+                    self.reiniciar_nivel_actual()
+                    return "continuar"
+                else:
+                    # Si no hay más niveles, es victoria final
+                    return "victoria_final"
+            elif accion == "menu":
+                return "menu"
+            else:  # salir
+                return "salir"
+                
         else:
             accion = VentanaGameOver(self.pantalla).run()  
 
@@ -626,6 +658,9 @@ class Interfaz:
 
 
 
+    def mostrar_ventana_victoria(self):
+        ventana_win = VentanaWin(self.pantalla)
+        return ventana_win.run_modificado()
 
     def ejecutar(self):
         # Posiciones
@@ -644,12 +679,9 @@ class Interfaz:
 
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_r and (self.juego.game_over or self.juego.victoria):
-                        self.juego.reiniciar_juego()
-                        #PUNTAJE SALON
-                        self.puntaje_registrado = False 
-                        self.info_resultado = None
+                        self.reiniciar_nivel_actual()
 
-                    elif event.key == pygame.K_f :
+                    elif event.key == pygame.K_f:
                         self.mostrar_salon = not self.mostrar_salon
                     elif event.key == pygame.K_ESCAPE:
                         if self.mostrar_salon:
@@ -711,10 +743,31 @@ class Interfaz:
 
             # Verificar fin del juego y mostrar animaciones
             if self.juego.victoria:
-                self.mostrar_animacion_fin("victoria")
+                accion = self.mostrar_animacion_fin("victoria")
+                
+                if accion == "continuar":
+                    continue  # Continuar con el siguiente nivel
+                elif accion == "menu":
+                    pygame.quit()
+                    return
+                elif accion == "victoria_final":
+                    # Mostrar victoria final con la ventana win normal
+                    ventana_final = VentanaWin()
+                    ventana_final.run()
+                    pygame.quit()
+                    return
 
             elif self.juego.game_over:
-                self.mostrar_animacion_fin("derrota")
+                accion = self.mostrar_animacion_fin("derrota")
+                
+                if accion == "reiniciar":
+                    self.reiniciar_nivel_actual()
+                elif accion == "menu":
+                    pygame.quit()
+                    return
+                elif accion == "salir":
+                    pygame.quit()
+                    exit()
 
             if self.mostrar_salon:
                 self.interfaz_salon.dibujar_salon_completo(
