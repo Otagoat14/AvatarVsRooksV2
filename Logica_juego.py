@@ -83,6 +83,7 @@ class Juego:
             }
         ]
     
+    
     def obtener_avatares_info(self):
         """Retorna la información de avatares aplicando el modificador de dificultad"""
         avatares_base = [
@@ -90,47 +91,32 @@ class Juego:
                 "tipo": "Flechero",
                 "vida": 5, "daño": 2, "velocidad": 12.0,
                 "velocidad_ataque": 10.0, "probabilidad_spawn": 0.3,
-<<<<<<< HEAD
-                "intervalo_spawn_base": 4.0  # Cambiado a intervalo_spawn_base
-=======
-                "intervalo_spawn": 4.0,
-                "valor_monedas" : 5
->>>>>>> c64d98140486dd24fd57c5a72ad4ec766143e7a9
+                "intervalo_spawn_base": 4.0, 
+                "valor_monedas": 5
             },
             {
                 "tipo": "Escudero", 
                 "vida": 10, "daño": 3, "velocidad": 10.0,
                 "velocidad_ataque": 15.0, "probabilidad_spawn": 0.2,
-<<<<<<< HEAD
-                "intervalo_spawn_base": 6.0  # Cambiado a intervalo_spawn_base
-=======
-                "intervalo_spawn": 6.0,
-                "valor_monedas" : 10
->>>>>>> c64d98140486dd24fd57c5a72ad4ec766143e7a9
+                "intervalo_spawn_base": 6.0,  #
+                "valor_monedas": 10
             },
             {
                 "tipo": "Leñador",
                 "vida": 20, "daño": 9, "velocidad": 13.0,
                 "velocidad_ataque": 5.0, "probabilidad_spawn": 0.15,
-<<<<<<< HEAD
-                "intervalo_spawn_base": 8.0  # Cambiado a intervalo_spawn_base
-=======
-                "intervalo_spawn": 8.0,
-                "valor_monedas" : 20
->>>>>>> c64d98140486dd24fd57c5a72ad4ec766143e7a9
+                "intervalo_spawn_base": 8.0,  
+                "valor_monedas": 20
             },
             {
                 "tipo": "Caníbal",
                 "vida": 25, "daño": 12, "velocidad": 14.0,
                 "velocidad_ataque": 3.0, "probabilidad_spawn": 0.1,
-<<<<<<< HEAD
-                "intervalo_spawn_base": 10.0  # Cambiado a intervalo_spawn_base
-=======
-                "intervalo_spawn": 10.0,
-                "valor_monedas" : 25
->>>>>>> c64d98140486dd24fd57c5a72ad4ec766143e7a9
+                "intervalo_spawn_base": 10.0, 
+                "valor_monedas": 25
             }
         ]
+    
         
         # Aplicar modificador de dificultad a los intervalos de spawn
         avatares_modificados = []
@@ -437,9 +423,7 @@ class Juego:
                         self.game_over = True
                         print("DERROTA - No quedan rooks vivos")
 
-<<<<<<< HEAD
    
-=======
     #Funciones para lo que es el puntaje 
 
     def obtener_puntaje_actual(self):
@@ -448,7 +432,6 @@ class Juego:
     def obtener_detalles_puntaje(self):
         return self.calculador_puntaje.obtener_detalles()
 
->>>>>>> c64d98140486dd24fd57c5a72ad4ec766143e7a9
     def iniciar_juego(self):
         self.juego_iniciado = True
         self.game_over = False

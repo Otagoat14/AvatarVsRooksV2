@@ -47,13 +47,9 @@ class Interfaz:
         self.campo_matriz = pygame.Surface((ANCHO, ALTO))
         self.campo_tienda = pygame.Surface((ANCHO, ALTO * 2))
         
-<<<<<<< HEAD
         # Pasar dificultad al juego
         self.juego = Juego(dificultad=self.dificultad)  # ← Aquí pasamos la dificultad
         
-=======
-        self.juego = Juego()
-
         # Sistema de Salón de la Fama
         self.salon_fama = SalonFama(max_registros=10)
         self.interfaz_salon = InterfazSalonFama(
@@ -69,7 +65,6 @@ class Interfaz:
         # IMPORTANTE: Cargar usuario actual desde el login !!!!!!!!
         # Reemplaza "Jugador" con el nombre real del usuario logueado
         self.usuario_actual = "Jugador"  
->>>>>>> c64d98140486dd24fd57c5a72ad4ec766143e7a9
         self.item_seleccionado = None
         
         # Cargar imágenes
