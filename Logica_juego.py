@@ -1,460 +1,431 @@
-import pygame
 import time
-from sys import exit
+import random
+from Personajes import Rooks, Avatar, FILAS, COLUMNAS
 
-#------CONSTANTES--------
-FILAS = 9
-COLUMNAS = 5
-TAMAÑO_CELDA = 64
-
-#Practicamente para sacar el tamaño del mapa en pixeles
-ANCHO = COLUMNAS * TAMAÑO_CELDA
-ALTO = FILAS * TAMAÑO_CELDA
-
-#Colores para probar 
-CELDA_OCUPADA = "Blue"
-CELDA_VACIA = "Gray"
-LINEA = (60, 60, 60)
-
-#CELDAS OCUPADAS O VACIAS
+# Constantes lógicas
 VACIO = 0
 OCUPADA = 1
-
-# NUEVOS TIPOS DE ROOKS 
 ROOK_TIPO_1 = 2
 ROOK_TIPO_2 = 3
 ROOK_TIPO_3 = 4
 ROOK_TIPO_4 = 5
 
-#Matriz con None para que podamos personalizarla
-matriz = [[VACIO for c in range(COLUMNAS)] for f in range(FILAS)]
-print(matriz)
+class Juego:
+    def __init__(self):
+        self.matriz = [[VACIO for c in range(COLUMNAS)] for f in range(FILAS)]
+        self.monedas_jugador = 350
+        self.rooks_activos = []     
+        self.avatares_activos = []  
+        self.flecheros_muertos = 0 
+        self.ultimo_spawn = {}
+        self.juego_iniciado = False
+        self.game_over = False
+        self.victoria = False
+        self.tiempo_restante = 0
+        self.tiempo_inicio = 0
+        self.ultima_notificacion = ""
+        self.tiempo_notificacion = 0
+        
+        # Inicializar último spawn
+        for avatar_info in self.obtener_avatares_info():
+            self.ultimo_spawn[avatar_info["tipo"]] = 0
 
-# ========== NUEVO: SISTEMA DE MONEDAS ==========
-# Esta variable guarda las monedas actuales del jugador
-monedas_jugador = 350  # El jugador empieza con 350 monedas
+    def obtener_rooks_info(self):
+        return [
+            {
+                "precio": 50, 
+                "tipo": ROOK_TIPO_1, 
+                "nombre": "Rook Arena",
+                "vida": 4, "daño": 2, "velocidad_ataque": 8.0
+            },
+            {
+                "precio": 100, 
+                "tipo": ROOK_TIPO_2, 
+                "nombre": "Rook Roca",
+                "vida": 6, "daño": 4, "velocidad_ataque": 10.0
+            },
+            {
+                "precio": 150, 
+                "tipo": ROOK_TIPO_3, 
+                "nombre": "Rook Agua",
+                "vida": 9, "daño": 17, "velocidad_ataque": 15.0
+            },
+            {
+                "precio": 150, 
+                "tipo": ROOK_TIPO_4, 
+                "nombre": "Rook Fuego",
+                "vida": 12, "daño": 16, "velocidad_ataque": 12.0
+            }
+        ]
 
-#------------------------------
+    def obtener_avatares_info(self):
+        return [
+            {
+                "tipo": "Flechero",
+                "vida": 5, "daño": 2, "velocidad": 12.0,
+                "velocidad_ataque": 10.0, "probabilidad_spawn": 0.3,
+                "intervalo_spawn": 4.0
+            },
+            {
+                "tipo": "Escudero",
+                "vida": 10, "daño": 3, "velocidad": 10.0,
+                "velocidad_ataque": 15.0, "probabilidad_spawn": 0.2,
+                "intervalo_spawn": 6.0
+            },
+            {
+                "tipo": "Leñador",
+                "vida": 20, "daño": 9, "velocidad": 13.0,
+                "velocidad_ataque": 5.0, "probabilidad_spawn": 0.15,
+                "intervalo_spawn": 8.0
+            },
+            {
+                "tipo": "Caníbal",
+                "vida": 25, "daño": 12, "velocidad": 14.0,
+                "velocidad_ataque": 3.0, "probabilidad_spawn": 0.1,
+                "intervalo_spawn": 10.0
+            }
+        ]
 
-pygame.init()
-#lo de la pantalla se puede cambiar para que quede de forma estética
-pantalla = pygame.display.set_mode(((ANCHO * 2) + 400, ALTO * 2))
-pygame.display.set_caption("Avatar vs Rooks")
-reloj = pygame.time.Clock()
-fuente_texto = pygame.font.Font("Fuentes/super_sliced.otf", 20)
-
-campo_matriz = pygame.Surface((ANCHO, ALTO))
-campo_matriz.fill("Red")
-
-campo_tienda = pygame.Surface((ANCHO, ALTO * 2))
-campo_tienda.fill("Red")
-
-ANCHO_MAPA_CENTRADO = (pantalla.get_width() - ANCHO) // 2
-ALTO_MAPA_CENTRADO = (pantalla.get_height() - ALTO) // 2
-
-titulo_juego = fuente_texto.render("Avatar vs rooks", False, "White")
-item_seleccionado = None
-
-nivel_dificultad = "Facil"
-juego_iniciado = False
-tiempo_restante = 0
-tiempo_inicio = 0
-
-
-
-# Aquí cargamos las imágenes y las escalamos al tamaño de la celda
-def cargar_imagen_rook(ruta, tamaño):
-    try:
-        imagen = pygame.image.load(ruta)
-        # convert_alpha() optimiza la imagen y mantiene la transparencia
-        imagen = imagen.convert_alpha()
-        # Escalar al tamaño deseado
-        imagen = pygame.transform.scale(imagen, (tamaño, tamaño))
-        return imagen
-    except:
-        return None
-
-#Esto se cambiaria con la logica de los avatars
-rooks_info = [
-    {
-        "precio": 50, 
-        "color": (100, 200, 255), 
-        "tipo": ROOK_TIPO_1, 
-        "nombre": "Rook Arena",
-        "ruta_imagen": "Imagenes/rook1.jpg"  
-    },
-    {
-        "precio": 100, 
-        "color": (100, 255, 100), 
-        "tipo": ROOK_TIPO_2, 
-        "nombre": "Rook Roca",
-        "ruta_imagen": "Imagenes/rook2.jpg"  
-    },
-    {
-        "precio": 150, 
-        "color": (255, 100, 100), 
-        "tipo": ROOK_TIPO_3, 
-        "nombre": "Rook Agua",
-        "ruta_imagen": "Imagenes/rook3.jpg"  
-    },
-    {
-        "precio": 150, 
-        "color": (255, 255, 100), 
-        "tipo": ROOK_TIPO_4, 
-        "nombre": "Rook Fuego",
-        "ruta_imagen": "Imagenes/rook4.jpg"  
-    }
-]
-
-
-for rook in rooks_info:
-    rook["imagen"] = cargar_imagen_rook(rook["ruta_imagen"], TAMAÑO_CELDA - 4)
-    rook["imagen_preview"] = cargar_imagen_rook(rook["ruta_imagen"], 40)
-
-#-------FUNCIONES PARA LA LOGICA---------
-def dibujar_matriz(superficie):  # Cambié 'pantalla' por 'superficie'
-    for f in range(FILAS):
-        for c in range(COLUMNAS):
-            posicion_x = c * TAMAÑO_CELDA
-            posicion_y = f * TAMAÑO_CELDA
-
-            valor_celda = matriz[f][c]
-            
-            # Primero dibujamos el fondo de la celda
-            if valor_celda == VACIO:
-                color = CELDA_VACIA
-            elif valor_celda == OCUPADA:
-                color = CELDA_OCUPADA
-            else:
-                color = CELDA_VACIA
-            
-            pygame.draw.rect(superficie, color, (posicion_x, posicion_y, TAMAÑO_CELDA, TAMAÑO_CELDA))
-            
-            if valor_celda != VACIO and valor_celda != OCUPADA:
-                for rook in rooks_info:
-                    if rook["tipo"] == valor_celda:
-                        if rook["imagen"] is not None:
-                            img_x = posicion_x + 2  
-                            img_y = posicion_y + 2
-                            superficie.blit(rook["imagen"], (img_x, img_y))
-                        else:
-                            pygame.draw.rect(superficie, rook["color"], 
-                                           (posicion_x + 5, posicion_y + 5, 
-                                            TAMAÑO_CELDA - 10, TAMAÑO_CELDA - 10))
-                        break
-
-    # Líneas verticales
-    for c in range(COLUMNAS + 1):
-        posicion_x = c * TAMAÑO_CELDA
-        pygame.draw.line(superficie, LINEA, (posicion_x, 0), (posicion_x, ALTO), 1)
-
-    # Líneas horizontales
-    for f in range(FILAS + 1):
-        posicion_y = f * TAMAÑO_CELDA
-        pygame.draw.line(superficie, LINEA, (0, posicion_y), (ANCHO, posicion_y), 1)
-
-
-def gastar_monedas(cantidad):
-    global monedas_jugador
-    
-    if monedas_jugador >= cantidad:
-        monedas_jugador -= cantidad
-        return True
-    else:
+    def casilla_ocupada_por_avatar(self, fila, columna):
+        for avatar in self.avatares_activos:
+            if avatar.personaje_vivo:
+                avatar_fila_actual = int(avatar.y_fila)
+                avatar_fila_objetivo = int(avatar.y_fila_objetivo)
+                avatar_columna = avatar.x_columna
+                
+                if (avatar_fila_actual == fila and avatar_columna == columna) or \
+                   (avatar_fila_objetivo == fila and avatar_columna == columna and avatar.en_movimiento):
+                    return True
         return False
 
-#Esto es para que cuando matemos enemigos y suelten monedas se agreguen a la cuenta
-def agregar_monedas(cantidad):
-    global monedas_jugador
-    monedas_jugador += cantidad
+    def casilla_ocupada_por_rook(self, fila, columna):
+        for rook in self.rooks_activos:
+            if rook.personaje_vivo:
+                rook_fila = int(rook.y_fila)
+                rook_columna = rook.x_columna
+                if rook_fila == fila and rook_columna == columna:
+                    return True
+        return False
 
-def obtener_tiempo_nivel(nivel):
-
-    if nivel == "Facil":
-        return 60
-    elif nivel == "Medio":
-        return int(60 * 1.25)  
-    elif nivel == "Dificil":
-        return int(60 * 1.25 * 1.25)  
-    else:
-        return 60  
-
-# Función para iniciar el juego
-def iniciar_juego(nivel_dificultad):
-    global juego_iniciado, tiempo_restante, tiempo_inicio
-    
-    juego_iniciado = True
-    tiempo_restante = obtener_tiempo_nivel(nivel_dificultad)
-    tiempo_inicio = time.time()
+    def casilla_libre(self, fila, columna):
+        return (not self.casilla_ocupada_por_rook(fila, columna) and 
+                not self.casilla_ocupada_por_avatar(fila, columna) and
+                self.matriz[fila][columna] == VACIO)
 
 
-# Función para actualizar el contador
-def actualizar_contador():
-    global tiempo_restante, juego_iniciado, tiempo_inicio, matriz, monedas_jugador, item_seleccionado
-    
-    if juego_iniciado and tiempo_restante > 0:
+    def spawn_avatares_recursivo(self, indice=0):
+        if indice >= len(self.obtener_avatares_info()):
+            return
+        
+        avatar_info = self.obtener_avatares_info()[indice]
         tiempo_actual = time.time()
-        tiempo_transcurrido = int(tiempo_actual - tiempo_inicio)
-        tiempo_calculado = obtener_tiempo_nivel(nivel_dificultad) - tiempo_transcurrido
+        tiempo_desde_ultimo = tiempo_actual - self.ultimo_spawn[avatar_info["tipo"]]
         
-        if tiempo_calculado != tiempo_restante:
-            tiempo_restante = max(0, tiempo_calculado)
-        
-        # Si el tiempo llegó a 0, el juego termina
-        if tiempo_restante == 0 :
-            juego_iniciado = False
-            tiempo_restante = 0
-            tiempo_inicio = 0
-            item_seleccionado = None
-            
-            # Reiniciar la matriz
-            matriz = [[VACIO for c in range(COLUMNAS)] for f in range(FILAS)]
-            
-            # Reiniciar monedas
-            monedas_jugador = 350
-            # Aquí se agrea la logica de cuando finaliza el tiempo si gano o perdio
-    
-    return tiempo_restante
-
-# Función para dibujar el contador en pantalla
-def dibujar_contador(pantalla, fuente, x, y):
-    mins, secs = divmod(tiempo_restante, 60)
-    texto_tiempo = f"Tiempo: {mins:02d}:{secs:02d}"
-    
-    # Color según tiempo restante
-    if tiempo_restante > 30:
-        color = (255, 255, 255) 
-    elif tiempo_restante > 10:
-        color = (255, 200, 0)  
-    else:
-        color = (255, 50, 50)    
-    
-    superficie_tiempo = fuente.render(texto_tiempo, False, color)
-    pantalla.blit(superficie_tiempo, (x, y))
-
-# Función para dibujar el botón de iniciar
-def dibujar_boton_iniciar(pantalla, fuente, x, y, ancho, alto):
-    boton_rect = pygame.Rect(x, y, ancho, alto)
-    
-    # Color del botón
-    if not juego_iniciado:
-        color_boton = (50, 200, 50)  
-        texto = "INICIAR JUEGO"
-    else:
-        color_boton = (100, 100, 100) 
-        texto = "EN JUEGO"
-    
-    # Dibujar el botón
-    pygame.draw.rect(pantalla, color_boton, boton_rect)
-    pygame.draw.rect(pantalla, (255, 255, 255), boton_rect, 3)
-    
-    # Dibujar el texto centrado
-    superficie_texto = fuente.render(texto, False, (255, 255, 255))
-    texto_x = x + (ancho - superficie_texto.get_width()) // 2
-    texto_y = y + (alto - superficie_texto.get_height()) // 2
-    pantalla.blit(superficie_texto, (texto_x, texto_y))
-    
-    return boton_rect
-
-
-# Función para verificar si se hizo clic en el botón
-def verificar_click_boton(boton_rect, mouse_x, mouse_y):
-    return boton_rect.collidepoint(mouse_x, mouse_y)
-
-
-def dibujar_tienda():
-    campo_tienda.fill("Red")
-
-    espacio_x = 20
-    inicio_y = 360
-    ancho_cuadro_item = ANCHO - (espacio_x * 2)
-    alto_cuadro_item = 128
-    espaciado = 24
-
-    fondo_monedas = pygame.Rect(20, 50, ANCHO - 40, 70)
-    pygame.draw.rect(campo_tienda, (40, 40, 40), fondo_monedas)
-    pygame.draw.rect(campo_tienda, (200, 200, 200), fondo_monedas, 3)
-    
-    # Texto de monedas
-    texto_monedas = fuente_texto.render(f"Monedas: ${monedas_jugador}", False, (255, 215, 0))  
-    campo_tienda.blit(texto_monedas, (50, 300))
-    
-    # Leyenda
-    texto_leyenda = fuente_texto.render("Coloca tus rooks", False, "White")
-    campo_tienda.blit(texto_leyenda, (50, 200))
-
-    #Dibujar las 4 rooks de la tieda
-    for i in range(4):
-        y = inicio_y + i * (alto_cuadro_item + espaciado)
-        rect = pygame.Rect(espacio_x, y, ancho_cuadro_item, alto_cuadro_item)
-        
-        #ver si puede comprar
-        puede_comprar = monedas_jugador >= rooks_info[i]["precio"]
-        
-        if item_seleccionado == i:
-            pygame.draw.rect(campo_tienda, (80, 80, 150), rect)  
-            pygame.draw.rect(campo_tienda, (255, 255, 0), rect, 4)  
-        else:
-            # Si no puede comprar dibujar con color más oscuro, es solo estetico
-            if not puede_comprar:
-                pygame.draw.rect(campo_tienda, (20, 20, 20), rect)  
-                pygame.draw.rect(campo_tienda, (100, 100, 100), rect, 2)  
-            else:
-                pygame.draw.rect(campo_tienda, (40, 40, 40), rect)
-                pygame.draw.rect(campo_tienda, (200, 200, 200), rect, 2)
-
-        tamaño_preview = 40
-        preview_x = espacio_x + 10
-        preview_y = y + (alto_cuadro_item // 2) - (tamaño_preview // 2)
-        
-        # Si hay imagen se dibuja si no se hace unos rectangulos de colores
-        if rooks_info[i]["imagen_preview"] is not None:
-            
-            #Dibujar todo mas oscuro en caso de que no se pueda comprar
-            if not puede_comprar:
-                # Crear una copia de la imagen transparente
-                imagen_oscura = rooks_info[i]["imagen_preview"].copy()
-                imagen_oscura.set_alpha(100)  
-                campo_tienda.blit(imagen_oscura, (preview_x, preview_y))
-            else:
-                campo_tienda.blit(rooks_info[i]["imagen_preview"], (preview_x, preview_y))
-        else:
-            # Si no hay imagen, dibujar el cuadrito de color como antes
-            color_item = rooks_info[i]["color"] if puede_comprar else (50, 50, 50)
-            pygame.draw.rect(campo_tienda, color_item, 
-                            (preview_x, preview_y, tamaño_preview, tamaño_preview))
-            pygame.draw.rect(campo_tienda, (200, 200, 200), 
-                            (preview_x, preview_y, tamaño_preview, tamaño_preview), 2)
-
-        # Precio 
-        color_precio = (255, 215, 0) if puede_comprar else (150, 150, 150)  
-        texto_precio = fuente_texto.render(f"${rooks_info[i]['precio']}", False, color_precio)
-        px = rect.right - texto_precio.get_width() - 8
-        py = rect.top + 6
-        campo_tienda.blit(texto_precio, (px, py))
-
-        # Nombre del rook
-        color_nombre = "White" if puede_comprar else (100, 100, 100)
-        texto_nombre = fuente_texto.render(rooks_info[i]['nombre'], False, color_nombre)
-        nombre_x = preview_x + tamaño_preview + 15
-        nombre_y = y + (alto_cuadro_item // 2) - (texto_nombre.get_height() // 2)
-        campo_tienda.blit(texto_nombre, (nombre_x, nombre_y))
-
-
-def obtener_item_clickeado(mouse_x, mouse_y):
-    posicion_tienda_x = ((ANCHO * 2) + 400) - ANCHO
-    posicion_tienda_y = 0
-    
-    # Coordenadas locales dentro de campo_tienda
-    local_x = mouse_x - posicion_tienda_x
-    local_y = mouse_y - posicion_tienda_y
-    
-    # Si el click no está dentro de campo_tienda
-    if local_x < 0 or local_x > ANCHO or local_y < 0 or local_y > ALTO * 2:
-        return None
-    
-    # Ahora verificamos en cuál de los 4 items clickeamos
-    espacio_x = 20
-    inicio_y = 360
-    ancho_cuadro_item = ANCHO - (espacio_x * 2)
-    alto_cuadro_item = 128
-    espaciado = 24
-    
-    for i in range(4):
-        y = inicio_y + i * (alto_cuadro_item + espaciado)
-        
-        # Verificar click dentro de esa zona
-        if (espacio_x <= local_x <= espacio_x + ancho_cuadro_item and 
-            y <= local_y <= y + alto_cuadro_item):
-            return i  
-    
-    return None  
-
-def juego():
-    global item_seleccionado
-    global nivel_dificultad
-
-    boton_x = 50
-    boton_y = 150
-    boton_ancho = 200
-    boton_alto = 60
-
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                exit()
-
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                mouse_x, mouse_y = pygame.mouse.get_pos()
-
-                # Verificar clic en botón iniciar
-                if event.button == 1:
-                    boton_rect = pygame.Rect(boton_x, boton_y, boton_ancho, boton_alto)
-                    if verificar_click_boton(boton_rect, mouse_x, mouse_y) and not juego_iniciado:
-                        iniciar_juego(nivel_dificultad)
-                # Click tienda
-                if not juego_iniciado:
-                    item_clickeado = obtener_item_clickeado(mouse_x, mouse_y)
-                    if item_clickeado is not None:
-                        precio = rooks_info[item_clickeado]["precio"]
-                        if monedas_jugador >= precio:
-                            item_seleccionado = item_clickeado
-
-                    # Click matriz
-                    local_x_campo_matriz = mouse_x - 180
-                    local_y_campo_matriz = mouse_y - ALTO_MAPA_CENTRADO
+        if tiempo_desde_ultimo >= avatar_info["intervalo_spawn"]:
+            if random.random() < avatar_info["probabilidad_spawn"]:
+                columnas_disponibles = list(range(COLUMNAS))
+                random.shuffle(columnas_disponibles)
+                
+                avatar_colocado = False
+                intentos = 0
+                max_intentos = COLUMNAS * 2
+                
+                while not avatar_colocado and intentos < max_intentos:
+                    columna_aleatoria = random.randint(0, COLUMNAS - 1)
                     
-                    if 0 <= local_x_campo_matriz < ANCHO and 0 <= local_y_campo_matriz < ALTO:
-                        fila = local_y_campo_matriz // TAMAÑO_CELDA
-                        columna = local_x_campo_matriz // TAMAÑO_CELDA
+                    if not self.casilla_ocupada_por_avatar(FILAS - 1, columna_aleatoria):
+                        nuevo_avatar = Avatar(
+                            vida=avatar_info["vida"],
+                            daño=avatar_info["daño"],
+                            velocidad_ataque=avatar_info["velocidad_ataque"],
+                            y_fila=FILAS - 1,
+                            x_columna=columna_aleatoria,
+                            velocidad_movimiento=avatar_info["velocidad"],
+                            tipo_avatar=avatar_info["tipo"],
+                        )
+                        self.avatares_activos.append(nuevo_avatar)
+                        avatar_colocado = True
+                        print(f"Avatar {avatar_info['tipo']} spawn en columna {columna_aleatoria}")
+                    
+                    intentos += 1
+                
+                if not avatar_colocado:
+                    print(f"No se pudo spawnear {avatar_info['tipo']} después de {max_intentos} intentos")
+            
+            self.ultimo_spawn[avatar_info["tipo"]] = tiempo_actual
 
-                        # Click izquierdo: colocar rook
-                        if event.button == 1:
-                            if item_seleccionado is not None:
-                                precio = rooks_info[item_seleccionado]["precio"]
-                                
-                                if matriz[fila][columna] == VACIO:
-                                    if gastar_monedas(precio):
-                                        matriz[fila][columna] = rooks_info[item_seleccionado]["tipo"]
-                                        print(f"Rook colocado en fila {fila}, columna {columna}")
-                                    else:
-                                        print("¡No se pudo colocar el rook! No tienes suficientes monedas")
-                            else:
-                                matriz[fila][columna] = OCUPADA
+        self.spawn_avatares_recursivo(indice + 1)
+
+    def actualizar_rooks_recursivo(self, indice=0):
+        if indice >= len(self.rooks_activos):
+            return
+        
+        rook = self.rooks_activos[indice]
+        
+        if rook.personaje_vivo:
+            rook.disparar()
+            rook.actualizar_balas()
+        
+        self.actualizar_rooks_recursivo(indice + 1)
+
+    def actualizar_avatares_recursivo(self, indice=0):
+        if indice >= len(self.avatares_activos):
+            return
+        
+        avatar = self.avatares_activos[indice]
+        
+        if avatar.personaje_vivo:
+            fila_actual = int(avatar.y_fila)
+            fila_objetivo = int(avatar.y_fila_objetivo)
+            
+            if fila_objetivo != fila_actual and not avatar.en_movimiento:
+                if not self.casilla_ocupada_por_avatar(fila_objetivo, avatar.x_columna) and \
+                   not self.casilla_ocupada_por_rook(fila_objetivo, avatar.x_columna):
+                    llego_a_cero = avatar.mover()
+                else:
+                    avatar.y_fila_objetivo = avatar.y_fila
+                    avatar.en_movimiento = False
+                    llego_a_cero = False
+            else:
+                llego_a_cero = avatar.mover()
+            
+            if llego_a_cero:
+                self.game_over = True
+                return
+            
+            avatar.disparar()
+            avatar.actualizar_balas()
+        
+        self.actualizar_avatares_recursivo(indice + 1)
+
+    def colision_balas_rooks_recursivo(self, i_rook=0, i_avatar=0, i_bala=0):
+        if i_rook >= len(self.rooks_activos):
+            return
+        
+        rook = self.rooks_activos[i_rook]
+        
+        if i_bala >= len(rook.balas):
+            return self.colision_balas_rooks_recursivo(i_rook + 1, 0, 0)
+        
+        bala = rook.balas[i_bala]
+        
+        if not bala.bala_activa:
+            return self.colision_balas_rooks_recursivo(i_rook, i_avatar, i_bala + 1)
+        
+        if i_avatar >= len(self.avatares_activos):
+            return self.colision_balas_rooks_recursivo(i_rook, 0, i_bala + 1)
+        
+        avatar = self.avatares_activos[i_avatar]
+        
+        if avatar.personaje_vivo:
+            if (abs(bala.x_columna - avatar.x_columna) < 0.5 and
+                abs(bala.y_fila - avatar.y_fila) < 0.5):
+                
+                avatar.recibir_daño(rook.daño)
+                bala.bala_activa = False
+                
+                if not avatar.personaje_vivo:
+                    # SOLO CONTAR FLEGUEROS PARA EL BONUS - ELIMINAR MONEDAS POR AVATAR NORMAL
+                    if avatar.tipo_avatar == "Flechero":
+                        self.flecheros_muertos += 1
+                        print(f"Flechero muerto! Total: {self.flecheros_muertos}/3")
                         
-                        # Click derecho: borrar
-                        elif event.button == 3:
-                            valor_celda = matriz[fila][columna]
-                            if valor_celda != VACIO and valor_celda != OCUPADA:
-                                for rook in rooks_info:
-                                    if rook["tipo"] == valor_celda:
-                                        agregar_monedas(rook["precio"])
-                                        print(f"Rook removido. Monedas devueltas: ${rook['precio']}")
-                                        break
-                            
-                            matriz[fila][columna] = VACIO
+                        # Cada 3 flecheros muertos, dar 100 monedas
+                        if self.flecheros_muertos >= 3:
+                            self.monedas_jugador += 100
+                            self.ultima_notificacion = "¡Bonus! +100 monedas por 3 flecheros eliminados"
+                            self.tiempo_notificacion = time.time()
+                            self.flecheros_muertos = 0  # Reiniciar contador
+                            print(self.ultima_notificacion)
+                    
+                    # ELIMINAR ESTA LÍNEA: self.agregar_monedas(avatar.valor_monedas)
+                    # Ya no se agregan monedas por avatar normal
+                    
+                return self.colision_balas_rooks_recursivo(i_rook, 0, i_bala + 1)
         
-        if juego_iniciado:
-            actualizar_contador()
-
-        pantalla.fill((18, 18, 18))
-
-        # IMPORTANTE: Aquí está el cambio principal - pasar campo_matriz en lugar de pantalla
-        dibujar_matriz(campo_matriz)
-        pantalla.blit(campo_matriz, (180, ALTO_MAPA_CENTRADO))
+        self.colision_balas_rooks_recursivo(i_rook, i_avatar + 1, i_bala)
         
-        dibujar_tienda()
-        pantalla.blit(campo_tienda, (((ANCHO * 2) + 400) - ANCHO, 0))
+        if avatar.personaje_vivo:
+            if (abs(bala.x_columna - avatar.x_columna) < 0.5 and
+                abs(bala.y_fila - avatar.y_fila) < 0.5):
+                
+                avatar.recibir_daño(rook.daño)
+                bala.bala_activa = False
+                
+                if not avatar.personaje_vivo:
+                    if avatar.tipo_avatar == "Flechero":
+                        self.flecheros_muertos += 1
+                        print(f"Flechero muerto! Total: {self.flecheros_muertos}/3")
+                        
+                        if self.flecheros_muertos >= 3:
+                            self.monedas_jugador += 100
+                            self.ultima_notificacion = "¡Bonus! +100 monedas por 3 flecheros eliminados"
+                            self.tiempo_notificacion = time.time()
+                            self.flecheros_muertos = 0
+                            print(self.ultima_notificacion)
+                    
+                    self.agregar_monedas(avatar.valor_monedas)
+                
+                return self.colision_balas_rooks_recursivo(i_rook, 0, i_bala + 1)
+        
+        self.colision_balas_rooks_recursivo(i_rook, i_avatar + 1, i_bala)
 
-        pantalla.blit(titulo_juego, (0, 0))
+    def colision_balas_avatares_recursivo(self, i_avatar=0, i_rook=0, i_bala=0):
+        if i_avatar >= len(self.avatares_activos):
+            return
+        
+        avatar = self.avatares_activos[i_avatar]
+        
+        if i_bala >= len(avatar.balas):
+            return self.colision_balas_avatares_recursivo(i_avatar + 1, 0, 0)
+        
+        bala = avatar.balas[i_bala]
+        
+        if not bala.bala_activa:
+            return self.colision_balas_avatares_recursivo(i_avatar, i_rook, i_bala + 1)
+        
+        if i_rook >= len(self.rooks_activos):
+            return self.colision_balas_avatares_recursivo(i_avatar, 0, i_bala + 1)
+        
+        rook = self.rooks_activos[i_rook]
+        
+        if rook.personaje_vivo:
+            if (abs(bala.x_columna - rook.x_columna) < 0.5 and
+                abs(bala.y_fila - rook.y_fila) < 0.5):
+                
+                rook.recibir_daño(avatar.daño)
+                bala.bala_activa = False
 
-        boton_rect = dibujar_boton_iniciar(pantalla, fuente_texto, boton_x, boton_y, boton_ancho, boton_alto)
+                if not rook.personaje_vivo:
+                    self.matriz[int(rook.y_fila)][rook.x_columna] = VACIO
+            
+                return self.colision_balas_avatares_recursivo(i_avatar, 0, i_bala + 1)
+        
+        self.colision_balas_avatares_recursivo(i_avatar, i_rook + 1, i_bala)
 
-        if juego_iniciado:
-            dibujar_contador(pantalla, fuente_texto, boton_x, boton_y + 80)
+    def limpiar_entidades_muertas_recursivo_rooks(self, indice=0):
+        if indice >= len(self.rooks_activos):
+            return
+        
+        if not self.rooks_activos[indice].personaje_vivo:
+            self.rooks_activos.pop(indice)
+            return self.limpiar_entidades_muertas_recursivo_rooks(indice)
+        
+        self.limpiar_entidades_muertas_recursivo_rooks(indice + 1)
 
-        pygame.display.update()
-        reloj.tick(60)
+    def limpiar_entidades_muertas_recursivo_avatares(self, indice=0):
+        if indice >= len(self.avatares_activos):
+            return
+        
+        if not self.avatares_activos[indice].personaje_vivo:
+            self.avatares_activos.pop(indice)
+            return self.limpiar_entidades_muertas_recursivo_avatares(indice)
+        
+        self.limpiar_entidades_muertas_recursivo_avatares(indice + 1)
 
-juego()
+    def verificar_victoria(self):
+        return len([r for r in self.rooks_activos if r.personaje_vivo]) > 0
+
+    def gastar_monedas(self, cantidad):
+        if self.monedas_jugador >= cantidad:
+            self.monedas_jugador -= cantidad
+            return True
+        return False
+
+    def agregar_monedas(self, cantidad):
+        self.monedas_jugador += cantidad
+
+    def colocar_rook(self, fila, columna, tipo_rook_index):
+        if not self.casilla_libre(fila, columna):
+            return False, "Casilla ocupada"
+        
+        rook_info = self.obtener_rooks_info()[tipo_rook_index]
+        if not self.gastar_monedas(rook_info["precio"]):
+            return False, "Monedas insuficientes"
+        
+        self.matriz[fila][columna] = rook_info["tipo"]
+        
+        nuevo_rook = Rooks(
+            vida=rook_info["vida"],
+            daño=rook_info["daño"],
+            velocidad_ataque=rook_info["velocidad_ataque"],
+            y_fila=fila,
+            x_columna=columna,
+            tipo_rook=rook_info["tipo"]
+        )
+        self.rooks_activos.append(nuevo_rook)
+        return True, "Rook colocado"
+
+    def remover_rook(self, fila, columna):
+        valor_celda = self.matriz[fila][columna]
+        if valor_celda != VACIO and valor_celda != OCUPADA:
+            for i, rook in enumerate(self.rooks_activos):
+                if int(rook.y_fila) == fila and rook.x_columna == columna:
+                    for rook_info in self.obtener_rooks_info():
+                        if rook_info["tipo"] == valor_celda:
+                            self.agregar_monedas(rook_info["precio"])
+                            break
+                    self.rooks_activos.pop(i)
+                    break
+            self.matriz[fila][columna] = VACIO
+            return True
+        return False
+
+    def verificar_victoria(self):
+        rooks_vivos = len([r for r in self.rooks_activos if r.personaje_vivo])
+        return rooks_vivos > 0
+
+    def actualizar_tiempo(self):
+        if self.juego_iniciado and self.tiempo_restante > 0:
+            tiempo_actual = time.time()
+            tiempo_transcurrido = int(tiempo_actual - self.tiempo_inicio)
+            self.tiempo_restante = max(0, 60 - tiempo_transcurrido)
+
+            if self.tiempo_restante == 0 and not self.game_over:
+                if self.verificar_victoria():
+                    self.victoria = True
+                    print("¡VICTORIA! Sobreviviste el tiempo con rooks vivos")
+                else:
+                    self.game_over = True
+                    print("DERROTA - No quedan rooks vivos")
+
+    def iniciar_juego(self):
+        self.juego_iniciado = True
+        self.game_over = False
+        self.victoria = False
+        self.tiempo_restante = 60
+        self.tiempo_inicio = time.time()
+        
+        tiempo_actual = time.time()
+        for avatar_info in self.obtener_avatares_info():
+            self.ultimo_spawn[avatar_info["tipo"]] = tiempo_actual
+
+    def reiniciar_juego(self):
+        self.matriz = [[VACIO for c in range(COLUMNAS)] for f in range(FILAS)]
+        self.monedas_jugador = 350
+        self.rooks_activos = []
+        self.avatares_activos = []
+        self.flecheros_muertos = 0
+        self.juego_iniciado = True
+        self.game_over = False
+        self.victoria = False
+        self.tiempo_restante = 60
+        self.tiempo_inicio = time.time()
+        
+        tiempo_actual = time.time()
+        for avatar_info in self.obtener_avatares_info():
+            self.ultimo_spawn[avatar_info["tipo"]] = tiempo_actual
+
+    def actualizar(self):
+        if self.juego_iniciado and not self.game_over and not self.victoria:
+            self.actualizar_tiempo()  
+            
+    
+            if not self.game_over and not self.victoria:
+                self.spawn_avatares_recursivo()
+                self.actualizar_rooks_recursivo()
+                self.actualizar_avatares_recursivo()
+                self.colision_balas_rooks_recursivo()
+                self.colision_balas_avatares_recursivo()
+                self.limpiar_entidades_muertas_recursivo_rooks()
+                self.limpiar_entidades_muertas_recursivo_avatares()
