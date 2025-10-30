@@ -10,8 +10,9 @@ ROOK_TIPO_2 = 3
 ROOK_TIPO_3 = 4
 ROOK_TIPO_4 = 5
 
+
 class Juego:
-    def __init__(self):
+    def __init__(self, dificultad="facil"):
         self.matriz = [[VACIO for c in range(COLUMNAS)] for f in range(FILAS)]
         self.monedas_jugador = 350
         self.rooks_activos = []     
@@ -26,9 +27,28 @@ class Juego:
         self.ultima_notificacion = ""
         self.tiempo_notificacion = 0
         
+        # Configurar dificultad
+        self.dificultad = dificultad
+        self._configurar_modificador_dificultad()
+        
         # Inicializar último spawn
         for avatar_info in self.obtener_avatares_info():
             self.ultimo_spawn[avatar_info["tipo"]] = 0
+
+    def _configurar_modificador_dificultad(self):
+        """Configura los modificadores según la dificultad"""
+        if self.dificultad == "facil":
+            self.modificador_spawn = 1.0    # Spawn normal
+            self.tiempo_total = 60          # 60 segundos
+        elif self.dificultad == "medio":
+            self.modificador_spawn = 1.25   # 25% más rápido
+            self.tiempo_total = 75          # 60 + 25% = 75 segundos
+        elif self.dificultad == "dificil":
+            self.modificador_spawn = 1.5    # 50% más rápido  
+            self.tiempo_total = 90          # 60 + 50% = 90 segundos
+        else:
+            self.modificador_spawn = 1.0
+            self.tiempo_total = 60
 
     def obtener_rooks_info(self):
         return [
@@ -57,35 +77,45 @@ class Juego:
                 "vida": 12, "daño": 16, "velocidad_ataque": 12.0
             }
         ]
-
+    
     def obtener_avatares_info(self):
-        return [
+        """Retorna la información de avatares aplicando el modificador de dificultad"""
+        avatares_base = [
             {
                 "tipo": "Flechero",
                 "vida": 5, "daño": 2, "velocidad": 12.0,
                 "velocidad_ataque": 10.0, "probabilidad_spawn": 0.3,
-                "intervalo_spawn": 4.0
+                "intervalo_spawn_base": 4.0  # Cambiado a intervalo_spawn_base
             },
             {
-                "tipo": "Escudero",
+                "tipo": "Escudero", 
                 "vida": 10, "daño": 3, "velocidad": 10.0,
                 "velocidad_ataque": 15.0, "probabilidad_spawn": 0.2,
-                "intervalo_spawn": 6.0
+                "intervalo_spawn_base": 6.0  # Cambiado a intervalo_spawn_base
             },
             {
                 "tipo": "Leñador",
                 "vida": 20, "daño": 9, "velocidad": 13.0,
                 "velocidad_ataque": 5.0, "probabilidad_spawn": 0.15,
-                "intervalo_spawn": 8.0
+                "intervalo_spawn_base": 8.0  # Cambiado a intervalo_spawn_base
             },
             {
                 "tipo": "Caníbal",
                 "vida": 25, "daño": 12, "velocidad": 14.0,
                 "velocidad_ataque": 3.0, "probabilidad_spawn": 0.1,
-                "intervalo_spawn": 10.0
+                "intervalo_spawn_base": 10.0  # Cambiado a intervalo_spawn_base
             }
         ]
-
+        
+        # Aplicar modificador de dificultad a los intervalos de spawn
+        avatares_modificados = []
+        for avatar in avatares_base:
+            avatar_modificado = avatar.copy()
+            avatar_modificado["intervalo_spawn"] = avatar["intervalo_spawn_base"] / self.modificador_spawn
+            avatares_modificados.append(avatar_modificado)
+            
+        return avatares_modificados
+    
     def casilla_ocupada_por_avatar(self, fila, columna):
         for avatar in self.avatares_activos:
             if avatar.personaje_vivo:
@@ -121,8 +151,17 @@ class Juego:
         tiempo_actual = time.time()
         tiempo_desde_ultimo = tiempo_actual - self.ultimo_spawn[avatar_info["tipo"]]
         
+        # DEBUG: Mostrar información de spawn
+        if indice == 0 and random.random() < 0.01:  # Solo ocasionalmente para no spammear
+            print(f"Dificultad: {self.dificultad}, Modificador: {self.modificador_spawn}")
+            print(f"Flechero - Intervalo: {avatar_info['intervalo_spawn']:.2f}s")
+        
         if tiempo_desde_ultimo >= avatar_info["intervalo_spawn"]:
-            if random.random() < avatar_info["probabilidad_spawn"]:
+            # AUMENTAR probabilidad de spawn según dificultad
+            probabilidad_base = avatar_info["probabilidad_spawn"]
+            probabilidad_modificada = probabilidad_base * self.modificador_spawn
+            
+            if random.random() < probabilidad_modificada:
                 columnas_disponibles = list(range(COLUMNAS))
                 random.shuffle(columnas_disponibles)
                 
@@ -155,6 +194,7 @@ class Juego:
             self.ultimo_spawn[avatar_info["tipo"]] = tiempo_actual
 
         self.spawn_avatares_recursivo(indice + 1)
+
 
     def actualizar_rooks_recursivo(self, indice=0):
         if indice >= len(self.rooks_activos):
@@ -340,30 +380,29 @@ class Juego:
             self.matriz[fila][columna] = VACIO
             return True
         return False
-
-    def verificar_victoria(self):
-        rooks_vivos = len([r for r in self.rooks_activos if r.personaje_vivo])
-        return rooks_vivos > 0
-
+    
     def actualizar_tiempo(self):
-        if self.juego_iniciado and self.tiempo_restante > 0:
-            tiempo_actual = time.time()
-            tiempo_transcurrido = int(tiempo_actual - self.tiempo_inicio)
-            self.tiempo_restante = max(0, 60 - tiempo_transcurrido)
+            if self.juego_iniciado and self.tiempo_restante > 0:
+                tiempo_actual = time.time()
+                tiempo_transcurrido = int(tiempo_actual - self.tiempo_inicio)
+            
+                self.tiempo_restante = max(0, self.tiempo_total - tiempo_transcurrido)
 
-            if self.tiempo_restante == 0 and not self.game_over:
-                if self.verificar_victoria():
-                    self.victoria = True
-                    print("¡VICTORIA! Sobreviviste el tiempo con rooks vivos")
-                else:
-                    self.game_over = True
-                    print("DERROTA - No quedan rooks vivos")
+                if self.tiempo_restante == 0 and not self.game_over:
+                    if self.verificar_victoria():
+                        self.victoria = True
+                        print(f"¡VICTORIA! Sobreviviste {self.tiempo_total} segundos con rooks vivos")
+                    else:
+                        self.game_over = True
+                        print("DERROTA - No quedan rooks vivos")
 
+   
     def iniciar_juego(self):
         self.juego_iniciado = True
         self.game_over = False
         self.victoria = False
-        self.tiempo_restante = 60
+        # Usar el tiempo total configurado por dificultad
+        self.tiempo_restante = self.tiempo_total
         self.tiempo_inicio = time.time()
         
         tiempo_actual = time.time()
@@ -379,7 +418,8 @@ class Juego:
         self.juego_iniciado = True
         self.game_over = False
         self.victoria = False
-        self.tiempo_restante = 60
+        # Usar el tiempo total configurado por dificultad
+        self.tiempo_restante = self.tiempo_total
         self.tiempo_inicio = time.time()
         
         tiempo_actual = time.time()

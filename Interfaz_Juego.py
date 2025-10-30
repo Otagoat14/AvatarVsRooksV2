@@ -23,8 +23,10 @@ COLOR_AVATAR = (255, 100, 100)
 COLOR_BALA = (255, 255, 100)
 
 
+# En Interfaz_Juego.py, modifica la clase Interfaz:
+
 class Interfaz:
-    def __init__(self):
+    def __init__(self, dificultad="facil"):  # ← Agregar parámetro de dificultad
         pygame.init()
         info = pygame.display.Info()
         self.ANCHO_PANTALLA = info.current_w
@@ -35,13 +37,18 @@ class Interfaz:
         self.reloj = pygame.time.Clock()
         self.fuente_texto = pygame.font.Font("Fuentes/super_sliced.otf", 20)
         
+        # Guardar dificultad
+        self.dificultad = dificultad
+        
         # CARGAR PERSONALIZACIÓN DEL USUARIO
         self.cargar_personalizacion()
         
         self.campo_matriz = pygame.Surface((ANCHO, ALTO))
         self.campo_tienda = pygame.Surface((ANCHO, ALTO * 2))
         
-        self.juego = Juego()
+        # Pasar dificultad al juego
+        self.juego = Juego(dificultad=self.dificultad)  # ← Aquí pasamos la dificultad
+        
         self.item_seleccionado = None
         
         # Cargar imágenes
@@ -50,6 +57,7 @@ class Interfaz:
         # fondo de la matriz
         self.fondo_matriz = pygame.image.load("Imagenes/fondo.png").convert_alpha()
         self.fondo_matriz = pygame.transform.scale(self.fondo_matriz, (ANCHO, ALTO))
+
 
     def cargar_personalizacion(self):
         try:
@@ -356,6 +364,10 @@ class Interfaz:
         titulo_juego = self.fuente_texto.render("Avatar vs rooks", False, "White")
         self.pantalla.blit(titulo_juego, (50, 50))
         
+        # Información de dificultad
+        dificultad_texto = self.fuente_texto.render(f"Dificultad: {self.dificultad.upper()}", False, "White")
+        self.pantalla.blit(dificultad_texto, (50, 85))
+        
         # Contador de tiempo
         self.dibujar_contador_tiempo()
         
@@ -557,5 +569,6 @@ class Interfaz:
             self.reloj.tick(60)
 
 if __name__ == "__main__":
+   
     interfaz = Interfaz()
     interfaz.ejecutar()

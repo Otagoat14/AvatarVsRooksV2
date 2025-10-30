@@ -47,7 +47,6 @@ class PantallaDificultad:
         self.running = True
     
     def _cargar_tema_usuario(self):
-        """Carga el tema personalizado del usuario"""
         try:
             perfil = cargar_perfil(self.username)
             if perfil and perfil.get('tema'):
@@ -65,7 +64,6 @@ class PantallaDificultad:
         }
     
     def _aplicar_tema(self):
-        """Aplica los colores del tema a variables internas"""
         self.col_fondo = tuple(self.tema["fondo"]["rgb"])
         self.col_texto = tuple(self.tema["texto"]["rgb"])
         self.col_ventana = tuple(self.tema["ventana"]["rgb"])
@@ -101,7 +99,6 @@ class PantallaDificultad:
                 pass
     
     def _cargar_fuentes(self):
-        """Carga las fuentes necesarias"""
         try:
             # Intentar cargar fuentes personalizadas
             self.fuente_titulo = pygame.font.Font("Fuentes/super_sliced.otf", 48)
@@ -114,7 +111,6 @@ class PantallaDificultad:
             self.fuente_desc = pygame.font.SysFont("segoeui", 16)
     
     def _crear_botones(self):
-        """Crea los rectángulos y textos de los botones"""
         center_x = self.WIN_W // 2
         center_y = self.WIN_H // 2
         
@@ -144,7 +140,6 @@ class PantallaDificultad:
         }
     
     def _ajustar_color(self, color, factor):
-        """Ajusta el brillo de un color"""
         r, g, b = color
         r = max(0, min(255, int(r * factor)))
         g = max(0, min(255, int(g * factor)))
@@ -152,13 +147,11 @@ class PantallaDificultad:
         return (r, g, b)
     
     def _obtener_color_texto_contraste(self, color_fondo):
-        """Determina si el texto debe ser claro u oscuro según el fondo"""
         r, g, b = color_fondo
         luminancia = (0.299 * r + 0.587 * g + 0.114 * b) / 255
         return (20, 20, 20) if luminancia > 0.6 else (245, 245, 245)
     
     def _dibujar_boton(self, boton_info, dificultad):
-        """Dibuja un botón con su estado actual"""
         rect = boton_info["rect"]
         texto = boton_info["texto"]
         descripcion = boton_info["descripcion"]
@@ -186,7 +179,6 @@ class PantallaDificultad:
         self.screen.blit(desc_surface, desc_rect)
     
     def _procesar_eventos(self):
-        """Procesa los eventos de pygame"""
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
@@ -221,7 +213,6 @@ class PantallaDificultad:
                     self.running = False
     
     def _dibujar_interfaz(self):
-        """Dibuja toda la interfaz"""
         # Fondo
         self.screen.fill(self.col_fondo)
         
@@ -247,7 +238,6 @@ class PantallaDificultad:
         self.screen.blit(inst_surface, inst_rect)
     
     def run(self):
-        """Ejecuta la pantalla de dificultad"""
         while self.running and not self.dificultad_seleccionada:
             self._procesar_eventos()
             self._dibujar_interfaz()
@@ -258,7 +248,6 @@ class PantallaDificultad:
         return self.dificultad_seleccionada
 
 def main(username: str, lang: str = "es"):
-    """Función principal para ejecutar la pantalla de dificultad"""
     pantalla = PantallaDificultad(username, lang)
     dificultad = pantalla.run()
     
@@ -271,16 +260,13 @@ def main(username: str, lang: str = "es"):
             
             # Importar y ejecutar el juego
             from Interfaz_Juego import Interfaz
+            juego = Interfaz(dificultad=dificultad) 
             
-            # Pasar la dificultad seleccionada al juego
-            juego = Interfaz()
-            juego.dificultad = dificultad
-
             juego.ejecutar()
             
         except Exception as e:
-            
-            # Mostrar mensaje de error
+
+
             try:
                 import tkinter as tk
                 from tkinter import messagebox
