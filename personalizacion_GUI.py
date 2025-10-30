@@ -39,6 +39,15 @@ def aplicar_intensidad(rgb, nivel:int):
         return (clamp(r*(1-t)), clamp(g*(1-t)), clamp(b*(1-t)))
     return (clamp(r), clamp(g), clamp(b))
 
+def ruta_datos_cancion(username: str):
+    # Guarda los features junto al tema del usuario
+    from perfiles import ruta_tema_json
+    ruta_tema = ruta_tema_json(username)
+    base_dir = os.path.dirname(ruta_tema)
+    os.makedirs(base_dir, exist_ok=True)
+    return os.path.join(base_dir, "datos_cancion.json")
+
+
 class EstadoTema:
     def __init__(self):
         self.h, self.s, self.v = 0.0, 0.0, 1.0
@@ -159,8 +168,19 @@ class SpotifyClient:
             return f"{self.t('Reproduciendo')} {self.last_track[0]} — {self.last_track[1]}"
         except Exception as e:
             return f"{self.t('No se pudo reproducir')}: {e}"
+        
+    def obtener_features(self, uri: str):
+        # Tempo
+        feats = self.sp.audio_features([uri])[0] or {}
+        tempo = int(round(feats.get("tempo", 120)))
+        # Popularidad (0-100)
+        tr = self.sp.track(uri) or {}
+        popularidad = int(tr.get("popularity", 50))
+        return tempo, popularidad
+
 
 def main(username: str, lang: str = "es"):
+
     import os
     import pygame
     import pygame_gui
@@ -316,11 +336,18 @@ def main(username: str, lang: str = "es"):
                 if event.user_type == pygame_gui.UI_BUTTON_PRESSED:
                     if event.ui_element == btn_aplicar:
                         from perfiles import marcar_personalizacion, ruta_tema_json
+                        # 1) Validar canción seleccionada la primera vez
+                        primera_vez = not os.path.exists(ruta_tema_json(username))
+                        if primera_vez and not spotify.last_track:
+                            lbl_sp.set_text(t("Debes elegir una canción antes de aplicar"))
+                            continue  # no cerrar
+
                         musica_uri = spotify.last_track[2] if spotify.last_track else None
                         ruta = ruta_tema_json(username)
                         os.makedirs(os.path.dirname(ruta), exist_ok=True)
                         state.aplicar_archivo(ruta, musica=musica_uri)
-                        
+
+                        # 2) Guardar tema en perfiles
                         tema_dict = {
                             k: {
                                 "hex": rgb_to_hex(v["rgb"]),
@@ -329,12 +356,17 @@ def main(username: str, lang: str = "es"):
                             }
                             for k, v in state.estilos.items()
                         }
-                        
                         marcar_personalizacion(username, tema_dict, musica_uri)
-                        
+
+                        # 3) Guardar features de la canción para el puntaje
+                        if musica_uri:
+                            tempo, popularidad = spotify.obtener_features(musica_uri)
+                            with open(ruta_datos_cancion(username), "w", encoding="utf-8") as f:
+                                json.dump({"uri": musica_uri, "tempo": tempo, "popularidad": popularidad}, f, ensure_ascii=False, indent=2)
+
                         running = False
                         pygame.quit()
-                        
+
                         import dificultad
                         dificultad_seleccionada = dificultad.main(username, lang)
 

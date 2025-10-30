@@ -32,30 +32,41 @@ return puntaje_ajustado """
 
 
 class CalculadorPuntaje:
-    def __init__(self):
+    def __init__(self, usuario = "None"):
+        self.usuario = usuario
         self.tempo = 0
         self.popularidad = 0
         self.avatars_matados = 0
         self.puntos_totales_avatars = 0
         self.cargar_datos_cancion()
+
+    def _ruta_datos_cancion_usuario(self):
+        # misma lógica de personalizacion_GUI.ruta_datos_cancion
+        try:
+            from perfiles import ruta_tema_json
+            ruta_tema = ruta_tema_json(self.usuario) if self.usuario else None
+            if ruta_tema:
+                base_dir = os.path.dirname(ruta_tema)
+                return os.path.join(base_dir, "datos_cancion.json")
+        except Exception:
+            pass
+        return "datos_cancion.json"  # fallback
     
     def cargar_datos_cancion(self):
         try:
-            if os.path.exists("datos_cancion.json"):
-                with open("datos_cancion.json", "r") as f:
+            ruta = self._ruta_datos_cancion_usuario()
+            if ruta and os.path.exists(ruta):
+                with open(ruta, "r", encoding="utf-8") as f:
                     datos = json.load(f)
-                    self.tempo = datos.get("tempo", 120)  # Valor por defecto
-                    self.popularidad = datos.get("popularidad", 50)
+                    self.tempo = int(datos.get("tempo", 120))
+                    self.popularidad = int(datos.get("popularidad", 50))
                     print(f"Datos cargados - Tempo: {self.tempo}, Popularidad: {self.popularidad}")
             else:
-                # Valores por defecto si no hay canción seleccionada
-                self.tempo = 120
-                self.popularidad = 50
-                print("Usando valores por defecto para el puntaje")
+                self.tempo, self.popularidad = 120, 50
+                print("Usando valores por defecto para el puntaje (no hay canción seleccionada)")
         except Exception as e:
             print(f"Error cargando datos de canción: {e}")
-            self.tempo = 120
-            self.popularidad = 50
+            self.tempo, self.popularidad = 120, 50
     
     def actualizar_avatars(self, cantidad_muertos, puntos_avatar):
         self.avatars_matados = cantidad_muertos

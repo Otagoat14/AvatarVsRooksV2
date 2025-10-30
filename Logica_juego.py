@@ -13,7 +13,7 @@ ROOK_TIPO_4 = 5
 
 
 class Juego:
-    def __init__(self, dificultad="facil"):
+    def __init__(self, dificultad="facil", usuario = "None"):
         self.matriz = [[VACIO for c in range(COLUMNAS)] for f in range(FILAS)]
         self.monedas_jugador = 350
         self.rooks_activos = []     
@@ -28,7 +28,7 @@ class Juego:
         self.ultima_notificacion = ""
         self.tiempo_notificacion = 0
         #Para lo que es el puntaje
-        self.calculador_puntaje = CalculadorPuntaje()
+        self.calculador_puntaje = CalculadorPuntaje(usuario)
         self.total_avatars_matados = 0  
         self.puntos_acumulados_avatars = 0
         

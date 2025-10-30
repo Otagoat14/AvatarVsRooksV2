@@ -29,6 +29,13 @@ COLOR_BALA = (255, 255, 100)
 class Interfaz:
     def __init__(self, dificultad="facil"):  # ← Agregar parámetro de dificultad
         pygame.init()
+
+        try:
+            pygame.mixer.pre_init(44100, -16, 2, 512)
+            pygame.mixer.init()
+        except Exception as e:
+            print("Audio deshabilitado (no se pudo iniciar mixer):", e)
+
         info = pygame.display.Info()
         self.ANCHO_PANTALLA = info.current_w
         self.ALTO_PANTALLA = info.current_h
@@ -43,12 +50,24 @@ class Interfaz:
         
         # CARGAR PERSONALIZACIÓN DEL USUARIO
         self.cargar_personalizacion()
+
+        # Usuario actual real
+        try:
+            from Clases_auxiliares.credenciales import cargar_credenciales
+            usuario, _ = cargar_credenciales()
+            self.usuario_actual = usuario or "Jugador"
+        except Exception:
+            self.usuario_actual = "Jugador"
+
+        # Crear el juego pasando usuario para el puntaje
+        self.juego = Juego(dificultad=self.dificultad, usuario=self.usuario_actual)
+
+        # Al abrir la pantalla de juego, sonar su canción
+        self.reproducir_cancion_usuario()
         
         self.campo_matriz = pygame.Surface((ANCHO, ALTO))
         self.campo_tienda = pygame.Surface((ANCHO, ALTO * 2))
         
-        # Pasar dificultad al juego
-        self.juego = Juego(dificultad=self.dificultad)  # ← Aquí pasamos la dificultad
         
         # Sistema de Salón de la Fama
         self.salon_fama = SalonFama(max_registros=10)
@@ -64,7 +83,6 @@ class Interfaz:
 
         # IMPORTANTE: Cargar usuario actual desde el login !!!!!!!!
         # Reemplaza "Jugador" con el nombre real del usuario logueado
-        self.usuario_actual = "Jugador"  
         self.item_seleccionado = None
         
         # Cargar imágenes
@@ -73,6 +91,37 @@ class Interfaz:
         # fondo de la matriz
         self.fondo_matriz = pygame.image.load("Imagenes/fondo.png").convert_alpha()
         self.fondo_matriz = pygame.transform.scale(self.fondo_matriz, (ANCHO, ALTO))
+    
+    def reproducir_cancion_usuario(self):
+        try:
+            from perfiles import ruta_tema_json
+            import json, os
+            ruta = ruta_tema_json(self.usuario_actual)
+            if os.path.exists(ruta):
+                with open(ruta, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                uri = data.get("musica")
+                if uri:
+                    # Reutilizar spotipy rápidamente aquí
+                    import spotipy
+                    from spotipy.oauth2 import SpotifyOAuth
+                    sp = spotipy.Spotify(auth_manager=SpotifyOAuth(
+                        client_id="37141bd00fde487fb1dbf3b8d2fdf6f4",
+                        client_secret="87a87eb30ee5418f9f07c0c1800e0905",
+                        redirect_uri="http://127.0.0.1:8888/callback",
+                        scope="user-modify-playback-state user-read-playback-state"
+                    ))
+                    devices = sp.devices().get("devices", [])
+                    if devices:
+                        device_id = devices[0]["id"]
+                        try:
+                            sp.transfer_playback(device_id, force_play=True)
+                        except Exception:
+                            pass
+                        sp.start_playback(device_id=device_id, uris=[uri])
+        except Exception as e:
+            print("No se pudo reproducir la canción del usuario:", e)
+
 
 
     def cargar_personalizacion(self):
