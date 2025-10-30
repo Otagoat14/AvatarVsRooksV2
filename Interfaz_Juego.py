@@ -3,6 +3,9 @@ import time
 from sys import exit
 from Logica_juego import Juego, FILAS, COLUMNAS, VACIO, OCUPADA
 from Personajes import TAMAÑO_CELDA
+from gameOverAnimado import VentanaGameOver
+from salon_fama import VentanaSalonFama
+from win import VentanaWin
 
 
 # Constantes visuales
@@ -38,6 +41,11 @@ class Interfaz:
         
         # Cargar imágenes
         self.cargar_imagenes()
+        self.cargar_imagenes_avatares()
+        # fondo de la matriz
+        self.fondo_matriz = pygame.image.load("Imagenes/fondo.png").convert_alpha()
+        self.fondo_matriz = pygame.transform.scale(self.fondo_matriz, (ANCHO, ALTO))
+
 
     def cargar_imagenes(self):
         def cargar_imagen(ruta, tamaño):
@@ -52,12 +60,43 @@ class Interfaz:
         rooks_info = self.juego.obtener_rooks_info()
         for i, rook_info in enumerate(rooks_info):
             self.imagenes_rooks.append({
-                "imagen": cargar_imagen(f"Imagenes/rook{i+1}.jpg", TAMAÑO_CELDA - 4),
-                "imagen_preview": cargar_imagen(f"Imagenes/rook{i+1}.jpg", 40)
+                "imagen": cargar_imagen(f"Imagenes/rook{i+1}.png", TAMAÑO_CELDA - 4),
+                "imagen_preview": cargar_imagen(f"Imagenes/rook{i+1}.png", 40)
             })
 
+
+
+    def cargar_imagenes_avatares(self):
+        def cargar_imagen(ruta, tamaño):
+            try:
+                imagen = pygame.image.load(ruta)
+                imagen = imagen.convert_alpha()
+                return pygame.transform.scale(imagen, (tamaño, tamaño))
+            except:
+                print(f"No se pudo cargar la imagen: {ruta}")
+                return None
+
+        # Diccionario con los nombres base de los avatares
+        nombres_avatares = ["arquero", "canibal", "guerrero", "leñador"]
+
+        self.imagenes_avatares = []
+
+        for nombre in nombres_avatares:
+            frames = []
+            for i in range(1, 5):  # 4 frames por avatar
+                ruta = f"Imagenes/{nombre}{i}.png"
+                frames.append(cargar_imagen(ruta, TAMAÑO_CELDA - 4))
+            self.imagenes_avatares.append({
+                "nombre": nombre.capitalize(),
+                "frames": frames
+            })
+            print("\n=== DEBUG: contenido de self.imagenes_avatares ===")
+            for idx, data in enumerate(self.imagenes_avatares):
+                print(idx, type(data), data)
+
+
     def dibujar_matriz(self):
-        self.campo_matriz.fill("Red")
+        self.campo_matriz.blit(self.fondo_matriz, (0, 0))
         
         for f in range(FILAS):
             for c in range(COLUMNAS):
@@ -65,9 +104,9 @@ class Interfaz:
                 y = f * TAMAÑO_CELDA
                 
                 valor_celda = self.juego.matriz[f][c]
-                color = CELDA_VACIA if valor_celda == VACIO else CELDA_OCUPADA
-                
-                pygame.draw.rect(self.campo_matriz, color, (x, y, TAMAÑO_CELDA, TAMAÑO_CELDA))
+                if valor_celda == OCUPADA:
+                    pygame.draw.rect(self.campo_matriz, CELDA_OCUPADA, (x, y, TAMAÑO_CELDA, TAMAÑO_CELDA))
+
 
         # Líneas de la grid
         for c in range(COLUMNAS + 1):
@@ -95,13 +134,55 @@ class Interfaz:
     def dibujar_avatar(self, avatar):
         x = int(avatar.x_columna * TAMAÑO_CELDA)
         y = int(avatar.y_fila * TAMAÑO_CELDA)
-        
-        pygame.draw.rect(self.campo_matriz, COLOR_AVATAR, 
-                        (x + 10, y + 10, TAMAÑO_CELDA - 20, TAMAÑO_CELDA - 20), 
-                        border_radius=10)
-        
-        # Barra de vida
+
+        # --- Normalización robusta del tipo de avatar ----
+        avatar_index = getattr(avatar, "tipo_avatar", 0)
+
+        # Si viene como texto (e.g. "Flechero", "Caníbal", "Leñador"), mapearlo a índice 0-3
+        if isinstance(avatar_index, str):
+            # normalizar (minúsculas y sin tildes/ñ)
+            import unicodedata
+            def _norm(s):
+                s = ''.join(c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn')
+                return s.lower()
+            key = _norm(avatar_index)
+            # cubrir nombres lógicos y nombres de sprites
+            name_to_idx = {
+                "flechero": 0, "arquero": 0,
+                "canibal": 1, "caníbal": 1,
+                "guerrero": 2, "escudero": 2,
+                "lenador": 3, "leñador": 3,
+            }
+            avatar_index = name_to_idx.get(key, 0)
+
+        # Asegurar rango válido por si llega un número fuera de 0-3
+        if not (0 <= int(avatar_index) < len(self.imagenes_avatares)):
+            avatar_index = 0
+        # --------------------------------------------------
+
+        frames = self.imagenes_avatares[int(avatar_index)]["frames"]
+
+        # Animación
+        if getattr(avatar, "moviendose", False):  # atributo booleano
+            frame_index = getattr(avatar, "frame_actual", 0)
+        else:
+            frame_index = 0  # frame estático (primer frame del sprite)
+
+        frame = frames[frame_index] if frames[frame_index] else None
+
+
+        if frame:
+            self.campo_matriz.blit(frame, (x + 2, y + 2))
+        else:
+            pygame.draw.rect(
+                self.campo_matriz, COLOR_AVATAR,
+                (x + 10, y + 10, TAMAÑO_CELDA - 20, TAMAÑO_CELDA - 20),
+                border_radius=10
+            )
+
         self.dibujar_barra_vida(x + 10, y + 5, avatar.vida, avatar.vida_maxima, TAMAÑO_CELDA - 20)
+
+
 
     def dibujar_balas(self, balas):
         for bala in balas:
@@ -320,6 +401,31 @@ class Interfaz:
                 return i
         
         return None
+    
+    def mostrar_animacion_fin(self, tipo="derrota"):
+        """Muestra la animación de victoria o derrota y devuelve acción del usuario"""
+        self.juego.juego_iniciado = False  
+
+        if tipo == "victoria":
+            accion = VentanaSalonFama().run()
+        else:
+            accion = VentanaGameOver().run()
+
+        # Dependiendo de lo que el jugador haga:
+        if accion == "reiniciar":
+            print("🔁 Reiniciando juego...")
+            self.juego.reiniciar_juego()
+        elif accion == "menu":
+            print("🏠 Volviendo al menú principal...")
+            # aquí puedes abrir otra ventana o cerrar el juego
+            pygame.quit()
+            sys.exit()
+        elif accion == "salir":
+            pygame.quit()
+            sys.exit()
+
+
+
 
     def ejecutar(self):
         # Posiciones
@@ -374,6 +480,8 @@ class Interfaz:
 
             # Actualizar lógica del juego
             self.juego.actualizar()
+            # === DEBUG: ver cuántos avatares hay activos ===
+            print("Avatares activos:", len(self.juego.avatares_activos))
 
             # Dibujar
             self.pantalla.fill(COLOR_FONDO)
@@ -395,8 +503,15 @@ class Interfaz:
             self.dibujar_ui()
 
             # Mensajes de fin de juego
-            if self.juego.game_over or self.juego.victoria:
-                self.dibujar_mensaje_fin_juego()
+            #if self.juego.game_over or self.juego.victoria:
+            #    self.dibujar_mensaje_fin_juego()
+
+            if self.juego.victoria:
+                self.mostrar_animacion_fin("victoria")
+
+            elif self.juego.game_over:
+                self.mostrar_animacion_fin("derrota")
+
 
             pygame.display.update()
             self.reloj.tick(60)
