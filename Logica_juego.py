@@ -1,6 +1,7 @@
 import time
 import random
 from Personajes import Rooks, Avatar, FILAS, COLUMNAS
+from Puntaje import CalculadorPuntaje
 
 # Constantes lógicas
 VACIO = 0
@@ -26,6 +27,10 @@ class Juego:
         self.tiempo_inicio = 0
         self.ultima_notificacion = ""
         self.tiempo_notificacion = 0
+        #Para lo que es el puntaje
+        self.calculador_puntaje = CalculadorPuntaje()
+        self.total_avatars_matados = 0  
+        self.puntos_acumulados_avatars = 0
         
         # Configurar dificultad
         self.dificultad = dificultad
@@ -85,25 +90,45 @@ class Juego:
                 "tipo": "Flechero",
                 "vida": 5, "daño": 2, "velocidad": 12.0,
                 "velocidad_ataque": 10.0, "probabilidad_spawn": 0.3,
+<<<<<<< HEAD
                 "intervalo_spawn_base": 4.0  # Cambiado a intervalo_spawn_base
+=======
+                "intervalo_spawn": 4.0,
+                "valor_monedas" : 5
+>>>>>>> c64d98140486dd24fd57c5a72ad4ec766143e7a9
             },
             {
                 "tipo": "Escudero", 
                 "vida": 10, "daño": 3, "velocidad": 10.0,
                 "velocidad_ataque": 15.0, "probabilidad_spawn": 0.2,
+<<<<<<< HEAD
                 "intervalo_spawn_base": 6.0  # Cambiado a intervalo_spawn_base
+=======
+                "intervalo_spawn": 6.0,
+                "valor_monedas" : 10
+>>>>>>> c64d98140486dd24fd57c5a72ad4ec766143e7a9
             },
             {
                 "tipo": "Leñador",
                 "vida": 20, "daño": 9, "velocidad": 13.0,
                 "velocidad_ataque": 5.0, "probabilidad_spawn": 0.15,
+<<<<<<< HEAD
                 "intervalo_spawn_base": 8.0  # Cambiado a intervalo_spawn_base
+=======
+                "intervalo_spawn": 8.0,
+                "valor_monedas" : 20
+>>>>>>> c64d98140486dd24fd57c5a72ad4ec766143e7a9
             },
             {
                 "tipo": "Caníbal",
                 "vida": 25, "daño": 12, "velocidad": 14.0,
                 "velocidad_ataque": 3.0, "probabilidad_spawn": 0.1,
+<<<<<<< HEAD
                 "intervalo_spawn_base": 10.0  # Cambiado a intervalo_spawn_base
+=======
+                "intervalo_spawn": 10.0,
+                "valor_monedas" : 25
+>>>>>>> c64d98140486dd24fd57c5a72ad4ec766143e7a9
             }
         ]
         
@@ -181,7 +206,7 @@ class Juego:
                             x_columna=columna_aleatoria,
                             velocidad_movimiento=avatar_info["velocidad"],
                             tipo_avatar=avatar_info["tipo"],
-                            valor_monedas=0
+                            valor_monedas = avatar_info["valor_monedas"]
                         )
                         self.avatares_activos.append(nuevo_avatar)
                         avatar_colocado = True
@@ -267,13 +292,28 @@ class Juego:
                 if not avatar.personaje_vivo:
                     if avatar.tipo_avatar == "Flechero":
                         self.flecheros_muertos += 1
+                        print(f"Flechero muerto! Total: {self.flecheros_muertos}/3")
+                    
                         
+                        # Cada 3 flecheros muertos, dar 100 monedas
+                        #Hay que cambiar esto por que aparezcan las monedas en la matriz con denominaciones raandom que sumen 100
                         if self.flecheros_muertos >= 3:
                             self.monedas_jugador += 100
                             self.ultima_notificacion = "¡Bonus! +100 monedas por 3 flecheros eliminados"
                             self.tiempo_notificacion = time.time()
                             self.flecheros_muertos = 0 
                             print(self.ultima_notificacion)
+                    
+                    # ELIMINAR ESTA LÍNEA: self.agregar_monedas(avatar.valor_monedas)
+                    # Ya no se agregan monedas por avatar normal
+                
+                    self.total_avatars_matados += 1
+                    self.puntos_acumulados_avatars += avatar.vida_maxima
+                    
+                    # Actualizar el calculador de puntaje
+                    self.calculador_puntaje.actualizar_avatars(
+                        self.total_avatars_matados,
+                        self.puntos_acumulados_avatars)
                     
                 return self.colision_balas_rooks_recursivo(i_rook, 0, i_bala + 1)
         
@@ -319,6 +359,7 @@ class Juego:
         
         if not self.rooks_activos[indice].personaje_vivo:
             self.rooks_activos.pop(indice)
+
             return self.limpiar_entidades_muertas_recursivo_rooks(indice)
         
         self.limpiar_entidades_muertas_recursivo_rooks(indice + 1)
@@ -396,7 +437,18 @@ class Juego:
                         self.game_over = True
                         print("DERROTA - No quedan rooks vivos")
 
+<<<<<<< HEAD
    
+=======
+    #Funciones para lo que es el puntaje 
+
+    def obtener_puntaje_actual(self):
+        return self.calculador_puntaje.calcular_puntaje()
+
+    def obtener_detalles_puntaje(self):
+        return self.calculador_puntaje.obtener_detalles()
+
+>>>>>>> c64d98140486dd24fd57c5a72ad4ec766143e7a9
     def iniciar_juego(self):
         self.juego_iniciado = True
         self.game_over = False
@@ -421,6 +473,9 @@ class Juego:
         # Usar el tiempo total configurado por dificultad
         self.tiempo_restante = self.tiempo_total
         self.tiempo_inicio = time.time()
+        self.total_avatars_matados = 0
+        self.puntos_acumulados_avatars = 0
+        self.calculador_puntaje = CalculadorPuntaje()
         
         tiempo_actual = time.time()
         for avatar_info in self.obtener_avatares_info():
