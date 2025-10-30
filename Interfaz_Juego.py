@@ -224,7 +224,22 @@ class Interfaz:
                 daño_x = vida_x + texto_vida.get_width() + 15
                 daño_y = vida_y
                 self.campo_tienda.blit(texto_daño, (daño_x, daño_y))
-                
+    
+    #Nueva funcion para que se vea el puntaje
+    def dibujar_puntaje(self):
+        puntaje_actual = self.juego.obtener_puntaje_actual()
+        
+        # Puntaje principal
+        texto_puntaje = f"Puntaje: {puntaje_actual}"
+        superficie_puntaje = self.fuente_texto.render(texto_puntaje, False, (255, 215, 0))
+        self.pantalla.blit(superficie_puntaje, (50, 180))
+        
+        # Estadísticas adicionales
+        fuente_pequena = pygame.font.Font("Fuentes/super_sliced.otf", 16)
+        
+        stats_text = f"Avatars eliminados: {self.juego.total_avatars_matados}"
+        stats_surface = fuente_pequena.render(stats_text, False, (200, 200, 200))
+        self.pantalla.blit(stats_surface, (50, 210))
 
     def dibujar_ui(self):
         # Título
@@ -233,6 +248,7 @@ class Interfaz:
         
         # Contador de tiempo
         self.dibujar_contador_tiempo()
+        self.dibujar_puntaje()
         
         # Notificaciones
         if self.juego.ultima_notificacion and time.time() - self.juego.tiempo_notificacion < 2.0:
@@ -280,7 +296,11 @@ class Interfaz:
         self.pantalla.blit(overlay, (0, 0))
         
         fuente_grande = pygame.font.Font("Fuentes/super_sliced.otf", 60)
+        fuente_mediana = pygame.font.Font("Fuentes/super_sliced.otf", 30)
         fuente_pequeña = pygame.font.Font("Fuentes/super_sliced.otf", 25)
+
+        puntaje_final = self.juego.obtener_puntaje_actual()
+        detalles = self.juego.obtener_detalles_puntaje()
         
         if self.juego.game_over:
             texto = fuente_grande.render("GAME OVER", False, (255, 50, 50))
@@ -288,15 +308,24 @@ class Interfaz:
         else:  # victoria
             texto = fuente_grande.render("¡VICTORIA!", False, (50, 255, 50))
             texto2 = fuente_pequeña.render("Sobreviviste el tiempo con tus rooks", False, (255, 255, 255))
+
+        texto_puntaje = fuente_mediana.render(f"Puntaje Final: {puntaje_final}", False, (255, 215, 0))
+        texto_avatars = fuente_pequeña.render(
+            f"Avatars eliminados: {detalles['avatars_matados']}", 
+            False, (200, 200, 200))
         
         texto_rect = texto.get_rect(center=(self.ANCHO_PANTALLA // 2, self.ALTO_PANTALLA // 2 - 50))
         texto2_rect = texto2.get_rect(center=(self.ANCHO_PANTALLA // 2, self.ALTO_PANTALLA // 2 + 20))
+        puntaje_rect = texto_puntaje.get_rect(center=(self.ANCHO_PANTALLA // 2, self.ALTO_PANTALLA // 2 + 60))
+        avatars_rect = texto_avatars.get_rect(center=(self.ANCHO_PANTALLA // 2, self.ALTO_PANTALLA // 2 + 90))
         
         texto3 = fuente_pequeña.render("Presiona R para reiniciar", False, (200, 200, 200))
         texto3_rect = texto3.get_rect(center=(self.ANCHO_PANTALLA // 2, self.ALTO_PANTALLA // 2 + 80))
         
         self.pantalla.blit(texto, texto_rect)
         self.pantalla.blit(texto2, texto2_rect)
+        self.pantalla.blit(texto_puntaje, puntaje_rect)
+        self.pantalla.blit(texto_avatars, avatars_rect)
         self.pantalla.blit(texto3, texto3_rect)
 
     def obtener_item_clickeado(self, mouse_x, mouse_y):
