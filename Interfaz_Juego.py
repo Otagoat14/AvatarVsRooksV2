@@ -64,7 +64,7 @@ class Interfaz:
             self.usuario_actual = "Jugador"
 
         # Crear el juego pasando usuario para el puntaje
-        self.juego = Juego(dificultad=self.dificultad, usuario=self.usuario_actual)
+        self.juego = Juego(dificultad=self.dificultad_actual, usuario=self.usuario_actual)
 
         # Al abrir la pantalla de juego, sonar su canción
         self.reproducir_cancion_usuario()
