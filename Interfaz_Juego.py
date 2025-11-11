@@ -635,26 +635,20 @@ class Interfaz:
                 return "salir"
                 
         else:
+            # PARA DERROTA - usar VentanaGameOver
             accion = VentanaGameOver(self.pantalla).run()  
 
-        if accion == "reiniciar":
-            self.juego.reiniciar_juego()
+            if accion == "reiniciar":
+                self.juego.reiniciar_juego()
+                return "reiniciar"
 
-        elif accion == "menu":
-            self.mostrar_selector = True
-            # (opcional) limpiar estados de fin de partida
-            self.juego.game_over = False
-            self.juego.victoria = False
-            
+            elif accion == "menu":
+                # IMPORTANTE: Retornar "menu" para que se redirija a la pantalla de dificultad
+                return "menu"
 
-        elif accion == "salir":
-            pygame.quit()
-            sys.exit()
-
-        elif accion == "ver":
-            self.mostrar_salon = True
-            self.juego.game_over = False
-            self.juego.victoria = False
+            elif accion == "salir":
+                pygame.quit()
+                sys.exit()
 
 
 
@@ -749,6 +743,9 @@ class Interfaz:
                     continue  # Continuar con el siguiente nivel
                 elif accion == "menu":
                     pygame.quit()
+                    # IMPORTANTE: Importar y ejecutar la pantalla de dificultad
+                    from dificultad import main as main_dificultad
+                    main_dificultad(self.usuario_actual)
                     return
                 elif accion == "victoria_final":
                     # Mostrar victoria final con la ventana win normal
@@ -764,6 +761,9 @@ class Interfaz:
                     self.reiniciar_nivel_actual()
                 elif accion == "menu":
                     pygame.quit()
+                    # IMPORTANTE: Importar y ejecutar la pantalla de dificultad
+                    from dificultad import main as main_dificultad
+                    main_dificultad(self.usuario_actual)
                     return
                 elif accion == "salir":
                     pygame.quit()

@@ -89,7 +89,7 @@ class Juego:
         avatares_base = [
             {
                 "tipo": "Flechero",
-                "vida": 5, "daño": 2, "velocidad": 0.5, #12.0
+                "vida": 5, "daño": 2, "velocidad": 12.0, #12.0, si está en otro valor es para probar
                 "velocidad_ataque": 10.0, "probabilidad_spawn": 0.3,
                 "intervalo_spawn_base": 4.0, 
                 "valor_monedas": 5
