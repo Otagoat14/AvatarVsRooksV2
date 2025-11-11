@@ -44,13 +44,13 @@ class Juego:
         """Configura los modificadores según la dificultad"""
         if self.dificultad == "facil":
             self.modificador_spawn = 1.0    # Spawn normal
-            self.tiempo_total = 60          # 60 segundos
+            self.tiempo_total = 6          # 60 segundos
         elif self.dificultad == "medio":
             self.modificador_spawn = 1.25   # 25% más rápido
-            self.tiempo_total = 75          # 60 + 25% = 75 segundos
+            self.tiempo_total = 7          # 60 + 25% = 75 segundos
         elif self.dificultad == "dificil":
             self.modificador_spawn = 1.5    # 50% más rápido  
-            self.tiempo_total = 90          # 60 + 50% = 90 segundos
+            self.tiempo_total = 9          # 60 + 50% = 90 segundos
         else:
             self.modificador_spawn = 1.0
             self.tiempo_total = 60
@@ -232,15 +232,16 @@ class Juego:
             if fila_objetivo != fila_actual and not avatar.en_movimiento:
                 if not self.casilla_ocupada_por_avatar(fila_objetivo, avatar.x_columna) and \
                 not self.casilla_ocupada_por_rook(fila_objetivo, avatar.x_columna):
-                    llego_a_cero = avatar.mover()  # ← Aquí se detecta la derrota
+                    llego_a_cero = avatar.mover()
                 else:
                     avatar.y_fila_objetivo = avatar.y_fila
                     avatar.en_movimiento = False
                     llego_a_cero = False
             else:
-                llego_a_cero = avatar.mover()  # ← Y aquí también
+                llego_a_cero = avatar.mover()
             
-            if llego_a_cero:
+            # Verificar si el avatar llegó al final (fila 0 o menos)
+            if avatar.y_fila <= 0:
                 self.game_over = True
                 return
             
@@ -361,7 +362,13 @@ class Juego:
         self.limpiar_entidades_muertas_recursivo_avatares(indice + 1)
 
     def verificar_victoria(self):
-        return len([r for r in self.rooks_activos if r.personaje_vivo]) > 0
+        # Verificar si ningún avatar llegó al final (fila 0 o menos)
+        for avatar in self.avatares_activos:
+            if avatar.personaje_vivo and avatar.y_fila <= 0:
+                return False  # Derrota: algún avatar llegó al final
+        
+        # Victoria: ningún avatar llegó al final
+        return True
 
     def gastar_monedas(self, cantidad):
         if self.monedas_jugador >= cantidad:
@@ -409,19 +416,28 @@ class Juego:
         return False
     
     def actualizar_tiempo(self):
-            if self.juego_iniciado and self.tiempo_restante > 0:
-                tiempo_actual = time.time()
-                tiempo_transcurrido = int(tiempo_actual - self.tiempo_inicio)
-            
-                self.tiempo_restante = max(0, self.tiempo_total - tiempo_transcurrido)
+        if self.juego_iniciado and self.tiempo_restante > 0:
+            tiempo_actual = time.time()
+            tiempo_transcurrido = int(tiempo_actual - self.tiempo_inicio)
+        
+            self.tiempo_restante = max(0, self.tiempo_total - tiempo_transcurrido)
 
-                if self.tiempo_restante == 0 and not self.game_over:
-                    if self.verificar_victoria():
-                        self.victoria = True
-                        print(f"¡VICTORIA! Sobreviviste {self.tiempo_total} segundos con rooks vivos")
-                    else:
-                        self.game_over = True
-                        print("DERROTA - No quedan rooks vivos")
+            if self.tiempo_restante == 0 and not self.game_over:
+                # Verificar si algún avatar llegó al final
+                avatar_en_final = False
+                for avatar in self.avatares_activos:
+                    if avatar.personaje_vivo and avatar.y_fila <= 0:
+                        avatar_en_final = True
+                        break
+                
+                if avatar_en_final:
+                    # Derrota: algún avatar llegó al final
+                    self.game_over = True
+                    print("DERROTA - Los avatares llegaron a la base")
+                else:
+                    # Victoria: tiempo acabó y ningún avatar llegó al final (no importa si hay rooks o no)
+                    self.victoria = True
+                    print(f"¡VICTORIA! Sobreviviste {self.tiempo_total} segundos")
 
    
     #Funciones para lo que es el puntaje 
