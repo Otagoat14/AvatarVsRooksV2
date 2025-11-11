@@ -44,13 +44,13 @@ class Juego:
         """Configura los modificadores según la dificultad"""
         if self.dificultad == "facil":
             self.modificador_spawn = 1.0    # Spawn normal
-            self.tiempo_total = 6          # 60 segundos
+            self.tiempo_total = 60          # 60 segundos
         elif self.dificultad == "medio":
             self.modificador_spawn = 1.25   # 25% más rápido
-            self.tiempo_total = 7          # 60 + 25% = 75 segundos
+            self.tiempo_total = 75          # 60 + 25% = 75 segundos
         elif self.dificultad == "dificil":
             self.modificador_spawn = 1.5    # 50% más rápido  
-            self.tiempo_total = 9          # 60 + 50% = 90 segundos
+            self.tiempo_total = 90          # 60 + 50% = 90 segundos
         else:
             self.modificador_spawn = 1.0
             self.tiempo_total = 60

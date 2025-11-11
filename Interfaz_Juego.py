@@ -8,7 +8,7 @@ from Animaciones.animacion_game_over import VentanaGameOver
 from Animaciones.animacion_salon_fama import VentanaSalonFama
 from Animaciones.animacion_win import VentanaWin
 import sys
-
+from Animaciones.animacion_final_juego import VentanaFinalJuego
 
 # Constantes visuales
 ANCHO = COLUMNAS * TAMAÑO_CELDA
@@ -619,20 +619,33 @@ class Interfaz:
         self.juego.juego_iniciado = False 
         
         if tipo == "victoria":
-            # Usar VentanaWin modificada para progresión de niveles
-            accion = self.mostrar_ventana_victoria()
-            
-            if accion == "continuar":
-                if self.avanzar_nivel():
+            # Verificar si es el nivel difícil Y no llegó al salón de la fama
+            if self.dificultad_actual == "dificil" and not self.puntaje_registrado:
+                # Usar la nueva animación para victoria final sin salón de la fama
+                accion = VentanaFinalJuego(self.pantalla).run()
+                
+                if accion == "reiniciar":
                     self.reiniciar_nivel_actual()
-                    return "continuar"
-                else:
-                    # Si no hay más niveles, es victoria final
-                    return "victoria_final"
-            elif accion == "menu":
-                return "menu"
-            else:  # salir
-                return "salir"
+                    return "reiniciar"
+                elif accion == "menu":
+                    return "menu"
+                else:  # salir
+                    return "salir"
+            else:
+                # Usar VentanaWin normal para progresión de niveles
+                accion = self.mostrar_ventana_victoria()
+                
+                if accion == "continuar":
+                    if self.avanzar_nivel():
+                        self.reiniciar_nivel_actual()
+                        return "continuar"
+                    else:
+                        # Si no hay más niveles, es victoria final
+                        return "victoria_final"
+                elif accion == "menu":
+                    return "menu"
+                else:  # salir
+                    return "salir"
                 
         else:
             # PARA DERROTA - usar VentanaGameOver
@@ -643,7 +656,6 @@ class Interfaz:
                 return "reiniciar"
 
             elif accion == "menu":
-                # IMPORTANTE: Retornar "menu" para que se redirija a la pantalla de dificultad
                 return "menu"
 
             elif accion == "salir":
