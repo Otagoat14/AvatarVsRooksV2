@@ -125,9 +125,10 @@ class Avatar(Personaje):
             self.ultimo_movimiento = tiempo_actual
             self.en_movimiento = True
             
-            # Verificar si llegó al final (fila 0)
-            if self.y_fila_objetivo <= 0:
-                return True 
+            # Verificar si SUPERÓ la primera fila (fila 0)
+            # Cambio: ahora es cuando el objetivo es menor que 0, no cuando es <= 0
+            if self.y_fila_objetivo < 0:
+                return True  # Derrota - el avatar superó la primera fila
         
         # Suavizar movimiento si está en transición
         if self.en_movimiento:

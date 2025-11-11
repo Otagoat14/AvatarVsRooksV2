@@ -89,7 +89,7 @@ class Juego:
         avatares_base = [
             {
                 "tipo": "Flechero",
-                "vida": 5, "daño": 2, "velocidad": 12.0,
+                "vida": 5, "daño": 2, "velocidad": 0.5, #12.0
                 "velocidad_ataque": 10.0, "probabilidad_spawn": 0.3,
                 "intervalo_spawn_base": 4.0, 
                 "valor_monedas": 5
@@ -231,14 +231,14 @@ class Juego:
             
             if fila_objetivo != fila_actual and not avatar.en_movimiento:
                 if not self.casilla_ocupada_por_avatar(fila_objetivo, avatar.x_columna) and \
-                   not self.casilla_ocupada_por_rook(fila_objetivo, avatar.x_columna):
-                    llego_a_cero = avatar.mover()
+                not self.casilla_ocupada_por_rook(fila_objetivo, avatar.x_columna):
+                    llego_a_cero = avatar.mover()  # ← Aquí se detecta la derrota
                 else:
                     avatar.y_fila_objetivo = avatar.y_fila
                     avatar.en_movimiento = False
                     llego_a_cero = False
             else:
-                llego_a_cero = avatar.mover()
+                llego_a_cero = avatar.mover()  # ← Y aquí también
             
             if llego_a_cero:
                 self.game_over = True
