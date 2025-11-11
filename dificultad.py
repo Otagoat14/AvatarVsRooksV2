@@ -257,7 +257,7 @@ def main(username: str, lang: str = "es"):
             
             # Importar y ejecutar el juego
             from Interfaz_Juego import Interfaz
-            juego = Interfaz(dificultad=dificultad) 
+            juego = Interfaz(dificultad=dificultad, puntaje_acumulado=0) 
             
             juego.ejecutar()
             

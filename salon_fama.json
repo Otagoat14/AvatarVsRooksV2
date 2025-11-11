@@ -1,16 +1,7 @@
 [
     {
         "nombre": "Jugador",
-        "puntaje": 79,
-        "fecha": "2025-10-30 10:56:07",
-        "detalles": {
-            "puntaje_final": 79,
-            "tempo": 120,
-            "popularidad": 50,
-            "avatars_matados": 5,
-            "puntos_avatars": 45,
-            "victoria": true,
-            "tiempo_jugado": 60
-        }
+        "puntaje": 115,
+        "fecha": "2025-11-10 20:51:18"
     }
 ]

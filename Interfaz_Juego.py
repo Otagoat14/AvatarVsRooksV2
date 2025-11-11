@@ -29,7 +29,7 @@ COLOR_BALA = (255, 255, 100)
 # En Interfaz_Juego.py, modifica la clase Interfaz:
 
 class Interfaz:
-    def __init__(self, dificultad="facil"):  # ← Agregar parámetro de dificultad
+    def __init__(self, dificultad="facil", puntaje_acumulado=0):  
         pygame.init()
 
         try:
@@ -51,7 +51,10 @@ class Interfaz:
         self.dificultad_actual = dificultad
         self.niveles = ["facil", "medio", "dificil"]
         self.nivel_actual_index = self.niveles.index(dificultad)
-        
+
+        # PUNTAJE ACUMULADO
+        self.puntaje_acumulado = puntaje_acumulado
+
         # CARGAR PERSONALIZACIÓN DEL USUARIO
         self.cargar_personalizacion()
 
@@ -63,8 +66,10 @@ class Interfaz:
         except Exception:
             self.usuario_actual = "Jugador"
 
-        # Crear el juego pasando usuario para el puntaje
-        self.juego = Juego(dificultad=self.dificultad_actual, usuario=self.usuario_actual)
+        # Crear el juego pasando usuario y puntaje acumulado
+        self.juego = Juego(dificultad=self.dificultad_actual, 
+                          usuario=self.usuario_actual, 
+                          puntaje_acumulado=self.puntaje_acumulado)
 
         # Al abrir la pantalla de juego, sonar su canción
         self.reproducir_cancion_usuario()
@@ -132,12 +137,20 @@ class Interfaz:
         if self.nivel_actual_index < len(self.niveles) - 1:
             self.nivel_actual_index += 1
             self.dificultad_actual = self.niveles[self.nivel_actual_index]
+            
+            # CALCULAR PUNTAJE ACUMULADO antes de avanzar
+            puntaje_nivel_actual = self.juego.obtener_puntaje_actual()
+            self.puntaje_acumulado += puntaje_nivel_actual
+            
             return True
         return False  # No hay más niveles
 
     def reiniciar_nivel_actual(self):
         """Reinicia el nivel actual"""
-        self.juego = Juego(dificultad=self.dificultad_actual)
+        # Mantener el puntaje acumulado al reiniciar
+        self.juego = Juego(dificultad=self.dificultad_actual, 
+                          usuario=self.usuario_actual, 
+                          puntaje_acumulado=self.puntaje_acumulado)
         self.juego.iniciar_juego()
         self.puntaje_registrado = False
         self.info_resultado = None
@@ -441,21 +454,27 @@ class Interfaz:
                 daño_y = vida_y
                 self.campo_tienda.blit(texto_daño, (daño_x, daño_y))
     
-    #Nueva funcion para que se vea el puntaje
+    #Funcion para que se vea el puntaje
     def dibujar_puntaje(self):
         puntaje_actual = self.juego.obtener_puntaje_actual()
+        puntaje_total = self.puntaje_acumulado + puntaje_actual
         
-        # Puntaje principal
-        texto_puntaje = f"Puntaje: {puntaje_actual}"
-        superficie_puntaje = self.fuente_texto.render(texto_puntaje, False, (255, 215, 0))
-        self.pantalla.blit(superficie_puntaje, (50, 180))
+        # Puntaje del nivel actual
+        texto_puntaje_nivel = f"Puntaje Nivel: {puntaje_actual}"
+        superficie_puntaje_nivel = self.fuente_texto.render(texto_puntaje_nivel, False, (255, 215, 0))
+        self.pantalla.blit(superficie_puntaje_nivel, (50, 180))
+        
+        # Puntaje acumulado total
+        texto_puntaje_total = f"Puntaje Total: {puntaje_total}"
+        superficie_puntaje_total = self.fuente_texto.render(texto_puntaje_total, False, (200, 200, 255))
+        self.pantalla.blit(superficie_puntaje_total, (50, 210))
         
         # Estadísticas adicionales
         fuente_pequena = pygame.font.Font("Fuentes/super_sliced.otf", 16)
         
         stats_text = f"Avatars eliminados: {self.juego.total_avatars_matados}"
         stats_surface = fuente_pequena.render(stats_text, False, (200, 200, 200))
-        self.pantalla.blit(stats_surface, (50, 210))
+        self.pantalla.blit(stats_surface, (50, 240))
 
     def dibujar_ui(self):
         # Título
@@ -614,17 +633,41 @@ class Interfaz:
         
         return None
     
-
     def mostrar_animacion_fin(self, tipo="derrota"):
         self.juego.juego_iniciado = False 
         
         if tipo == "victoria":
-            # Verificar si es el nivel difícil Y no llegó al salón de la fama
-            if self.dificultad_actual == "dificil" and not self.puntaje_registrado:
-                # Usar la nueva animación para victoria final sin salón de la fama
-                accion = VentanaFinalJuego(self.pantalla).run()
+            # Calcular puntaje total acumulado
+            puntaje_final_total = self.puntaje_acumulado + self.juego.obtener_puntaje_actual()
+            
+            # Verificar si es el nivel difícil (último nivel)
+            if self.dificultad_actual == "dificil":
+                # REGISTRAR EN SALÓN DE LA FAMA con puntaje acumulado
+                if not self.puntaje_registrado:
+                    # Crear un juego temporal con el puntaje acumulado total para el registro
+                    juego_temp = Juego(dificultad="dificil", usuario=self.usuario_actual)
+                    juego_temp.total_avatars_matados = self.juego.total_avatars_matados
+                    juego_temp.puntos_acumulados_avatars = self.juego.puntos_acumulados_avatars
+                    
+                    self.info_resultado = IntegradorJuego.registrar_partida(
+                        self.salon_fama,
+                        self.usuario_actual,
+                        juego_temp,
+                        puntaje_manual=puntaje_final_total  # Pasar puntaje acumulado
+                    )
+                    self.puntaje_registrado = True
+                
+                # Verificar si llegó al salón de la fama
+                if self.puntaje_registrado and self.info_resultado and self.info_resultado['es_top']:
+                    # Usar animación de salón de la fama
+                    accion = VentanaSalonFama(self.pantalla).run()
+                else:
+                    # Usar animación final del juego sin salón de la fama
+                    accion = VentanaFinalJuego(self.pantalla).run()
                 
                 if accion == "reiniciar":
+                    # Reiniciar desde el nivel difícil con puntaje en 0
+                    self.puntaje_acumulado = 0
                     self.reiniciar_nivel_actual()
                     return "reiniciar"
                 elif accion == "menu":
@@ -632,7 +675,7 @@ class Interfaz:
                 else:  # salir
                     return "salir"
             else:
-                # Usar VentanaWin normal para progresión de niveles
+                # Nivel no difícil - progresión normal
                 accion = self.mostrar_ventana_victoria()
                 
                 if accion == "continuar":
@@ -640,19 +683,19 @@ class Interfaz:
                         self.reiniciar_nivel_actual()
                         return "continuar"
                     else:
-                        # Si no hay más niveles, es victoria final
                         return "victoria_final"
                 elif accion == "menu":
                     return "menu"
                 else:  # salir
                     return "salir"
-                
+            
         else:
-            # PARA DERROTA - usar VentanaGameOver
+            # PARA DERROTA
             accion = VentanaGameOver(self.pantalla).run()  
 
             if accion == "reiniciar":
-                self.juego.reiniciar_juego()
+                # Reiniciar nivel actual manteniendo el puntaje acumulado
+                self.reiniciar_nivel_actual()
                 return "reiniciar"
 
             elif accion == "menu":

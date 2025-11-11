@@ -13,7 +13,7 @@ ROOK_TIPO_4 = 5
 
 
 class Juego:
-    def __init__(self, dificultad="facil", usuario = "None"):
+    def __init__(self, dificultad="facil", usuario="None", puntaje_acumulado=0):
         self.matriz = [[VACIO for c in range(COLUMNAS)] for f in range(FILAS)]
         self.monedas_jugador = 350
         self.rooks_activos = []     
@@ -27,6 +27,10 @@ class Juego:
         self.tiempo_inicio = 0
         self.ultima_notificacion = ""
         self.tiempo_notificacion = 0
+        
+        # PUNTAJE ACUMULADO entre niveles
+        self.puntaje_acumulado = puntaje_acumulado
+        
         #Para lo que es el puntaje
         self.calculador_puntaje = CalculadorPuntaje(usuario)
         self.total_avatars_matados = 0  
@@ -39,18 +43,25 @@ class Juego:
         # Inicializar último spawn
         for avatar_info in self.obtener_avatares_info():
             self.ultimo_spawn[avatar_info["tipo"]] = 0
+        
+        # Inicializar último spawn
+        for avatar_info in self.obtener_avatares_info():
+            self.ultimo_spawn[avatar_info["tipo"]] = 0
+
+    def obtener_puntaje_acumulado(self):
+        return self.puntaje_acumulado + self.calculador_puntaje.calcular_puntaje()
 
     def _configurar_modificador_dificultad(self):
         """Configura los modificadores según la dificultad"""
         if self.dificultad == "facil":
             self.modificador_spawn = 1.0    # Spawn normal
-            self.tiempo_total = 60          # 60 segundos
+            self.tiempo_total = 6          # 60 segundos
         elif self.dificultad == "medio":
             self.modificador_spawn = 1.25   # 25% más rápido
-            self.tiempo_total = 75          # 60 + 25% = 75 segundos
+            self.tiempo_total = 7          # 60 + 25% = 75 segundos
         elif self.dificultad == "dificil":
             self.modificador_spawn = 1.5    # 50% más rápido  
-            self.tiempo_total = 90          # 60 + 50% = 90 segundos
+            self.tiempo_total = 9          # 60 + 50% = 90 segundos
         else:
             self.modificador_spawn = 1.0
             self.tiempo_total = 60
@@ -472,13 +483,23 @@ class Juego:
         # Usar el tiempo total configurado por dificultad
         self.tiempo_restante = self.tiempo_total
         self.tiempo_inicio = time.time()
+        
+        # NO reiniciar el puntaje acumulado entre niveles
+        # self.puntaje_acumulado se mantiene
+        
+        # Reiniciar solo los contadores del nivel actual, mantener el acumulado
         self.total_avatars_matados = 0
         self.puntos_acumulados_avatars = 0
-        self.calculador_puntaje = CalculadorPuntaje()
+        self.calculador_puntaje = CalculadorPuntaje(self.calculador_puntaje.usuario)
         
+        # Reiniciar último spawn
         tiempo_actual = time.time()
         for avatar_info in self.obtener_avatares_info():
             self.ultimo_spawn[avatar_info["tipo"]] = tiempo_actual
+        
+        # Reiniciar notificaciones
+        self.ultima_notificacion = ""
+        self.tiempo_notificacion = 0
 
     def actualizar(self):
         if self.juego_iniciado and not self.game_over and not self.victoria:
