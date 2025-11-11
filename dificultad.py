@@ -202,16 +202,15 @@ class PantallaDificultad:
                 if event.key == pygame.K_ESCAPE:
                     self.running = False
                     self.dificultad_seleccionada = "salir"
-                elif event.key == pygame.K_1:
+                elif event.key == pygame.K_1 or event.key == pygame.K_KP1:
                     self.dificultad_seleccionada = "facil"
                     self.running = False
-                elif event.key == pygame.K_2:
+                elif event.key == pygame.K_2 or event.key == pygame.K_KP2:
                     self.dificultad_seleccionada = "medio"
                     self.running = False
-                elif event.key == pygame.K_3:
+                elif event.key == pygame.K_3 or event.key == pygame.K_KP3:
                     self.dificultad_seleccionada = "dificil"
                     self.running = False
-    
     def _dibujar_interfaz(self):
         # Fondo
         self.screen.fill(self.col_fondo)
@@ -244,7 +243,6 @@ class PantallaDificultad:
             pygame.display.flip()
             self.clock.tick(60)
         
-        pygame.quit()
         return self.dificultad_seleccionada
 
 def main(username: str, lang: str = "es"):
@@ -252,7 +250,6 @@ def main(username: str, lang: str = "es"):
     dificultad = pantalla.run()
     
     if dificultad and dificultad != "salir":
-        
         # Iniciar el juego después de seleccionar dificultad
         try:
             # Detener música del menú
@@ -265,8 +262,8 @@ def main(username: str, lang: str = "es"):
             juego.ejecutar()
             
         except Exception as e:
-
-
+            print(f"Error al iniciar el juego: {e}")
+            
             try:
                 import tkinter as tk
                 from tkinter import messagebox
@@ -284,6 +281,8 @@ def main(username: str, lang: str = "es"):
             except:
                 pass
     
+    # Cerrar pygame solo después de que termine el juego
+    pygame.quit()
     return dificultad
 
 if __name__ == "__main__":
