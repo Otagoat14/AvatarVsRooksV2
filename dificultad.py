@@ -115,24 +115,24 @@ class PantallaDificultad:
         center_y = self.WIN_H // 2
         
         btn_width, btn_height = 400, 100
-        espaciado = 120
+        espaciado = 140  # Aumentado de 120 a 140 para más separación
         
-        # Botones
+        # Botones con más espacio entre ellos
         self.botones = {
             "facil": {
-                "rect": pygame.Rect(center_x - btn_width//2, center_y - 80, btn_width, btn_height),
+                "rect": pygame.Rect(center_x - btn_width//2, center_y - 120, btn_width, btn_height),
                 "texto": "🎮 " + self.t("FÁCIL"),
                 "descripcion": self.t("Perfecto para principiantes"),
                 "hover": False
             },
             "medio": {
-                "rect": pygame.Rect(center_x - btn_width//2, center_y + 40, btn_width, btn_height),
+                "rect": pygame.Rect(center_x - btn_width//2, center_y + 30, btn_width, btn_height),
                 "texto": "⚔️ " + self.t("MEDIO"),
                 "descripcion": self.t("Desafío equilibrado"),
                 "hover": False
             },
             "dificil": {
-                "rect": pygame.Rect(center_x - btn_width//2, center_y + 160, btn_width, btn_height),
+                "rect": pygame.Rect(center_x - btn_width//2, center_y + 180, btn_width, btn_height),
                 "texto": "🔥 " + self.t("DIFÍCIL"),
                 "descripcion": self.t("Para expertos en busca de reto"),
                 "hover": False
@@ -172,10 +172,10 @@ class PantallaDificultad:
         texto_rect = texto_surface.get_rect(center=rect.center)
         self.screen.blit(texto_surface, texto_rect)
         
-        # Dibujar descripción
+        # Dibujar descripción - AUMENTAR ESPACIO entre botón y descripción
         color_desc = self._ajustar_color(self.col_texto, 0.7)
         desc_surface = self.fuente_desc.render(descripcion, True, color_desc)
-        desc_rect = desc_surface.get_rect(center=(rect.centerx, rect.bottom + 20))
+        desc_rect = desc_surface.get_rect(center=(rect.centerx, rect.bottom + 30))  # Aumentado de 20 a 30
         self.screen.blit(desc_surface, desc_rect)
     
     def _procesar_eventos(self):
@@ -216,15 +216,15 @@ class PantallaDificultad:
         # Fondo
         self.screen.fill(self.col_fondo)
         
-        # Panel central
-        panel_rect = pygame.Rect(self.WIN_W//2 - 450, self.WIN_H//2 - 300, 900, 600)
+        # Panel central - AUMENTAR ALTURA para acomodar mejor los botones
+        panel_rect = pygame.Rect(self.WIN_W//2 - 450, self.WIN_H//2 - 350, 900, 700)  # Aumentada altura de 600 a 700
         pygame.draw.rect(self.screen, self.col_ventana, panel_rect, border_radius=25)
         pygame.draw.rect(self.screen, self._ajustar_color(self.col_ventana, 1.1), 
                        panel_rect, width=4, border_radius=25)
         
-        # Título
+        # Título - Ajustar posición para centrar mejor
         titulo_surface = self.fuente_titulo.render(self.t("SELECCIONA LA DIFICULTAD"), True, self.col_texto)
-        titulo_rect = titulo_surface.get_rect(center=(self.WIN_W//2, self.WIN_H//2 - 200))
+        titulo_rect = titulo_surface.get_rect(center=(self.WIN_W//2, self.WIN_H//2 - 250))  # Ajustada posición
         self.screen.blit(titulo_surface, titulo_rect)
         
         # Dibujar botones
