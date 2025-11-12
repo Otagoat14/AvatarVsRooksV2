@@ -375,6 +375,7 @@ class Interfaz:
         
         self.dibujar_rooks_recursivo(indice + 1)
 
+    # En la función dibujar_avatares_recursivo, asegúrate de pasar el juego:
     def dibujar_avatares_recursivo(self, indice=0):
         if indice >= len(self.juego.avatares_activos):
             return
@@ -382,6 +383,7 @@ class Interfaz:
         avatar = self.juego.avatares_activos[indice]
         if avatar.personaje_vivo:
             self.dibujar_avatar(avatar)
+            # El avatar ya disparó en la lógica del juego, solo dibujamos las balas
             self.dibujar_balas(avatar.balas)
         
         self.dibujar_avatares_recursivo(indice + 1)
@@ -678,12 +680,12 @@ class Interfaz:
                 if self.puntaje_registrado and self.info_resultado and self.info_resultado['es_top']:
                     # Usar animación de salón de la fama
                     ventana_fama = VentanaSalonFama(self.pantalla, paleta=self._paleta_usuario(), username=self.usuario_actual)
-                    ventana_fama.run()
-
+                    accion = ventana_fama.run()  # ✅ ASIGNAR accion AQUÍ
                 else:
                     # Usar animación final del juego sin salón de la fama
-                    accion = VentanaFinalJuego(self.pantalla).run()
+                    accion = VentanaFinalJuego(self.pantalla).run()  # ✅ ASIGNAR accion AQUÍ
                 
+                # ✅ AHORA accion SIEMPRE ESTÁ DEFINIDA
                 if accion == "reiniciar":
                     # Reiniciar desde el nivel difícil con puntaje en 0
                     self.puntaje_acumulado = 0

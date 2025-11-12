@@ -56,6 +56,7 @@ class PantallaDificultad:
         
         # Estado
         self.dificultad_seleccionada = None
+        self.mostrar_salon_fama = False
         self.running = True
         
     def _cargar_tema_usuario(self):
@@ -72,8 +73,6 @@ class PantallaDificultad:
                 "btn_secundario": {"rgb": [68, 68, 76]}
             }
 
-
-    
     def _aplicar_tema(self):
         self.col_fondo = tuple(self.tema["fondo"]["rgb"])
         self.col_texto = tuple(self.tema["texto"]["rgb"])
@@ -115,20 +114,22 @@ class PantallaDificultad:
             self.fuente_titulo = pygame.font.Font("Fuentes/super_sliced.otf", 48)
             self.fuente_boton = pygame.font.Font("Fuentes/super_sliced.otf", 32)
             self.fuente_desc = pygame.font.Font("Fuentes/super_sliced.otf", 16)
+            self.fuente_salon = pygame.font.Font("Fuentes/super_sliced.otf", 24)
         except:
             # Fallback a fuentes del sistema
             self.fuente_titulo = pygame.font.SysFont("segoeui", 48, bold=True)
             self.fuente_boton = pygame.font.SysFont("segoeui", 32, bold=True)
             self.fuente_desc = pygame.font.SysFont("segoeui", 16)
+            self.fuente_salon = pygame.font.SysFont("segoeui", 24)
     
     def _crear_botones(self):
         center_x = self.WIN_W // 2
         center_y = self.WIN_H // 2
         
         btn_width, btn_height = 400, 100
-        espaciado = 140  # Aumentado de 120 a 140 para más separación
+        espaciado = 140
         
-        # Botones con más espacio entre ellos
+        # Botones de dificultad
         self.botones = {
             "facil": {
                 "rect": pygame.Rect(center_x - btn_width//2, center_y - 120, btn_width, btn_height),
@@ -149,6 +150,21 @@ class PantallaDificultad:
                 "hover": False
             }
         }
+        
+        # Botón de Salón de la Fama 
+        salon_btn_width, salon_btn_height = 220, 50  # Aumentado el ancho
+        self.boton_salon = {
+            "rect": pygame.Rect(self.WIN_W - salon_btn_width - 30, 30, salon_btn_width, salon_btn_height),
+            "texto": "🏆 " + self.t("RANKING"),  
+            "hover": False
+        }
+        
+        # Botón para volver del salón de la fama
+        self.boton_volver = {
+            "rect": pygame.Rect(30, 30, 120, 50),
+            "texto": "← " + self.t("VOLVER"),  # Texto en mayúsculas para consistencia
+            "hover": False
+        }
     
     def _ajustar_color(self, color, factor):
         r, g, b = color
@@ -162,32 +178,182 @@ class PantallaDificultad:
         luminancia = (0.299 * r + 0.587 * g + 0.114 * b) / 255
         return (20, 20, 20) if luminancia > 0.6 else (245, 245, 245)
     
-    def _dibujar_boton(self, boton_info, dificultad):
+    def _dibujar_boton(self, boton_info, color_btn=None):
         rect = boton_info["rect"]
         texto = boton_info["texto"]
-        descripcion = boton_info["descripcion"]
         
         # Determinar color según estado
-        if boton_info["hover"]:
-            color_btn = self.col_btn_hover
-        else:
-            color_btn = self.col_btn_primario
+        if not color_btn:
+            if boton_info["hover"]:
+                color_btn = self.col_btn_hover
+            else:
+                color_btn = self.col_btn_primario
         
         # Dibujar botón
-        pygame.draw.rect(self.screen, color_btn, rect, border_radius=15)
-        pygame.draw.rect(self.screen, self._ajustar_color(color_btn, 0.8), rect, width=3, border_radius=15)
+        pygame.draw.rect(self.screen, color_btn, rect, border_radius=12)
+        pygame.draw.rect(self.screen, self._ajustar_color(color_btn, 0.8), rect, width=3, border_radius=12)
         
-        # Dibujar texto del botón
+        # Dibujar texto del botón - CENTRADO CORRECTAMENTE
         color_texto_btn = self._obtener_color_texto_contraste(color_btn)
-        texto_surface = self.fuente_boton.render(texto, True, color_texto_btn)
+        
+        # SELECCIONAR FUENTE Y AJUSTAR TEXTO SEGÚN EL BOTÓN
+        if rect.width <= 240:  # Botones pequeños como Salón de la Fama y Volver
+            # Para botones pequeños, usar fuente más pequeña desde el inicio
+            try:
+                fuente = pygame.font.Font("Fuentes/super_sliced.otf", 20)  # Fuente más pequeña
+            except:
+                fuente = pygame.font.SysFont("segoeui", 20, bold=True)
+            
+            # Renderizar el texto
+            texto_surface = fuente.render(texto, True, color_texto_btn)
+            
+            # Si aún es muy grande, reducir más el tamaño
+            if texto_surface.get_width() > rect.width - 20:
+                try:
+                    fuente = pygame.font.Font("Fuentes/super_sliced.otf", 16)
+                except:
+                    fuente = pygame.font.SysFont("segoeui", 16, bold=True)
+                texto_surface = fuente.render(texto, True, color_texto_btn)
+        else:
+            # Para botones grandes de dificultad
+            try:
+                fuente = pygame.font.Font("Fuentes/super_sliced.otf", 32)
+            except:
+                fuente = pygame.font.SysFont("segoeui", 32, bold=True)
+            texto_surface = fuente.render(texto, True, color_texto_btn)
+        
+        # CENTRAR el texto en el botón - ESTA ES LA PARTE CLAVE
         texto_rect = texto_surface.get_rect(center=rect.center)
         self.screen.blit(texto_surface, texto_rect)
         
-        # Dibujar descripción - AUMENTAR ESPACIO entre botón y descripción
-        color_desc = self._ajustar_color(self.col_texto, 0.7)
-        desc_surface = self.fuente_desc.render(descripcion, True, color_desc)
-        desc_rect = desc_surface.get_rect(center=(rect.centerx, rect.bottom + 30))  # Aumentado de 20 a 30
-        self.screen.blit(desc_surface, desc_rect)
+        # Dibujar descripción si existe (solo para botones de dificultad)
+        if "descripcion" in boton_info:
+            try:
+                fuente_desc = pygame.font.Font("Fuentes/super_sliced.otf", 16)
+            except:
+                fuente_desc = pygame.font.SysFont("segoeui", 16)
+            color_desc = self._ajustar_color(self.col_texto, 0.7)
+            desc_surface = fuente_desc.render(boton_info["descripcion"], True, color_desc)
+            desc_rect = desc_surface.get_rect(center=(rect.centerx, rect.bottom + 30))
+            self.screen.blit(desc_surface, desc_rect)
+    
+    def _dibujar_salon_fama(self):
+        # Fondo
+        overlay = pygame.Surface((self.WIN_W, self.WIN_H))
+        overlay.set_alpha(230)
+        overlay.fill(self.col_fondo)
+        self.screen.blit(overlay, (0, 0))
+        
+        # Título
+        titulo = self.fuente_titulo.render("SALÓN DE LA FAMA", True, self.col_texto)
+        titulo_rect = titulo.get_rect(center=(self.WIN_W // 2, 80))
+        self.screen.blit(titulo, titulo_rect)
+        
+        # Cargar datos del salón de la fama
+        try:
+            from Salon_fama import SalonFama
+            salon = SalonFama()
+            top_puntajes = salon.obtener_top(10)
+            
+            if not top_puntajes:
+                mensaje = self.fuente_salon.render("No hay puntajes registrados aún", True, self.col_texto)
+                mensaje_rect = mensaje.get_rect(center=(self.WIN_W // 2, self.WIN_H // 2))
+                self.screen.blit(mensaje, mensaje_rect)
+            else:
+                # Panel para la lista - Ajustado para mejor espaciado
+                panel_ancho = 800
+                panel_alto = 500
+                panel_rect = pygame.Rect(
+                    (self.WIN_W - panel_ancho) // 2,
+                    150,
+                    panel_ancho,
+                    panel_alto
+                )
+                pygame.draw.rect(self.screen, self.col_ventana, panel_rect, border_radius=15)
+                pygame.draw.rect(self.screen, self._ajustar_color(self.col_ventana, 1.1), 
+                            panel_rect, width=3, border_radius=15)
+                
+                # Definir columnas con posiciones fijas
+                col_pos = panel_rect.x + 60  # Más espacio para la posición
+                col_nombre = panel_rect.x + 120  # Ajustado para dejar espacio para el número
+                col_puntaje = panel_rect.x + 400
+                col_fecha = panel_rect.x + 550
+                
+                # Encabezados - Centrados en sus columnas
+                encabezados_y = panel_rect.y + 25
+                
+                # Encabezado unificado para "JUGADOR" que incluye la posición
+                jugador_text = self.fuente_salon.render("JUGADOR", True, self.col_texto)
+                puntaje_text = self.fuente_salon.render("PUNTAJE", True, self.col_texto)
+                fecha_text = self.fuente_salon.render("FECHA", True, self.col_texto)
+                
+                # Centrar encabezados en sus columnas
+                self.screen.blit(jugador_text, (col_nombre - jugador_text.get_width() // 2, encabezados_y))
+                self.screen.blit(puntaje_text, (col_puntaje - puntaje_text.get_width() // 2, encabezados_y))
+                self.screen.blit(fecha_text, (col_fecha - fecha_text.get_width() // 2, encabezados_y))
+                
+                # Línea separadora
+                pygame.draw.line(self.screen, self.col_texto, 
+                            (panel_rect.x + 20, encabezados_y + 35),
+                            (panel_rect.x + panel_ancho - 20, encabezados_y + 35), 2)
+                
+                # Lista de puntajes
+                for i, registro in enumerate(top_puntajes):
+                    y_pos = panel_rect.y + 75 + (i * 40)
+                    
+                    # Colores según posición
+                    if i == 0:
+                        color = (255, 215, 0)  # Oro
+                        pos_color = (255, 215, 0)
+                    elif i == 1:
+                        color = (192, 192, 192)  # Plata
+                        pos_color = (192, 192, 192)
+                    elif i == 2:
+                        color = (205, 127, 50)  # Bronce
+                        pos_color = (205, 127, 50)
+                    else:
+                        color = self.col_texto
+                        pos_color = self.col_texto
+                    
+                    # Número de posición - más grande y destacado
+                    pos_numero = i + 1
+                    pos_text = self.fuente_salon.render(f"{pos_numero}.", True, pos_color)
+                    
+                    # Dibujar número de posición alineado a la izquierda del nombre
+                    self.screen.blit(pos_text, (col_pos, y_pos - 2))  # -2 para centrar verticalmente
+                    
+                    # Nombre (recortado si es muy largo) - alineado después del número
+                    nombre = registro["nombre"]
+                    if len(nombre) > 15:  # Ajustado por el espacio del número
+                        nombre = nombre[:12] + "..."
+                    nombre_text = self.fuente_desc.render(nombre, True, color)
+                    self.screen.blit(nombre_text, (col_nombre, y_pos))
+                    
+                    # Puntaje - centrado
+                    puntaje_text = self.fuente_desc.render(str(registro["puntaje"]), True, color)
+                    self.screen.blit(puntaje_text, (col_puntaje - puntaje_text.get_width() // 2, y_pos))
+                    
+                    # Fecha (formateada) - centrada
+                    fecha = registro.get("fecha", "N/A")
+                    if len(fecha) > 10:
+                        fecha = fecha[:10]  # Solo fecha, sin hora
+                    fecha_text = self.fuente_desc.render(fecha, True, color)
+                    self.screen.blit(fecha_text, (col_fecha - fecha_text.get_width() // 2, y_pos))
+                    
+                    # Línea separadora entre filas (opcional)
+                    if i < len(top_puntajes) - 1:
+                        pygame.draw.line(self.screen, self._ajustar_color(self.col_texto, 0.3), 
+                                    (panel_rect.x + 20, y_pos + 30),
+                                    (panel_rect.x + panel_ancho - 20, y_pos + 30), 1)
+                        
+        except Exception as e:
+            print(f"Error cargando salón de la fama: {e}")
+            error_text = self.fuente_salon.render("Error al cargar el salón de la fama", True, (255, 50, 50))
+            error_rect = error_text.get_rect(center=(self.WIN_W // 2, self.WIN_H // 2))
+            self.screen.blit(error_text, error_rect)
+        
+        # Botón Volver
+        self._dibujar_boton(self.boton_volver)
     
     def _procesar_eventos(self):
         for event in pygame.event.get():
@@ -198,48 +364,71 @@ class PantallaDificultad:
             elif event.type == pygame.MOUSEMOTION:
                 # Actualizar estado hover de los botones
                 mouse_pos = pygame.mouse.get_pos()
-                for dificultad, boton in self.botones.items():
-                    boton["hover"] = boton["rect"].collidepoint(mouse_pos)
+                
+                if self.mostrar_salon_fama:
+                    self.boton_volver["hover"] = self.boton_volver["rect"].collidepoint(mouse_pos)
+                else:
+                    for dificultad, boton in self.botones.items():
+                        boton["hover"] = boton["rect"].collidepoint(mouse_pos)
+                    self.boton_salon["hover"] = self.boton_salon["rect"].collidepoint(mouse_pos)
             
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:  # Click izquierdo
                     mouse_pos = pygame.mouse.get_pos()
-                    for dificultad, boton in self.botones.items():
-                        if boton["rect"].collidepoint(mouse_pos):
-                            self.dificultad_seleccionada = dificultad
-                            self.running = False
+                    
+                    if self.mostrar_salon_fama:
+                        if self.boton_volver["rect"].collidepoint(mouse_pos):
+                            self.mostrar_salon_fama = False
+                    else:
+                        # Verificar botón Salón de la Fama
+                        if self.boton_salon["rect"].collidepoint(mouse_pos):
+                            self.mostrar_salon_fama = True
+                        
+                        # Verificar botones de dificultad
+                        for dificultad, boton in self.botones.items():
+                            if boton["rect"].collidepoint(mouse_pos):
+                                self.dificultad_seleccionada = dificultad
+                                self.running = False
             
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    self.running = False
-                    self.dificultad_seleccionada = "salir"
-                elif event.key == pygame.K_1 or event.key == pygame.K_KP1:
-                    self.dificultad_seleccionada = "facil"
-                    self.running = False
-                elif event.key == pygame.K_2 or event.key == pygame.K_KP2:
-                    self.dificultad_seleccionada = "medio"
-                    self.running = False
-                elif event.key == pygame.K_3 or event.key == pygame.K_KP3:
-                    self.dificultad_seleccionada = "dificil"
-                    self.running = False
-    def _dibujar_interfaz(self):
+                    if self.mostrar_salon_fama:
+                        self.mostrar_salon_fama = False
+                    else:
+                        self.running = False
+                        self.dificultad_seleccionada = "salir"
+                elif not self.mostrar_salon_fama:
+                    if event.key == pygame.K_1 or event.key == pygame.K_KP1:
+                        self.dificultad_seleccionada = "facil"
+                        self.running = False
+                    elif event.key == pygame.K_2 or event.key == pygame.K_KP2:
+                        self.dificultad_seleccionada = "medio"
+                        self.running = False
+                    elif event.key == pygame.K_3 or event.key == pygame.K_KP3:
+                        self.dificultad_seleccionada = "dificil"
+                        self.running = False
+    
+    def _dibujar_interfaz_principal(self):
         # Fondo
         self.screen.fill(self.col_fondo)
         
-        # Panel central - AUMENTAR ALTURA para acomodar mejor los botones
-        panel_rect = pygame.Rect(self.WIN_W//2 - 450, self.WIN_H//2 - 350, 900, 700)  # Aumentada altura de 600 a 700
+        # Panel central
+        panel_rect = pygame.Rect(self.WIN_W//2 - 450, self.WIN_H//2 - 350, 900, 700)
         pygame.draw.rect(self.screen, self.col_ventana, panel_rect, border_radius=25)
         pygame.draw.rect(self.screen, self._ajustar_color(self.col_ventana, 1.1), 
                        panel_rect, width=4, border_radius=25)
         
-        # Título - Ajustar posición para centrar mejor
+        # Título
         titulo_surface = self.fuente_titulo.render(self.t("SELECCIONA LA DIFICULTAD"), True, self.col_texto)
-        titulo_rect = titulo_surface.get_rect(center=(self.WIN_W//2, self.WIN_H//2 - 250))  # Ajustada posición
+        titulo_rect = titulo_surface.get_rect(center=(self.WIN_W//2, self.WIN_H//2 - 250))
         self.screen.blit(titulo_surface, titulo_rect)
         
-        # Dibujar botones
+        # Dibujar botones de dificultad
         for dificultad, boton in self.botones.items():
-            self._dibujar_boton(boton, dificultad)
+            self._dibujar_boton(boton)
+        
+        # Dibujar botón Salón de la Fama
+        self._dibujar_boton(self.boton_salon, self.col_btn_secundario)
         
         # Instrucciones
         instrucciones = self.t("Presiona ESC para salir • 1=Fácil • 2=Medio • 3=Difícil")
@@ -250,7 +439,12 @@ class PantallaDificultad:
     def run(self):
         while self.running and not self.dificultad_seleccionada:
             self._procesar_eventos()
-            self._dibujar_interfaz()
+            
+            if self.mostrar_salon_fama:
+                self._dibujar_salon_fama()
+            else:
+                self._dibujar_interfaz_principal()
+                
             pygame.display.flip()
             self.clock.tick(60)
         
@@ -285,8 +479,6 @@ def main(username: str, lang: str = "es"):
     # === LLÁMALA ANTES DE DIBUJAR NADA ===
     _aplicar_tema_desde_perfiles()
 
-
-
     if dificultad and dificultad != "salir":
         # Iniciar el juego después de seleccionar dificultad
         try:
@@ -298,7 +490,6 @@ def main(username: str, lang: str = "es"):
             juego = Interfaz(dificultad=dificultad, puntaje_acumulado=0, usuario=username)
             juego.ejecutar()
 
-            
         except Exception as e:
             print(f"Error al iniciar el juego: {e}")
             

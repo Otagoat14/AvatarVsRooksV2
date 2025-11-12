@@ -55,13 +55,13 @@ class Juego:
         """Configura los modificadores según la dificultad"""
         if self.dificultad == "facil":
             self.modificador_spawn = 1.0    # Spawn normal
-            self.tiempo_total = 6          # 60 segundos
+            self.tiempo_total = 60          # 60 segundos
         elif self.dificultad == "medio":
             self.modificador_spawn = 1.25   # 25% más rápido
-            self.tiempo_total = 7          # 60 + 25% = 75 segundos
+            self.tiempo_total = 75          # 60 + 25% = 75 segundos
         elif self.dificultad == "dificil":
             self.modificador_spawn = 1.5    # 50% más rápido  
-            self.tiempo_total = 9          # 60 + 50% = 90 segundos
+            self.tiempo_total = 90          # 60 + 50% = 90 segundos
         else:
             self.modificador_spawn = 1.0
             self.tiempo_total = 60
@@ -230,6 +230,8 @@ class Juego:
         
         self.actualizar_rooks_recursivo(indice + 1)
 
+    # En la función actualizar_avatares_recursivo, modifica la llamada a mover:
+    # En la función actualizar_avatares_recursivo, modifica la llamada a mover:
     def actualizar_avatares_recursivo(self, indice=0):
         if indice >= len(self.avatares_activos):
             return
@@ -243,20 +245,23 @@ class Juego:
             if fila_objetivo != fila_actual and not avatar.en_movimiento:
                 if not self.casilla_ocupada_por_avatar(fila_objetivo, avatar.x_columna) and \
                 not self.casilla_ocupada_por_rook(fila_objetivo, avatar.x_columna):
-                    llego_a_cero = avatar.mover()
+                    # Pasar self (juego) como parámetro para verificar movimiento
+                    llego_a_cero = avatar.mover(self)
                 else:
                     avatar.y_fila_objetivo = avatar.y_fila
                     avatar.en_movimiento = False
                     llego_a_cero = False
             else:
-                llego_a_cero = avatar.mover()
+                # Pasar self (juego) como parámetro para verificar movimiento
+                llego_a_cero = avatar.mover(self)
             
             # Verificar si el avatar llegó al final (fila 0 o menos)
             if avatar.y_fila <= 0:
                 self.game_over = True
                 return
             
-            avatar.disparar()
+            # Pasar self (juego) como parámetro para verificar ataque
+            avatar.disparar(self)
             avatar.actualizar_balas()
         
         self.actualizar_avatares_recursivo(indice + 1)
