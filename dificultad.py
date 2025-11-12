@@ -6,6 +6,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from perfiles import cargar_perfil
+from perfiles import obtener_colores
 from Clases_auxiliares.musica import MUSICA
 from Traductor import dic_idiomas
 
@@ -25,6 +26,17 @@ class PantallaDificultad:
         self.info = pygame.display.Info()
         self.WIN_W = self.info.current_w
         self.WIN_H = self.info.current_h
+
+        try:
+            from perfiles import obtener_paleta_personalizada
+            paleta = obtener_paleta_personalizada(self.username)
+            self.FONDO_PANTALLA = paleta["FONDO_PANTALLA"]
+            self.CARD_BG = paleta["CARD_BG"]
+            self.COLOR_BOTONES = paleta["COLOR_BOTONES"]
+            self.COLOR_TEXT_TITU = paleta["COLOR_TEXT_TITU"]
+            self.COLOR_TEXT_CUER = paleta["COLOR_TEXT_CUER"]
+        except Exception as e:
+            print(f"No se aplicó personalización en dificultad: {e}")
         
         self.screen = pygame.display.set_mode((self.WIN_W, self.WIN_H), pygame.FULLSCREEN)
         pygame.display.set_caption(t("Selección de Dificultad"))
@@ -45,23 +57,22 @@ class PantallaDificultad:
         # Estado
         self.dificultad_seleccionada = None
         self.running = True
-    
+        
     def _cargar_tema_usuario(self):
         try:
-            perfil = cargar_perfil(self.username)
-            if perfil and perfil.get('tema'):
-                return perfil['tema']
+            from perfiles import obtener_colores
+            return obtener_colores(self.username)
         except Exception as e:
             print(f"Error cargando tema: {e}")
-        
-        # Tema por defecto si no hay personalización
-        return {
-            "fondo": {"rgb": [20, 22, 26]},
-            "texto": {"rgb": [245, 245, 245]},
-            "ventana": {"rgb": [34, 38, 44]},
-            "btn_primario": {"rgb": [180, 68, 68]},
-            "btn_secundario": {"rgb": [68, 68, 76]}
-        }
+            return {
+                "fondo": {"rgb": [20, 22, 26]},
+                "texto": {"rgb": [245, 245, 245]},
+                "ventana": {"rgb": [34, 38, 44]},
+                "btn_primario": {"rgb": [180, 68, 68]},
+                "btn_secundario": {"rgb": [68, 68, 76]}
+            }
+
+
     
     def _aplicar_tema(self):
         self.col_fondo = tuple(self.tema["fondo"]["rgb"])
@@ -249,6 +260,33 @@ def main(username: str, lang: str = "es"):
     pantalla = PantallaDificultad(username, lang)
     dificultad = pantalla.run()
     
+    def _aplicar_tema_desde_perfiles():
+        """
+        Lee el tema del usuario y pisa los colores globales de esta ventana.
+        Ajusta aquí los nombres de tus variables de color locales.
+        """
+        global COLOR_FONDO, COLOR_TEXTO, BTN_BG, BTN_HOVER, SUBTEXTO  # o las que uses en dificultad.py
+        col = obtener_colores(username)
+        if not col:
+            return
+        # Mapa clave->variable_local
+        mapeo = {
+            "fondo": "COLOR_FONDO",
+            "ventana": "SUBTEXTO",        # si tienes un color para panel/fondo de tarjetas
+            "btn_primario": "BTN_BG",
+            "btn_secundario": "BTN_HOVER",
+            "texto": "COLOR_TEXTO",
+        }
+        for k, var in mapeo.items():
+            if k in col and "rgb" in col[k]:
+                rgb = tuple(col[k]["rgb"])
+                globals()[var] = rgb
+
+    # === LLÁMALA ANTES DE DIBUJAR NADA ===
+    _aplicar_tema_desde_perfiles()
+
+
+
     if dificultad and dificultad != "salir":
         # Iniciar el juego después de seleccionar dificultad
         try:
@@ -257,9 +295,9 @@ def main(username: str, lang: str = "es"):
             
             # Importar y ejecutar el juego
             from Interfaz_Juego import Interfaz
-            juego = Interfaz(dificultad=dificultad, puntaje_acumulado=0) 
-            
+            juego = Interfaz(dificultad=dificultad, puntaje_acumulado=0, usuario=username)
             juego.ejecutar()
+
             
         except Exception as e:
             print(f"Error al iniciar el juego: {e}")

@@ -24,10 +24,49 @@ VENT_ANCHO, VENT_ALTO = 800, 500
 
 
 class VentanaGameOver:
-    def __init__(self, main_surface):
+    def __init__(self, main_surface, paleta=None, username=None):
         pygame.init()
         pygame.mixer.init()
-        
+
+        # === Aplicar tema del usuario ===
+        # === Aplicar personalización (MEJORADO) ===
+        self.username = username
+        self.paleta = paleta
+
+        try:
+            if self.paleta is None and self.username:
+                from perfiles import obtener_paleta_personalizada
+                self.paleta = obtener_paleta_personalizada(self.username)
+        except Exception as e:
+            print(f"No se pudo obtener paleta del usuario: {e}")
+            self.paleta = None
+
+        # Colores por defecto
+        global FONDO_PANTALLA, CARD_BG, CARD_BORDER, COLOR_TEXT_TITU, COLOR_TEXT_CUER, COLOR_BOTONES, HOVER
+        FONDO_PANTALLA = PALETA["charcoal"]
+        CARD_BG = PALETA["ruby"]
+        CARD_BORDER = PALETA["snow"]
+        COLOR_TEXT_TITU = PALETA["snow"]
+        COLOR_TEXT_CUER = PALETA["taupe"]
+        COLOR_BOTONES = PALETA["vermilion"]
+        HOVER = (50, 55, 60)
+
+        # Aplicar paleta personalizada (si existe)
+        if isinstance(self.paleta, dict) and self.paleta:
+            FONDO_PANTALLA = self.paleta.get("FONDO_PANTALLA", FONDO_PANTALLA)
+            CARD_BG = self.paleta.get("CARD_BG", CARD_BG)
+            CARD_BORDER = self.paleta.get("CARD_BORDER", CARD_BORDER)
+            COLOR_TEXT_TITU = self.paleta.get("COLOR_TEXT_TITU", COLOR_TEXT_TITU)
+            COLOR_TEXT_CUER = self.paleta.get("COLOR_TEXT_CUER", COLOR_TEXT_CUER)
+            COLOR_BOTONES = self.paleta.get("COLOR_BOTONES", COLOR_BOTONES)
+
+        # Hover dinámico (20% más claro que el botón)
+        try:
+            HOVER = tuple(min(255, int(c * 1.2)) for c in COLOR_BOTONES)
+        except Exception:
+            HOVER = (50, 55, 60)
+
+
         # === Guardar referencia a la ventana principal ===
         self.main_surface = main_surface
         self.original_caption = pygame.display.get_caption()
@@ -104,7 +143,6 @@ class VentanaGameOver:
                     self.accion_usuario = "salir"
                     self.running = False
                 elif e.type == pygame.MOUSEBUTTONDOWN and e.button == 1:
-                    # Ajustar coordenadas del mouse a la ventana modal
                     mouse_x, mouse_y = pygame.mouse.get_pos()
                     modal_mouse_x = mouse_x - self.modal_x
                     modal_mouse_y = mouse_y - self.modal_y
@@ -127,7 +165,7 @@ class VentanaGameOver:
                         self.running = False
 
             # === Dibujar en la superficie modal ===
-            self.modal_surface.fill((0, 0, 0, 0))  # Limpiar con transparencia
+            self.modal_surface.fill(FONDO_PANTALLA)  # ← color de fondo personalizado
 
             # === Partículas ===
             for p in self.particulas:
@@ -170,14 +208,11 @@ class VentanaGameOver:
             
             self.clock.tick(60)
 
-        # === Restaurar el título original ===
         pygame.display.set_caption(self.original_caption[0])
-        
         return self.accion_usuario
 
     # === Método auxiliar para botones ===
     def _dibujar_botones(self):
-        # Ajustar coordenadas del mouse a la ventana modal
         mouse_x, mouse_y = pygame.mouse.get_pos()
         modal_mouse_x = mouse_x - self.modal_x
         modal_mouse_y = mouse_y - self.modal_y
@@ -200,7 +235,8 @@ class VentanaGameOver:
                 rect.centery - btn_scaled.get_height() // 2
             ))
 
-            label = self.font_boton.render(texto, True, COLOR_TEXT_TITU)
+            label_color = COLOR_TEXT_TITU if not hover else COLOR_TEXT_CUER
+            label = self.font_boton.render(texto, True, label_color)
             self.modal_surface.blit(label, (
                 rect.centerx - label.get_width() // 2,
                 rect.centery - label.get_height() // 2

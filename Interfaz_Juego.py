@@ -29,7 +29,7 @@ COLOR_BALA = (255, 255, 100)
 # En Interfaz_Juego.py, modifica la clase Interfaz:
 
 class Interfaz:
-    def __init__(self, dificultad="facil", puntaje_acumulado=0):  
+    def __init__(self, dificultad="facil", puntaje_acumulado=0, usuario = None):  
         pygame.init()
 
         try:
@@ -55,16 +55,21 @@ class Interfaz:
         # PUNTAJE ACUMULADO
         self.puntaje_acumulado = puntaje_acumulado
 
+        # Usuario actual (preferir el que viene desde la dificultad/login)
+        self.usuario_actual = usuario
+        if not self.usuario_actual:
+            try:
+                from Clases_auxiliares.credenciales import cargar_credenciales
+                u, _ = cargar_credenciales()
+                self.usuario_actual = u or "Jugador"
+            except Exception:
+                self.usuario_actual = "Jugador"
+
+
         # CARGAR PERSONALIZACIÓN DEL USUARIO
         self.cargar_personalizacion()
-
-        # Usuario actual real
-        try:
-            from Clases_auxiliares.credenciales import cargar_credenciales
-            usuario, _ = cargar_credenciales()
-            self.usuario_actual = usuario or "Jugador"
-        except Exception:
-            self.usuario_actual = "Jugador"
+        self.pantalla.fill(COLOR_FONDO)
+        pygame.display.flip()
 
         # Crear el juego pasando usuario y puntaje acumulado
         self.juego = Juego(dificultad=self.dificultad_actual, 
@@ -157,38 +162,50 @@ class Interfaz:
 
     def cargar_personalizacion(self):
         try:
-            from perfiles import cargar_personalizacion
-            from Clases_auxiliares.credenciales import cargar_credenciales
-            
-            # Obtener usuario actual
-            usuario, _ = cargar_credenciales()
-            if usuario:
-                personalizacion = cargar_personalizacion(usuario)
-                if personalizacion and "colores" in personalizacion:
-                    self.aplicar_colores_personalizados(personalizacion["colores"])
+            from perfiles import obtener_colores
+            colores = obtener_colores(self.usuario_actual)
+            if colores:
+                self.aplicar_colores_personalizados(colores)
+                return
+            self.aplicar_colores_por_defecto()
+        except Exception:
+            self.aplicar_colores_por_defecto()
 
-            self.aplicar_colores_por_defecto()
-            
-        except Exception as e:
-            self.aplicar_colores_por_defecto()
 
     def aplicar_colores_personalizados(self, colores):
         global COLOR_FONDO, CELDA_VACIA, CELDA_OCUPADA, LINEA, COLOR_ROOK, COLOR_AVATAR, COLOR_BALA
         
         try:
-            mapeo_colores = {
-                "fondo": "COLOR_FONDO",
-                "ventana": "CELDA_VACIA", 
-                "btn_primario": "COLOR_ROOK",
-                "btn_secundario": "COLOR_AVATAR",
-                "texto": "COLOR_BALA"
-            }
-            
-            for clave_personalizacion, variable_juego in mapeo_colores.items():
-                if clave_personalizacion in colores:
-                    rgb = colores[clave_personalizacion]["rgb"]
-                    globals()[variable_juego] = tuple(rgb)
-                    
+            # Esperamos que 'colores' tenga claves como "fondo","ventana","btn_primario","btn_secundario","texto"
+            def to_rgb(c):
+                try:
+                    return tuple(c["rgb"])
+                except Exception:
+                    return None
+                
+            if "fondo" in colores:
+                v = to_rgb(colores["fondo"])
+                if v: COLOR_FONDO = v
+            if "ventana" in colores:
+                v = to_rgb(colores["ventana"])
+                if v:
+                    # usar para celdas vacías / fondo de tarjetas
+                    CELDA_VACIA = v
+                    LINEA = tuple(max(0, int(c * 0.9)) for c in v)  # linea un poco más oscura
+            if "btn_primario" in colores:
+                v = to_rgb(colores["btn_primario"])
+                if v:
+                    COLOR_ROOK = v
+                    CELDA_OCUPADA = tuple(max(0, int(c * 0.85)) for c in v)
+            if "btn_secundario" in colores:
+                v = to_rgb(colores["btn_secundario"])
+                if v:
+                    COLOR_AVATAR = v
+            if "texto" in colores:
+                v = to_rgb(colores["texto"])
+                if v:
+                    COLOR_BALA = v
+
         except Exception as e:
             self.aplicar_colores_por_defecto()
 
@@ -660,7 +677,9 @@ class Interfaz:
                 # Verificar si llegó al salón de la fama
                 if self.puntaje_registrado and self.info_resultado and self.info_resultado['es_top']:
                     # Usar animación de salón de la fama
-                    accion = VentanaSalonFama(self.pantalla).run()
+                    ventana_fama = VentanaSalonFama(self.pantalla, paleta=self._paleta_usuario(), username=self.usuario_actual)
+                    ventana_fama.run()
+
                 else:
                     # Usar animación final del juego sin salón de la fama
                     accion = VentanaFinalJuego(self.pantalla).run()
@@ -691,7 +710,7 @@ class Interfaz:
             
         else:
             # PARA DERROTA
-            accion = VentanaGameOver(self.pantalla).run()  
+            accion = VentanaGameOver(self.pantalla, paleta=self._paleta_usuario(), username=self.usuario_actual).run()
 
             if accion == "reiniciar":
                 # Reiniciar nivel actual manteniendo el puntaje acumulado
@@ -705,11 +724,17 @@ class Interfaz:
                 pygame.quit()
                 sys.exit()
 
-
+    def _paleta_usuario(self):
+        try:
+            from perfiles import obtener_paleta_personalizada
+            return obtener_paleta_personalizada(self.usuario_actual)
+        except Exception:
+            return None
 
     def mostrar_ventana_victoria(self):
-        ventana_win = VentanaWin(self.pantalla)
+        ventana_win = VentanaWin(self.pantalla, paleta=self._paleta_usuario(), username=self.usuario_actual)
         return ventana_win.run_modificado()
+
 
     def ejecutar(self):
         # Posiciones
@@ -797,14 +822,21 @@ class Interfaz:
                 if accion == "continuar":
                     continue  # Continuar con el siguiente nivel
                 elif accion == "menu":
-                    pygame.quit()
-                    # IMPORTANTE: Importar y ejecutar la pantalla de dificultad
                     from dificultad import main as main_dificultad
-                    main_dificultad(self.usuario_actual)
+                    pygame.display.quit()
+                    try:
+                        from Clases_auxiliares.credenciales import cargar_preferencias
+                        prefs = cargar_preferencias()
+                        lang_actual = prefs.get("idioma", "es")
+                    except:
+                        lang_actual = "es"
+                    
+                    main_dificultad(self.usuario_actual, lang_actual)  # ✅ Ahora pasa ambos parámetros
                     return
+
                 elif accion == "victoria_final":
                     # Mostrar victoria final con la ventana win normal
-                    ventana_final = VentanaWin()
+                    ventana_final = VentanaWin(self.pantalla, paleta=self._paleta_usuario(), username=self.usuario_actual)
                     ventana_final.run()
                     pygame.quit()
                     return
@@ -815,10 +847,16 @@ class Interfaz:
                 if accion == "reiniciar":
                     self.reiniciar_nivel_actual()
                 elif accion == "menu":
-                    pygame.quit()
-                    # IMPORTANTE: Importar y ejecutar la pantalla de dificultad
                     from dificultad import main as main_dificultad
-                    main_dificultad(self.usuario_actual)
+                    pygame.display.quit()
+                    try:
+                        from Clases_auxiliares.credenciales import cargar_preferencias
+                        prefs = cargar_preferencias()
+                        lang_actual = prefs.get("idioma", "es")
+                    except:
+                        lang_actual = "es"
+                    
+                    main_dificultad(self.usuario_actual, lang_actual)  # ✅ Ahora pasa ambos parámetros
                     return
                 elif accion == "salir":
                     pygame.quit()

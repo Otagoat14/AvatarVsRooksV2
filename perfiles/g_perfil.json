@@ -1,0 +1,42 @@
+{
+  "usuario": "g",
+  "personalizado": true,
+  "tema": {
+    "fondo": {
+      "rgb": [
+        255,
+        233,
+        230
+      ]
+    },
+    "texto": {
+      "rgb": [
+        245,
+        245,
+        245
+      ]
+    },
+    "ventana": {
+      "rgb": [
+        255,
+        201,
+        194
+      ]
+    },
+    "btn_primario": {
+      "rgb": [
+        255,
+        42,
+        13
+      ]
+    },
+    "btn_secundario": {
+      "rgb": [
+        255,
+        105,
+        85
+      ]
+    }
+  },
+  "musica": null
+}
