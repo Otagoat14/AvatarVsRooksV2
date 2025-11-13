@@ -1,0 +1,40 @@
+{
+  "colores": {
+    "fondo": {
+      "rgb": [
+        236,
+        241,
+        231
+      ]
+    },
+    "texto": {
+      "rgb": [
+        245,
+        245,
+        245
+      ]
+    },
+    "ventana": {
+      "rgb": [
+        208,
+        222,
+        195
+      ]
+    },
+    "btn_primario": {
+      "rgb": [
+        67,
+        124,
+        15
+      ]
+    },
+    "btn_secundario": {
+      "rgb": [
+        123,
+        163,
+        87
+      ]
+    }
+  },
+  "musica": "spotify:track:demo123"
+}
