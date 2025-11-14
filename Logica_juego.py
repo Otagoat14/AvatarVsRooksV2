@@ -27,6 +27,8 @@ class Juego:
         self.tiempo_inicio = 0
         self.ultima_notificacion = ""
         self.tiempo_notificacion = 0
+
+        self.en_preparacion = True
         
         # PUNTAJE ACUMULADO entre niveles
         self.puntaje_acumulado = puntaje_acumulado
@@ -47,6 +49,27 @@ class Juego:
         # Inicializar último spawn
         for avatar_info in self.obtener_avatares_info():
             self.ultimo_spawn[avatar_info["tipo"]] = 0
+    
+    def iniciar_juego(self, preparacion=False):
+        """Inicia el juego, opcionalmente en modo preparación"""
+        self.juego_iniciado = True
+        self.game_over = False
+        self.victoria = False
+        self.en_preparacion = preparacion  # Nuevo estado
+        
+        # Usar el tiempo total configurado por dificultad
+        self.tiempo_restante = self.tiempo_total
+        self.tiempo_inicio = time.time() if not preparacion else 0
+        
+        tiempo_actual = time.time()
+        for avatar_info in self.obtener_avatares_info():
+            self.ultimo_spawn[avatar_info["tipo"]] = tiempo_actual
+
+    def iniciar_ronda(self):
+        """Inicia la ronda (comienza el tiempo y los spawns)"""
+        self.en_preparacion = False
+        self.tiempo_inicio = time.time()
+        print("¡Ronda iniciada! Los avatares comenzarán a aparecer.")
 
     def obtener_puntaje_acumulado(self):
         return self.puntaje_acumulado + self.calculador_puntaje.calcular_puntaje()
@@ -166,6 +189,10 @@ class Juego:
 
 
     def spawn_avatares_recursivo(self, indice=0):
+        """Solo spawnea avatares si no está en preparación"""
+        if self.en_preparacion:
+            return
+            
         if indice >= len(self.obtener_avatares_info()):
             return
         
@@ -173,13 +200,7 @@ class Juego:
         tiempo_actual = time.time()
         tiempo_desde_ultimo = tiempo_actual - self.ultimo_spawn[avatar_info["tipo"]]
         
-        # DEBUG: Mostrar información de spawn
-        if indice == 0 and random.random() < 0.01:  # Solo ocasionalmente para no spammear
-            print(f"Dificultad: {self.dificultad}, Modificador: {self.modificador_spawn}")
-            print(f"Flechero - Intervalo: {avatar_info['intervalo_spawn']:.2f}s")
-        
         if tiempo_desde_ultimo >= avatar_info["intervalo_spawn"]:
-            # AUMENTAR probabilidad de spawn según dificultad
             probabilidad_base = avatar_info["probabilidad_spawn"]
             probabilidad_modificada = probabilidad_base * self.modificador_spawn
             
@@ -432,6 +453,10 @@ class Juego:
         return False
     
     def actualizar_tiempo(self):
+        """Solo actualiza el tiempo si la ronda está activa"""
+        if self.en_preparacion:
+            return
+            
         if self.juego_iniciado and self.tiempo_restante > 0:
             tiempo_actual = time.time()
             tiempo_transcurrido = int(tiempo_actual - self.tiempo_inicio)
@@ -451,9 +476,10 @@ class Juego:
                     self.game_over = True
                     print("DERROTA - Los avatares llegaron a la base")
                 else:
-                    # Victoria: tiempo acabó y ningún avatar llegó al final (no importa si hay rooks o no)
+                    # Victoria: tiempo acabó y ningún avatar llegó al final
                     self.victoria = True
                     print(f"¡VICTORIA! Sobreviviste {self.tiempo_total} segundos")
+
 
    
     #Funciones para lo que es el puntaje 
@@ -463,18 +489,6 @@ class Juego:
 
     def obtener_detalles_puntaje(self):
         return self.calculador_puntaje.obtener_detalles()
-
-    def iniciar_juego(self):
-        self.juego_iniciado = True
-        self.game_over = False
-        self.victoria = False
-        # Usar el tiempo total configurado por dificultad
-        self.tiempo_restante = self.tiempo_total
-        self.tiempo_inicio = time.time()
-        
-        tiempo_actual = time.time()
-        for avatar_info in self.obtener_avatares_info():
-            self.ultimo_spawn[avatar_info["tipo"]] = tiempo_actual
 
     def reiniciar_juego(self):
         self.matriz = [[VACIO for c in range(COLUMNAS)] for f in range(FILAS)]
@@ -497,6 +511,9 @@ class Juego:
         self.puntos_acumulados_avatars = 0
         self.calculador_puntaje = CalculadorPuntaje(self.calculador_puntaje.usuario)
         
+        # Reiniciar estado de preparación
+        self.en_preparacion = True  # Agregar esta línea
+        
         # Reiniciar último spawn
         tiempo_actual = time.time()
         for avatar_info in self.obtener_avatares_info():
@@ -507,10 +524,13 @@ class Juego:
         self.tiempo_notificacion = 0
 
     def actualizar(self):
+        """Actualiza la lógica del juego solo si no está en preparación"""
+        if self.en_preparacion:
+            return
+            
         if self.juego_iniciado and not self.game_over and not self.victoria:
             self.actualizar_tiempo()  
             
-    
             if not self.game_over and not self.victoria:
                 self.spawn_avatares_recursivo()
                 self.actualizar_rooks_recursivo()

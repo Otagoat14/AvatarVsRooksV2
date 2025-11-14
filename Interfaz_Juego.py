@@ -105,6 +105,68 @@ class Interfaz:
         # fondo de la matriz
         self.fondo_matriz = pygame.image.load("Imagenes/fondo.png").convert_alpha()
         self.fondo_matriz = pygame.transform.scale(self.fondo_matriz, (ANCHO, ALTO))
+
+        # Estado de la ronda
+        self.ronda_iniciada = False
+        self.boton_iniciar_ronda = None
+        self._crear_boton_iniciar()
+    
+    def _crear_boton_iniciar(self):
+        """Crea el botón para iniciar la ronda"""
+        ancho_boton = 200
+        alto_boton = 60
+        x = 50  # Posición en la esquina superior izquierda
+        y = 300  # Debajo del puntaje
+        
+        self.boton_iniciar_ronda = {
+            "rect": pygame.Rect(x, y, ancho_boton, alto_boton),
+            "texto": "INICIAR RONDA",
+            "hover": False,
+            "activo": True
+        }
+
+    def dibujar_boton_iniciar(self):
+        """Dibuja el botón de iniciar ronda"""
+        if not self.ronda_iniciada and self.boton_iniciar_ronda["activo"]:
+            boton = self.boton_iniciar_ronda
+            rect = boton["rect"]
+            
+            # Color según estado
+            if boton["hover"]:
+                color = (80, 160, 80)  # Verde más claro al hover
+            else:
+                color = (60, 140, 60)  # Verde normal
+            
+            # Dibujar botón
+            pygame.draw.rect(self.pantalla, color, rect, border_radius=8)
+            pygame.draw.rect(self.pantalla, (200, 200, 200), rect, width=2, border_radius=8)
+            
+            # Dibujar texto
+            try:
+                fuente_boton = pygame.font.Font("Fuentes/super_sliced.otf", 20)
+            except:
+                fuente_boton = pygame.font.SysFont("segoeui", 20, bold=True)
+            
+            texto_surface = fuente_boton.render(boton["texto"], True, (255, 255, 255))
+            texto_rect = texto_surface.get_rect(center=rect.center)
+            self.pantalla.blit(texto_surface, texto_rect)
+
+    def verificar_click_boton_iniciar(self, mouse_pos):
+        """Verifica si se hizo click en el botón de iniciar ronda"""
+        if (not self.ronda_iniciada and 
+            self.boton_iniciar_ronda["activo"] and 
+            self.boton_iniciar_ronda["rect"].collidepoint(mouse_pos)):
+            
+            self.ronda_iniciada = True
+            self.boton_iniciar_ronda["activo"] = False  # Desactivar después de iniciar
+            self.juego.iniciar_ronda()  # Método que agregaremos en Logica_juego.py
+            return True
+        return False
+
+    def actualizar_estado_boton(self, mouse_pos):
+        """Actualiza el estado hover del botón"""
+        if self.boton_iniciar_ronda["activo"]:
+            self.boton_iniciar_ronda["hover"] = self.boton_iniciar_ronda["rect"].collidepoint(mouse_pos)
     
     def reproducir_cancion_usuario(self):
         try:
@@ -513,22 +575,27 @@ class Interfaz:
             self.mostrar_notificacion(self.juego.ultima_notificacion)
 
     def dibujar_contador_tiempo(self):
-        mins, secs = divmod(self.juego.tiempo_restante, 60)
-        texto_tiempo = f"Tiempo: {mins:02d}:{secs:02d}"
-        
-        # Cambiar color cuando queda poco tiempo
-        if self.juego.tiempo_restante > 30:
-            color = (255, 255, 255)
-        elif self.juego.tiempo_restante > 10:
-            color = (255, 200, 0)  # Amarillo
+        if not self.ronda_iniciada:
+            # Mostrar "PREPARACIÓN" en lugar del tiempo
+            texto_tiempo = "PREPARACIÓN"
+            color = (255, 255, 100)  # Amarillo para preparación
         else:
-            color = (255, 50, 50)  # Rojo
+            mins, secs = divmod(self.juego.tiempo_restante, 60)
+            texto_tiempo = f"Tiempo: {mins:02d}:{secs:02d}"
+            
+            # Cambiar color cuando queda poco tiempo (código existente)
+            if self.juego.tiempo_restante > 30:
+                color = (255, 255, 255)
+            elif self.juego.tiempo_restante > 10:
+                color = (255, 200, 0)
+            else:
+                color = (255, 50, 50)
         
         superficie_tiempo = self.fuente_texto.render(texto_tiempo, False, color)
         self.pantalla.blit(superficie_tiempo, (50, 120))
         
-        # Mostrar mensaje especial cuando el tiempo está por acabarse
-        if self.juego.tiempo_restante <= 10 and self.juego.tiempo_restante > 0:
+        # Mostrar mensaje especial cuando el tiempo está por acabarse (solo si la ronda inició)
+        if self.ronda_iniciada and self.juego.tiempo_restante <= 10 and self.juego.tiempo_restante > 0:
             fuente_alerta = pygame.font.Font("Fuentes/super_sliced.otf", 16)
             texto_alerta = f"¡{self.juego.tiempo_restante} segundos restantes!"
             alerta_surface = fuente_alerta.render(texto_alerta, False, (255, 100, 100))
@@ -744,8 +811,8 @@ class Interfaz:
         matriz_y = (self.ALTO_PANTALLA - ALTO) // 2
         tienda_x = self.ANCHO_PANTALLA - ANCHO
 
-        # Iniciar juego automáticamente
-        self.juego.iniciar_juego()
+        # Iniciar juego en modo preparación
+        self.juego.iniciar_juego(preparacion=True)
 
         while True:
             for event in pygame.event.get():
@@ -753,9 +820,16 @@ class Interfaz:
                     pygame.quit()
                     exit()
 
+                elif event.type == pygame.MOUSEMOTION:
+                    # Actualizar estado hover del botón
+                    self.actualizar_estado_boton(event.pos)
+
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_r and (self.juego.game_over or self.juego.victoria):
                         self.reiniciar_nivel_actual()
+                        # Reiniciar también el estado del botón
+                        self.ronda_iniciada = False
+                        self.boton_iniciar_ronda["activo"] = True
 
                     elif event.key == pygame.K_f:
                         self.mostrar_salon = not self.mostrar_salon
@@ -765,9 +839,18 @@ class Interfaz:
                         else:
                             pygame.quit()
                             exit()
+                    # Atajo de teclado para iniciar ronda (Barra Espaciadora)
+                    elif event.key == pygame.K_SPACE and not self.ronda_iniciada and self.boton_iniciar_ronda["activo"]:
+                        self.ronda_iniciada = True
+                        self.boton_iniciar_ronda["activo"] = False
+                        self.juego.iniciar_ronda()
 
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     mouse_x, mouse_y = pygame.mouse.get_pos()
+
+                    # Verificar click en botón iniciar ronda
+                    if self.verificar_click_boton_iniciar((mouse_x, mouse_y)):
+                        continue  # Saltar el resto del procesamiento de clicks
 
                     # Seleccionar item de tienda
                     item_clickeado = self.obtener_item_clickeado(mouse_x, mouse_y)
@@ -795,8 +878,9 @@ class Interfaz:
                             if self.juego.remover_rook(fila, columna):
                                 print(f"Rook removido de ({fila}, {columna})")
 
-            # Actualizar lógica del juego
-            self.juego.actualizar()
+            # Actualizar lógica del juego SOLO si la ronda está iniciada
+            if self.ronda_iniciada:
+                self.juego.actualizar()
 
             # Dibujar
             self.pantalla.fill(COLOR_FONDO)
@@ -816,6 +900,13 @@ class Interfaz:
 
             # Dibujar UI
             self.dibujar_ui()
+            
+            # Dibujar botón de iniciar ronda
+            self.dibujar_boton_iniciar()
+
+            # Mostrar mensaje de preparación si la ronda no ha iniciado
+            if not self.ronda_iniciada:
+                self.mostrar_mensaje_preparacion()
 
             # Verificar fin del juego y mostrar animaciones
             if self.juego.victoria:
@@ -833,7 +924,7 @@ class Interfaz:
                     except:
                         lang_actual = "es"
                     
-                    main_dificultad(self.usuario_actual, lang_actual)  # ✅ Ahora pasa ambos parámetros
+                    main_dificultad(self.usuario_actual, lang_actual)
                     return
 
                 elif accion == "victoria_final":
@@ -848,6 +939,9 @@ class Interfaz:
                 
                 if accion == "reiniciar":
                     self.reiniciar_nivel_actual()
+                    # Reiniciar estado del botón al reiniciar nivel
+                    self.ronda_iniciada = False
+                    self.boton_iniciar_ronda["activo"] = True
                 elif accion == "menu":
                     from dificultad import main as main_dificultad
                     pygame.display.quit()
@@ -858,7 +952,7 @@ class Interfaz:
                     except:
                         lang_actual = "es"
                     
-                    main_dificultad(self.usuario_actual, lang_actual)  # ✅ Ahora pasa ambos parámetros
+                    main_dificultad(self.usuario_actual, lang_actual)
                     return
                 elif accion == "salir":
                     pygame.quit()
@@ -873,6 +967,32 @@ class Interfaz:
 
             pygame.display.update()
             self.reloj.tick(60)
+    
+    def mostrar_mensaje_preparacion(self):
+        """Muestra mensaje indicando que está en fase de preparación"""
+        fuente_grande = pygame.font.Font("Fuentes/super_sliced.otf", 36)
+        fuente_mediana = pygame.font.Font("Fuentes/super_sliced.otf", 24)
+        
+        # Fondo semitransparente
+        overlay = pygame.Surface((self.ANCHO_PANTALLA, 200))
+        overlay.set_alpha(180)
+        overlay.fill((0, 0, 0))
+        self.pantalla.blit(overlay, (0, self.ALTO_PANTALLA // 2 - 100))
+        
+        # Texto principal
+        texto_preparacion = fuente_grande.render("FASE DE PREPARACIÓN", True, (255, 255, 100))
+        texto_rect = texto_preparacion.get_rect(center=(self.ANCHO_PANTALLA // 2, self.ALTO_PANTALLA // 2 - 30))
+        self.pantalla.blit(texto_preparacion, texto_rect)
+        
+        # Instrucciones
+        instrucciones = fuente_mediana.render("Coloca tus Rooks y presiona INICIAR RONDA cuando estés listo", True, (255, 255, 255))
+        inst_rect = instrucciones.get_rect(center=(self.ANCHO_PANTALLA // 2, self.ALTO_PANTALLA // 2 + 20))
+        self.pantalla.blit(instrucciones, inst_rect)
+        
+        # Atajo de teclado
+        atajo = fuente_mediana.render("(También puedes usar la Barra Espaciadora)", True, (200, 200, 200))
+        atajo_rect = atajo.get_rect(center=(self.ANCHO_PANTALLA // 2, self.ALTO_PANTALLA // 2 + 60))
+        self.pantalla.blit(atajo, atajo_rect)
 
 if __name__ == "__main__":
    
