@@ -32,6 +32,9 @@ class Juego:
         
         # Estado de pausa
         self.juego_pausado = False
+        self.tiempo_pausa_inicio = 0
+        self.tiempo_acumulado_pausa = 0
+        self.tiempo_pausa_total = 0 
 
         # PUNTAJE ACUMULADO entre niveles
         self.puntaje_acumulado = puntaje_acumulado
@@ -58,7 +61,13 @@ class Juego:
         self.juego_iniciado = True
         self.game_over = False
         self.victoria = False
-        self.en_preparacion = preparacion  # Nuevo estado
+        self.en_preparacion = preparacion
+        
+        # Reiniciar contadores de pausa
+        self.juego_pausado = False
+        self.tiempo_pausa_inicio = 0
+        self.tiempo_acumulado_pausa = 0
+        self.tiempo_pausa_total = 0
         
         # Usar el tiempo total configurado por dificultad
         self.tiempo_restante = self.tiempo_total
@@ -72,15 +81,51 @@ class Juego:
         """Inicia la ronda (comienza el tiempo y los spawns)"""
         self.en_preparacion = False
         self.tiempo_inicio = time.time()
+        # Reiniciar contadores de pausa al iniciar ronda
+        self.tiempo_pausa_inicio = 0
+        self.tiempo_acumulado_pausa = 0
+        self.tiempo_pausa_total = 0
         print("¡Ronda iniciada! Los avatares comenzarán a aparecer.")
     
     def pausar(self):
         """Pausa el juego"""
-        self.juego_pausado = True
+        if not self.juego_pausado:
+            self.juego_pausado = True
+            self.tiempo_pausa_inicio = time.time()
+            print("Juego pausado")
 
     def reanudar(self):
         """Reanuda el juego"""
-        self.juego_pausado = False
+        if self.juego_pausado:
+            tiempo_actual = time.time()
+            # Calcular cuánto tiempo estuvo pausado
+            tiempo_en_pausa = tiempo_actual - self.tiempo_pausa_inicio
+            self.tiempo_pausa_total += tiempo_en_pausa
+            
+            # Ajustar los tiempos de los personajes
+            self._ajustar_tiempos_personajes(tiempo_en_pausa)
+            
+            self.juego_pausado = False
+            print(f"Juego reanudado. Tiempo en pausa: {tiempo_en_pausa:.2f}s")
+    
+    def _ajustar_tiempos_personajes(self, tiempo_pausa):
+        """Ajusta los tiempos de los personajes después de una pausa"""
+        # Ajustar rooks
+        for rook in self.rooks_activos:
+            if hasattr(rook, 'ultimo_ataque'):
+                rook.ultimo_ataque += tiempo_pausa
+        
+        # Ajustar avatares
+        for avatar in self.avatares_activos:
+            if hasattr(avatar, 'ultimo_ataque'):
+                avatar.ultimo_ataque += tiempo_pausa
+            if hasattr(avatar, 'ultimo_movimiento'):
+                avatar.ultimo_movimiento += tiempo_pausa
+        
+        # Ajustar últimos spawns
+        for tipo_avatar in self.ultimo_spawn:
+            self.ultimo_spawn[tipo_avatar] += tiempo_pausa
+
 
     def obtener_puntaje_acumulado(self):
         return self.puntaje_acumulado + self.calculador_puntaje.calcular_puntaje()
@@ -209,7 +254,10 @@ class Juego:
         
         avatar_info = self.obtener_avatares_info()[indice]
         tiempo_actual = time.time()
-        tiempo_desde_ultimo = tiempo_actual - self.ultimo_spawn[avatar_info["tipo"]]
+        
+        # Asegurarse de que el último spawn esté ajustado
+        tiempo_ultimo_spawn = self.ultimo_spawn[avatar_info["tipo"]]
+        tiempo_desde_ultimo = tiempo_actual - tiempo_ultimo_spawn
         
         if tiempo_desde_ultimo >= avatar_info["intervalo_spawn"]:
             probabilidad_base = avatar_info["probabilidad_spawn"]
@@ -470,7 +518,8 @@ class Juego:
             
         if self.juego_iniciado and self.tiempo_restante > 0:
             tiempo_actual = time.time()
-            tiempo_transcurrido = int(tiempo_actual - self.tiempo_inicio)
+            # Calcular tiempo transcurrido restando el tiempo en pausa
+            tiempo_transcurrido = int(tiempo_actual - self.tiempo_inicio - self.tiempo_pausa_total)
         
             self.tiempo_restante = max(0, self.tiempo_total - tiempo_transcurrido)
 
@@ -527,6 +576,9 @@ class Juego:
 
         # Reiniciar estado de pausa
         self.juego_pausado = False
+        self.tiempo_pausa_inicio = 0
+        self.tiempo_acumulado_pausa = 0
+        self.tiempo_pausa_total = 0 
         
         # Reiniciar último spawn
         tiempo_actual = time.time()

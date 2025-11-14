@@ -22,7 +22,7 @@ class Personaje:
         self.daño = daño
         self.velocidad_ataque = velocidad_ataque
         self.velocidad = velocidad
-        self.ultimo_ataque = 0  # Cambiar a 0 en lugar de time.time()
+        self.ultimo_ataque = time.time()  # Inicializar con tiempo actual
         self.personaje_vivo = True
         self.balas = []
         self.rango_ataque = 1.0
@@ -150,7 +150,7 @@ class Avatar(Personaje):
         self.velocidad_movimiento = velocidad_movimiento
         self.tipo_avatar = tipo_avatar  
         self.valor_monedas = valor_monedas  
-        self.ultimo_movimiento = 0  # Cambiar a 0 en lugar de time.time()
+        self.ultimo_movimiento = time.time()  # Inicializar con tiempo actual
         self.y_fila_objetivo = float(y_fila)
         self.en_movimiento = False
         
