@@ -110,6 +110,12 @@ class Interfaz:
         self.ronda_iniciada = False
         self.boton_iniciar_ronda = None
         self._crear_boton_iniciar()
+        
+        # Estado de pausa
+        self.juego_pausado = False
+        self.boton_pausa = None
+        self.boton_reanudar = None
+        self._crear_botones_pausa()
     
     def _crear_boton_iniciar(self):
         """Crea el botón para iniciar la ronda"""
@@ -167,6 +173,153 @@ class Interfaz:
         """Actualiza el estado hover del botón"""
         if self.boton_iniciar_ronda["activo"]:
             self.boton_iniciar_ronda["hover"] = self.boton_iniciar_ronda["rect"].collidepoint(mouse_pos)
+
+    def _crear_botones_pausa(self):
+        """Crea los botones de pausa y reanudar"""
+        ancho_boton = 180
+        alto_boton = 50
+        x = 50  # Posición en la esquina superior izquierda
+        y_pausa = 380  # Debajo del botón iniciar
+        y_reanudar = 440  # Debajo del botón pausa
+        
+        self.boton_pausa = {
+            "rect": pygame.Rect(x, y_pausa, ancho_boton, alto_boton),
+            "texto": "⏸️ PAUSAR",
+            "hover": False,
+            "activo": True,
+            "visible": True
+        }
+        
+        self.boton_reanudar = {
+            "rect": pygame.Rect(x, y_reanudar, ancho_boton, alto_boton),
+            "texto": "▶️ REANUDAR",
+            "hover": False,
+            "activo": True,
+            "visible": False  # Inicialmente oculto
+        }
+
+    def dibujar_botones_pausa(self):
+        """Dibuja los botones de pausa y reanudar según el estado del juego"""
+        # Botón de pausa (solo visible cuando el juego está activo y no pausado)
+        if (self.ronda_iniciada and not self.juego_pausado and 
+            self.boton_pausa["activo"] and self.boton_pausa["visible"]):
+            
+            boton = self.boton_pausa
+            rect = boton["rect"]
+            
+            # Color según estado
+            if boton["hover"]:
+                color = (180, 120, 80)  # Naranja más claro al hover
+            else:
+                color = (160, 100, 60)  # Naranja normal
+            
+            # Dibujar botón
+            pygame.draw.rect(self.pantalla, color, rect, border_radius=8)
+            pygame.draw.rect(self.pantalla, (200, 200, 200), rect, width=2, border_radius=8)
+            
+            # Dibujar texto
+            try:
+                fuente_boton = pygame.font.Font("Fuentes/super_sliced.otf", 18)
+            except:
+                fuente_boton = pygame.font.SysFont("segoeui", 18, bold=True)
+            
+            texto_surface = fuente_boton.render(boton["texto"], True, (255, 255, 255))
+            texto_rect = texto_surface.get_rect(center=rect.center)
+            self.pantalla.blit(texto_surface, texto_rect)
+        
+        # Botón de reanudar (solo visible cuando el juego está pausado)
+        if (self.juego_pausado and self.boton_reanudar["activo"] and 
+            self.boton_reanudar["visible"]):
+            
+            boton = self.boton_reanudar
+            rect = boton["rect"]
+            
+            # Color según estado
+            if boton["hover"]:
+                color = (80, 160, 80)  # Verde más claro al hover
+            else:
+                color = (60, 140, 60)  # Verde normal
+            
+            # Dibujar botón
+            pygame.draw.rect(self.pantalla, color, rect, border_radius=8)
+            pygame.draw.rect(self.pantalla, (200, 200, 200), rect, width=2, border_radius=8)
+            
+            # Dibujar texto
+            try:
+                fuente_boton = pygame.font.Font("Fuentes/super_sliced.otf", 18)
+            except:
+                fuente_boton = pygame.font.SysFont("segoeui", 18, bold=True)
+            
+            texto_surface = fuente_boton.render(boton["texto"], True, (255, 255, 255))
+            texto_rect = texto_surface.get_rect(center=rect.center)
+            self.pantalla.blit(texto_surface, texto_rect)
+
+    def verificar_click_botones_pausa(self, mouse_pos):
+        """Verifica si se hizo click en los botones de pausa/reanudar"""
+        # Botón de pausa
+        if (self.ronda_iniciada and not self.juego_pausado and 
+            self.boton_pausa["activo"] and self.boton_pausa["visible"] and
+            self.boton_pausa["rect"].collidepoint(mouse_pos)):
+            
+            self.pausar_juego()
+            return True
+        
+        # Botón de reanudar
+        if (self.juego_pausado and self.boton_reanudar["activo"] and 
+            self.boton_reanudar["visible"] and
+            self.boton_reanudar["rect"].collidepoint(mouse_pos)):
+            
+            self.reanudar_juego()
+            return True
+        
+        return False
+
+    def pausar_juego(self):
+        """Pausa el juego"""
+        self.juego_pausado = True
+        self.boton_pausa["visible"] = False
+        self.boton_reanudar["visible"] = True
+        self.juego.pausar()  # Método que agregaremos en Logica_juego.py
+        print("Juego pausado")
+
+    def reanudar_juego(self):
+        """Reanuda el juego"""
+        self.juego_pausado = False
+        self.boton_pausa["visible"] = True
+        self.boton_reanudar["visible"] = False
+        self.juego.reanudar()  # Método que agregaremos en Logica_juego.py
+        print("Juego reanudado")
+
+    def actualizar_estado_botones_pausa(self, mouse_pos):
+        """Actualiza el estado hover de los botones de pausa/reanudar"""
+        # Botón de pausa
+        if self.boton_pausa["activo"] and self.boton_pausa["visible"]:
+            self.boton_pausa["hover"] = self.boton_pausa["rect"].collidepoint(mouse_pos)
+        
+        # Botón de reanudar
+        if self.boton_reanudar["activo"] and self.boton_reanudar["visible"]:
+            self.boton_reanudar["hover"] = self.boton_reanudar["rect"].collidepoint(mouse_pos)
+    
+    def mostrar_mensaje_pausa(self):
+        """Muestra mensaje indicando que el juego está pausado"""
+        fuente_grande = pygame.font.Font("Fuentes/super_sliced.otf", 48)
+        fuente_mediana = pygame.font.Font("Fuentes/super_sliced.otf", 24)
+        
+        # Fondo semitransparente
+        overlay = pygame.Surface((self.ANCHO_PANTALLA, self.ALTO_PANTALLA))
+        overlay.set_alpha(150)
+        overlay.fill((0, 0, 0))
+        self.pantalla.blit(overlay, (0, 0))
+        
+        # Texto principal
+        texto_pausa = fuente_grande.render("JUEGO EN PAUSA", True, (255, 255, 100))
+        texto_rect = texto_pausa.get_rect(center=(self.ANCHO_PANTALLA // 2, self.ALTO_PANTALLA // 2 - 50))
+        self.pantalla.blit(texto_pausa, texto_rect)
+        
+        # Instrucciones
+        instrucciones = fuente_mediana.render("Presiona P o el botón REANUDAR para continuar", True, (255, 255, 255))
+        inst_rect = instrucciones.get_rect(center=(self.ANCHO_PANTALLA // 2, self.ALTO_PANTALLA // 2 + 20))
+        self.pantalla.blit(instrucciones, inst_rect)
     
     def reproducir_cancion_usuario(self):
         try:
@@ -216,11 +369,15 @@ class Interfaz:
         """Reinicia el nivel actual"""
         # Mantener el puntaje acumulado al reiniciar
         self.juego = Juego(dificultad=self.dificultad_actual, 
-                          usuario=self.usuario_actual, 
-                          puntaje_acumulado=self.puntaje_acumulado)
-        self.juego.iniciar_juego()
+                        usuario=self.usuario_actual, 
+                        puntaje_acumulado=self.puntaje_acumulado)
+        # Cambiar esta línea:
+        self.juego.iniciar_juego(preparacion=True)  # Agregar preparacion=True
         self.puntaje_registrado = False
         self.info_resultado = None
+        # También reiniciar el estado del botón
+        self.ronda_iniciada = False
+        self.boton_iniciar_ronda["activo"] = True
 
     def cargar_personalizacion(self):
         try:
@@ -579,6 +736,10 @@ class Interfaz:
             # Mostrar "PREPARACIÓN" en lugar del tiempo
             texto_tiempo = "PREPARACIÓN"
             color = (255, 255, 100)  # Amarillo para preparación
+        elif self.juego_pausado:
+            # Mostrar "PAUSADO" cuando el juego está pausado
+            texto_tiempo = "PAUSADO"
+            color = (255, 150, 50)  # Naranja para pausa
         else:
             mins, secs = divmod(self.juego.tiempo_restante, 60)
             texto_tiempo = f"Tiempo: {mins:02d}:{secs:02d}"
@@ -594,8 +755,9 @@ class Interfaz:
         superficie_tiempo = self.fuente_texto.render(texto_tiempo, False, color)
         self.pantalla.blit(superficie_tiempo, (50, 120))
         
-        # Mostrar mensaje especial cuando el tiempo está por acabarse (solo si la ronda inició)
-        if self.ronda_iniciada and self.juego.tiempo_restante <= 10 and self.juego.tiempo_restante > 0:
+        # Mostrar mensaje especial cuando el tiempo está por acabarse (solo si la ronda inició y no está pausada)
+        if (self.ronda_iniciada and not self.juego_pausado and 
+            self.juego.tiempo_restante <= 10 and self.juego.tiempo_restante > 0):
             fuente_alerta = pygame.font.Font("Fuentes/super_sliced.otf", 16)
             texto_alerta = f"¡{self.juego.tiempo_restante} segundos restantes!"
             alerta_surface = fuente_alerta.render(texto_alerta, False, (255, 100, 100))
@@ -821,15 +983,19 @@ class Interfaz:
                     exit()
 
                 elif event.type == pygame.MOUSEMOTION:
-                    # Actualizar estado hover del botón
+                    # Actualizar estado hover de todos los botones
                     self.actualizar_estado_boton(event.pos)
+                    self.actualizar_estado_botones_pausa(event.pos)
 
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_r and (self.juego.game_over or self.juego.victoria):
                         self.reiniciar_nivel_actual()
-                        # Reiniciar también el estado del botón
+                        # Reiniciar también el estado de los botones
                         self.ronda_iniciada = False
+                        self.juego_pausado = False
                         self.boton_iniciar_ronda["activo"] = True
+                        self.boton_pausa["visible"] = True
+                        self.boton_reanudar["visible"] = False
 
                     elif event.key == pygame.K_f:
                         self.mostrar_salon = not self.mostrar_salon
@@ -844,13 +1010,24 @@ class Interfaz:
                         self.ronda_iniciada = True
                         self.boton_iniciar_ronda["activo"] = False
                         self.juego.iniciar_ronda()
+                    
+                    # Atajo de teclado para pausar/reanudar (Tecla P)
+                    elif event.key == pygame.K_p and self.ronda_iniciada:
+                        if not self.juego_pausado:
+                            self.pausar_juego()
+                        else:
+                            self.reanudar_juego()
 
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     mouse_x, mouse_y = pygame.mouse.get_pos()
 
                     # Verificar click en botón iniciar ronda
                     if self.verificar_click_boton_iniciar((mouse_x, mouse_y)):
-                        continue  # Saltar el resto del procesamiento de clicks
+                        continue
+
+                    # Verificar click en botones de pausa/reanudar
+                    if self.verificar_click_botones_pausa((mouse_x, mouse_y)):
+                        continue
 
                     # Seleccionar item de tienda
                     item_clickeado = self.obtener_item_clickeado(mouse_x, mouse_y)
@@ -873,100 +1050,110 @@ class Interfaz:
                                 print(f"Rook colocado en ({fila}, {columna})")
                             else:
                                 print(message)
-                    
+                        
                         elif event.button == 3:
                             if self.juego.remover_rook(fila, columna):
                                 print(f"Rook removido de ({fila}, {columna})")
 
-            # Actualizar lógica del juego SOLO si la ronda está iniciada
-            if self.ronda_iniciada:
-                self.juego.actualizar()
+                # Actualizar lógica del juego SOLO si la ronda está iniciada y NO está pausada
+                if self.ronda_iniciada and not self.juego_pausado:
+                    self.juego.actualizar()
 
-            # Dibujar
-            self.pantalla.fill(COLOR_FONDO)
+                # Dibujar
+                self.pantalla.fill(COLOR_FONDO)
 
-            # Dibujar matriz
-            self.dibujar_matriz()
-            
-            # Dibujar personajes recursivamente
-            self.dibujar_rooks_recursivo()
-            self.dibujar_avatares_recursivo()
-            
-            self.pantalla.blit(self.campo_matriz, (matriz_x, matriz_y))
-
-            # Dibujar tienda
-            self.dibujar_tienda()
-            self.pantalla.blit(self.campo_tienda, (tienda_x, 0))
-
-            # Dibujar UI
-            self.dibujar_ui()
-            
-            # Dibujar botón de iniciar ronda
-            self.dibujar_boton_iniciar()
-
-            # Mostrar mensaje de preparación si la ronda no ha iniciado
-            if not self.ronda_iniciada:
-                self.mostrar_mensaje_preparacion()
-
-            # Verificar fin del juego y mostrar animaciones
-            if self.juego.victoria:
-                accion = self.mostrar_animacion_fin("victoria")
+                # Dibujar matriz
+                self.dibujar_matriz()
                 
-                if accion == "continuar":
-                    continue  # Continuar con el siguiente nivel
-                elif accion == "menu":
-                    from dificultad import main as main_dificultad
-                    pygame.display.quit()
-                    try:
-                        from Clases_auxiliares.credenciales import cargar_preferencias
-                        prefs = cargar_preferencias()
-                        lang_actual = prefs.get("idioma", "es")
-                    except:
-                        lang_actual = "es"
-                    
-                    main_dificultad(self.usuario_actual, lang_actual)
-                    return
-
-                elif accion == "victoria_final":
-                    # Mostrar victoria final con la ventana win normal
-                    ventana_final = VentanaWin(self.pantalla, paleta=self._paleta_usuario(), username=self.usuario_actual)
-                    ventana_final.run()
-                    pygame.quit()
-                    return
-
-            elif self.juego.game_over:
-                accion = self.mostrar_animacion_fin("derrota")
+                # Dibujar personajes recursivamente
+                self.dibujar_rooks_recursivo()
+                self.dibujar_avatares_recursivo()
                 
-                if accion == "reiniciar":
-                    self.reiniciar_nivel_actual()
-                    # Reiniciar estado del botón al reiniciar nivel
-                    self.ronda_iniciada = False
-                    self.boton_iniciar_ronda["activo"] = True
-                elif accion == "menu":
-                    from dificultad import main as main_dificultad
-                    pygame.display.quit()
-                    try:
-                        from Clases_auxiliares.credenciales import cargar_preferencias
-                        prefs = cargar_preferencias()
-                        lang_actual = prefs.get("idioma", "es")
-                    except:
-                        lang_actual = "es"
+                self.pantalla.blit(self.campo_matriz, (matriz_x, matriz_y))
+
+                # Dibujar tienda
+                self.dibujar_tienda()
+                self.pantalla.blit(self.campo_tienda, (tienda_x, 0))
+
+                # Dibujar UI
+                self.dibujar_ui()
+                
+                # Dibujar botón de iniciar ronda
+                self.dibujar_boton_iniciar()
+                
+                # Dibujar botones de pausa/reanudar
+                self.dibujar_botones_pausa()
+
+                # Mostrar mensaje de preparación si la ronda no ha iniciado
+                if not self.ronda_iniciada:
+                    self.mostrar_mensaje_preparacion()
+
+                # Mostrar mensaje de pausa si el juego está pausado
+                if self.juego_pausado:
+                    self.mostrar_mensaje_pausa()
+
+                # Verificar fin del juego y mostrar animaciones
+                if self.juego.victoria:
+                    accion = self.mostrar_animacion_fin("victoria")
                     
-                    main_dificultad(self.usuario_actual, lang_actual)
-                    return
-                elif accion == "salir":
-                    pygame.quit()
-                    exit()
+                    if accion == "continuar":
+                        continue  # Continuar con el siguiente nivel
+                    elif accion == "menu":
+                        from dificultad import main as main_dificultad
+                        pygame.display.quit()
+                        try:
+                            from Clases_auxiliares.credenciales import cargar_preferencias
+                            prefs = cargar_preferencias()
+                            lang_actual = prefs.get("idioma", "es")
+                        except:
+                            lang_actual = "es"
+                        
+                        main_dificultad(self.usuario_actual, lang_actual)
+                        return
 
-            if self.mostrar_salon:
-                self.interfaz_salon.dibujar_salon_completo(
-                    self.ANCHO_PANTALLA,
-                    self.ALTO_PANTALLA,
-                    self.usuario_actual
-                )
+                    elif accion == "victoria_final":
+                        # Mostrar victoria final con la ventana win normal
+                        ventana_final = VentanaWin(self.pantalla, paleta=self._paleta_usuario(), username=self.usuario_actual)
+                        ventana_final.run()
+                        pygame.quit()
+                        return
 
-            pygame.display.update()
-            self.reloj.tick(60)
+                elif self.juego.game_over:
+                    accion = self.mostrar_animacion_fin("derrota")
+                    
+                    if accion == "reiniciar":
+                        self.reiniciar_nivel_actual()
+                        # Reiniciar estado del botón al reiniciar nivel
+                        self.ronda_iniciada = False
+                        self.juego_pausado = False
+                        self.boton_iniciar_ronda["activo"] = True
+                        self.boton_pausa["visible"] = True
+                        self.boton_reanudar["visible"] = False
+                    elif accion == "menu":
+                        from dificultad import main as main_dificultad
+                        pygame.display.quit()
+                        try:
+                            from Clases_auxiliares.credenciales import cargar_preferencias
+                            prefs = cargar_preferencias()
+                            lang_actual = prefs.get("idioma", "es")
+                        except:
+                            lang_actual = "es"
+                        
+                        main_dificultad(self.usuario_actual, lang_actual)
+                        return
+                    elif accion == "salir":
+                        pygame.quit()
+                        exit()
+
+                if self.mostrar_salon:
+                    self.interfaz_salon.dibujar_salon_completo(
+                        self.ANCHO_PANTALLA,
+                        self.ALTO_PANTALLA,
+                        self.usuario_actual
+                    )
+
+                pygame.display.update()
+                self.reloj.tick(60)
     
     def mostrar_mensaje_preparacion(self):
         """Muestra mensaje indicando que está en fase de preparación"""

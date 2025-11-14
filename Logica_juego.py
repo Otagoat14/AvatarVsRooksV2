@@ -30,6 +30,11 @@ class Juego:
 
         self.en_preparacion = True
         
+        # Estado de pausa
+        self.juego_pausado = False
+        self.tiempo_pausa_inicio = 0
+        self.tiempo_acumulado_pausa = 0
+
         # PUNTAJE ACUMULADO entre niveles
         self.puntaje_acumulado = puntaje_acumulado
         
@@ -70,6 +75,19 @@ class Juego:
         self.en_preparacion = False
         self.tiempo_inicio = time.time()
         print("¡Ronda iniciada! Los avatares comenzarán a aparecer.")
+    
+    def pausar(self):
+        """Pausa el juego"""
+        if not self.juego_pausado:
+            self.juego_pausado = True
+            self.tiempo_pausa_inicio = time.time()
+
+    def reanudar(self):
+        """Reanuda el juego"""
+        if self.juego_pausado:
+            self.juego_pausado = False
+            tiempo_pausa_fin = time.time()
+            self.tiempo_acumulado_pausa += (tiempo_pausa_fin - self.tiempo_pausa_inicio)
 
     def obtener_puntaje_acumulado(self):
         return self.puntaje_acumulado + self.calculador_puntaje.calcular_puntaje()
@@ -277,7 +295,7 @@ class Juego:
                 llego_a_cero = avatar.mover(self)
             
             # Verificar si el avatar llegó al final (fila 0 o menos)
-            if avatar.y_fila <= 0:
+            if avatar.y_fila < 0:
                 self.game_over = True
                 return
             
@@ -453,13 +471,14 @@ class Juego:
         return False
     
     def actualizar_tiempo(self):
-        """Solo actualiza el tiempo si la ronda está activa"""
-        if self.en_preparacion:
+        """Solo actualiza el tiempo si la ronda está activa y no está pausada"""
+        if self.en_preparacion or self.juego_pausado:
             return
             
         if self.juego_iniciado and self.tiempo_restante > 0:
             tiempo_actual = time.time()
-            tiempo_transcurrido = int(tiempo_actual - self.tiempo_inicio)
+            # Ajustar el tiempo transcurrido restando el tiempo en pausa
+            tiempo_transcurrido = int(tiempo_actual - self.tiempo_inicio - self.tiempo_acumulado_pausa)
         
             self.tiempo_restante = max(0, self.tiempo_total - tiempo_transcurrido)
 
@@ -512,7 +531,12 @@ class Juego:
         self.calculador_puntaje = CalculadorPuntaje(self.calculador_puntaje.usuario)
         
         # Reiniciar estado de preparación
-        self.en_preparacion = True  # Agregar esta línea
+        self.en_preparacion = True  
+
+        # Reiniciar estado de pausa
+        self.juego_pausado = False
+        self.tiempo_pausa_inicio = 0
+        self.tiempo_acumulado_pausa = 0
         
         # Reiniciar último spawn
         tiempo_actual = time.time()
@@ -524,8 +548,8 @@ class Juego:
         self.tiempo_notificacion = 0
 
     def actualizar(self):
-        """Actualiza la lógica del juego solo si no está en preparación"""
-        if self.en_preparacion:
+        """Actualiza la lógica del juego solo si no está en preparación ni pausado"""
+        if self.en_preparacion or self.juego_pausado:
             return
             
         if self.juego_iniciado and not self.game_over and not self.victoria:
