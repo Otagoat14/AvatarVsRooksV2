@@ -22,10 +22,10 @@ class Personaje:
         self.daño = daño
         self.velocidad_ataque = velocidad_ataque
         self.velocidad = velocidad
-        self.ultimo_ataque = 0
+        self.ultimo_ataque = 0  # Cambiar a 0 en lugar de time.time()
         self.personaje_vivo = True
         self.balas = []
-        self.rango_ataque = 1.0  # Rango por defecto (ataque cuerpo a cuerpo)
+        self.rango_ataque = 1.0
 
     def recibir_daño(self, daño):
         self.vida -= daño
@@ -56,9 +56,16 @@ class Personaje:
 
     def disparar(self, direccion='arriba', juego=None): 
         tiempo_actual = time.time()
+        if juego and juego.juego_pausado:
+            return None
+            
+        if self.ultimo_ataque == 0:  # Primera vez
+            self.ultimo_ataque = tiempo_actual
+            return None
+            
         if tiempo_actual - self.ultimo_ataque >= self.velocidad_ataque:
             # Verificar si puede atacar (solo para cuerpo a cuerpo)
-            if juego and self.rango_ataque <= 1.0:  # Ataque cuerpo a cuerpo
+            if juego and self.rango_ataque <= 1.0:
                 if not self.puede_atacar(juego):
                     return None
             
@@ -140,15 +147,15 @@ class Rooks(Personaje):
 class Avatar(Personaje):
     def __init__(self, vida, daño, velocidad_ataque, y_fila, x_columna, velocidad_movimiento, tipo_avatar, valor_monedas):
         super().__init__(vida, daño, velocidad_ataque, velocidad=0, y_fila=y_fila, x_columna=x_columna)
-        self.velocidad_movimiento = velocidad_movimiento  # Tiempo en segundos entre movimientos
+        self.velocidad_movimiento = velocidad_movimiento
         self.tipo_avatar = tipo_avatar  
         self.valor_monedas = valor_monedas  
-        self.ultimo_movimiento = time.time()  # Tiempo del último movimiento
-        self.y_fila_objetivo = float(y_fila)  # Posición objetivo (para movimiento suavizado)
+        self.ultimo_movimiento = 0  # Cambiar a 0 en lugar de time.time()
+        self.y_fila_objetivo = float(y_fila)
         self.en_movimiento = False
         
-        # Configurar tipo de ataque según el avatar
         self._configurar_tipo_ataque()
+
 
     def _configurar_tipo_ataque(self):
         """Configura el rango de ataque según el tipo de avatar"""
@@ -163,14 +170,20 @@ class Avatar(Personaje):
 
     def mover(self, juego):
         """Intenta mover el avatar, considerando si hay rook al frente"""
+        if juego and juego.juego_pausado:
+            return False
+            
         tiempo_actual = time.time()
+        
+        if self.ultimo_movimiento == 0:  # Primera vez
+            self.ultimo_movimiento = tiempo_actual
+            return False
         
         # Si no está en movimiento y ha pasado el tiempo suficiente, intentar mover
         if not self.en_movimiento and tiempo_actual - self.ultimo_movimiento >= self.velocidad_movimiento:
             
             # Verificar si puede moverse (no hay rook al frente)
             if not self.puede_moverse(juego):
-                # No puede moverse porque hay rook al frente
                 self.en_movimiento = False
                 return False
                 
@@ -179,18 +192,15 @@ class Avatar(Personaje):
             self.ultimo_movimiento = tiempo_actual
             self.en_movimiento = True
             
-            # Verificar si SUPERÓ la primera fila (fila 0)
             if self.y_fila_objetivo < 0:
-                return True  # Derrota - el avatar superó la primera fila
+                return True
         
         # Suavizar movimiento si está en transición
         if self.en_movimiento:
             if abs(self.y_fila - self.y_fila_objetivo) > 0.05:
-                # Interpolar hacia la posición objetivo
                 diferencia = self.y_fila_objetivo - self.y_fila
-                self.y_fila += diferencia * 0.2  # Velocidad de interpolación
+                self.y_fila += diferencia * 0.2
             else:
-                # Llegó a la posición objetivo
                 self.y_fila = self.y_fila_objetivo
                 self.en_movimiento = False
         

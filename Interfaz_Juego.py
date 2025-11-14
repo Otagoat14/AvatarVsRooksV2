@@ -1055,105 +1055,105 @@ class Interfaz:
                             if self.juego.remover_rook(fila, columna):
                                 print(f"Rook removido de ({fila}, {columna})")
 
-                # Actualizar lógica del juego SOLO si la ronda está iniciada y NO está pausada
-                if self.ronda_iniciada and not self.juego_pausado:
-                    self.juego.actualizar()
+            # Actualizar lógica del juego SOLO si la ronda está iniciada y NO está pausada
+            if self.ronda_iniciada and not self.juego_pausado:
+                self.juego.actualizar()
 
-                # Dibujar
-                self.pantalla.fill(COLOR_FONDO)
+            # Dibujar (siempre se dibuja, incluso cuando está pausado)
+            self.pantalla.fill(COLOR_FONDO)
 
-                # Dibujar matriz
-                self.dibujar_matriz()
+            # Dibujar matriz
+            self.dibujar_matriz()
+            
+            # Dibujar personajes recursivamente
+            self.dibujar_rooks_recursivo()
+            self.dibujar_avatares_recursivo()
+            
+            self.pantalla.blit(self.campo_matriz, (matriz_x, matriz_y))
+
+            # Dibujar tienda
+            self.dibujar_tienda()
+            self.pantalla.blit(self.campo_tienda, (tienda_x, 0))
+
+            # Dibujar UI
+            self.dibujar_ui()
+            
+            # Dibujar botón de iniciar ronda
+            self.dibujar_boton_iniciar()
+            
+            # Dibujar botones de pausa/reanudar
+            self.dibujar_botones_pausa()
+
+            # Mostrar mensaje de preparación si la ronda no ha iniciado
+            if not self.ronda_iniciada:
+                self.mostrar_mensaje_preparacion()
+
+            # Mostrar mensaje de pausa si el juego está pausado
+            if self.juego_pausado:
+                self.mostrar_mensaje_pausa()
+
+            # Verificar fin del juego y mostrar animaciones
+            if self.juego.victoria:
+                accion = self.mostrar_animacion_fin("victoria")
                 
-                # Dibujar personajes recursivamente
-                self.dibujar_rooks_recursivo()
-                self.dibujar_avatares_recursivo()
-                
-                self.pantalla.blit(self.campo_matriz, (matriz_x, matriz_y))
-
-                # Dibujar tienda
-                self.dibujar_tienda()
-                self.pantalla.blit(self.campo_tienda, (tienda_x, 0))
-
-                # Dibujar UI
-                self.dibujar_ui()
-                
-                # Dibujar botón de iniciar ronda
-                self.dibujar_boton_iniciar()
-                
-                # Dibujar botones de pausa/reanudar
-                self.dibujar_botones_pausa()
-
-                # Mostrar mensaje de preparación si la ronda no ha iniciado
-                if not self.ronda_iniciada:
-                    self.mostrar_mensaje_preparacion()
-
-                # Mostrar mensaje de pausa si el juego está pausado
-                if self.juego_pausado:
-                    self.mostrar_mensaje_pausa()
-
-                # Verificar fin del juego y mostrar animaciones
-                if self.juego.victoria:
-                    accion = self.mostrar_animacion_fin("victoria")
+                if accion == "continuar":
+                    continue  # Continuar con el siguiente nivel
+                elif accion == "menu":
+                    from dificultad import main as main_dificultad
+                    pygame.display.quit()
+                    try:
+                        from Clases_auxiliares.credenciales import cargar_preferencias
+                        prefs = cargar_preferencias()
+                        lang_actual = prefs.get("idioma", "es")
+                    except:
+                        lang_actual = "es"
                     
-                    if accion == "continuar":
-                        continue  # Continuar con el siguiente nivel
-                    elif accion == "menu":
-                        from dificultad import main as main_dificultad
-                        pygame.display.quit()
-                        try:
-                            from Clases_auxiliares.credenciales import cargar_preferencias
-                            prefs = cargar_preferencias()
-                            lang_actual = prefs.get("idioma", "es")
-                        except:
-                            lang_actual = "es"
-                        
-                        main_dificultad(self.usuario_actual, lang_actual)
-                        return
+                    main_dificultad(self.usuario_actual, lang_actual)
+                    return
 
-                    elif accion == "victoria_final":
-                        # Mostrar victoria final con la ventana win normal
-                        ventana_final = VentanaWin(self.pantalla, paleta=self._paleta_usuario(), username=self.usuario_actual)
-                        ventana_final.run()
-                        pygame.quit()
-                        return
+                elif accion == "victoria_final":
+                    # Mostrar victoria final con la ventana win normal
+                    ventana_final = VentanaWin(self.pantalla, paleta=self._paleta_usuario(), username=self.usuario_actual)
+                    ventana_final.run()
+                    pygame.quit()
+                    return
 
-                elif self.juego.game_over:
-                    accion = self.mostrar_animacion_fin("derrota")
+            elif self.juego.game_over:
+                accion = self.mostrar_animacion_fin("derrota")
+                
+                if accion == "reiniciar":
+                    self.reiniciar_nivel_actual()
+                    # Reiniciar estado del botón al reiniciar nivel
+                    self.ronda_iniciada = False
+                    self.juego_pausado = False
+                    self.boton_iniciar_ronda["activo"] = True
+                    self.boton_pausa["visible"] = True
+                    self.boton_reanudar["visible"] = False
+                elif accion == "menu":
+                    from dificultad import main as main_dificultad
+                    pygame.display.quit()
+                    try:
+                        from Clases_auxiliares.credenciales import cargar_preferencias
+                        prefs = cargar_preferencias()
+                        lang_actual = prefs.get("idioma", "es")
+                    except:
+                        lang_actual = "es"
                     
-                    if accion == "reiniciar":
-                        self.reiniciar_nivel_actual()
-                        # Reiniciar estado del botón al reiniciar nivel
-                        self.ronda_iniciada = False
-                        self.juego_pausado = False
-                        self.boton_iniciar_ronda["activo"] = True
-                        self.boton_pausa["visible"] = True
-                        self.boton_reanudar["visible"] = False
-                    elif accion == "menu":
-                        from dificultad import main as main_dificultad
-                        pygame.display.quit()
-                        try:
-                            from Clases_auxiliares.credenciales import cargar_preferencias
-                            prefs = cargar_preferencias()
-                            lang_actual = prefs.get("idioma", "es")
-                        except:
-                            lang_actual = "es"
-                        
-                        main_dificultad(self.usuario_actual, lang_actual)
-                        return
-                    elif accion == "salir":
-                        pygame.quit()
-                        exit()
+                    main_dificultad(self.usuario_actual, lang_actual)
+                    return
+                elif accion == "salir":
+                    pygame.quit()
+                    exit()
 
-                if self.mostrar_salon:
-                    self.interfaz_salon.dibujar_salon_completo(
-                        self.ANCHO_PANTALLA,
-                        self.ALTO_PANTALLA,
-                        self.usuario_actual
-                    )
+            if self.mostrar_salon:
+                self.interfaz_salon.dibujar_salon_completo(
+                    self.ANCHO_PANTALLA,
+                    self.ALTO_PANTALLA,
+                    self.usuario_actual
+                )
 
-                pygame.display.update()
-                self.reloj.tick(60)
+            pygame.display.update()
+            self.reloj.tick(60)  # Limitar a 60 FPS
     
     def mostrar_mensaje_preparacion(self):
         """Muestra mensaje indicando que está en fase de preparación"""

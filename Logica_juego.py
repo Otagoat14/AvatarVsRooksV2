@@ -32,8 +32,6 @@ class Juego:
         
         # Estado de pausa
         self.juego_pausado = False
-        self.tiempo_pausa_inicio = 0
-        self.tiempo_acumulado_pausa = 0
 
         # PUNTAJE ACUMULADO entre niveles
         self.puntaje_acumulado = puntaje_acumulado
@@ -78,16 +76,11 @@ class Juego:
     
     def pausar(self):
         """Pausa el juego"""
-        if not self.juego_pausado:
-            self.juego_pausado = True
-            self.tiempo_pausa_inicio = time.time()
+        self.juego_pausado = True
 
     def reanudar(self):
         """Reanuda el juego"""
-        if self.juego_pausado:
-            self.juego_pausado = False
-            tiempo_pausa_fin = time.time()
-            self.tiempo_acumulado_pausa += (tiempo_pausa_fin - self.tiempo_pausa_inicio)
+        self.juego_pausado = False
 
     def obtener_puntaje_acumulado(self):
         return self.puntaje_acumulado + self.calculador_puntaje.calcular_puntaje()
@@ -207,8 +200,8 @@ class Juego:
 
 
     def spawn_avatares_recursivo(self, indice=0):
-        """Solo spawnea avatares si no está en preparación"""
-        if self.en_preparacion:
+        """Solo spawnea avatares si no está en preparación ni pausado"""
+        if self.en_preparacion or self.juego_pausado:
             return
             
         if indice >= len(self.obtener_avatares_info()):
@@ -258,6 +251,9 @@ class Juego:
 
 
     def actualizar_rooks_recursivo(self, indice=0):
+        if self.juego_pausado:
+            return
+            
         if indice >= len(self.rooks_activos):
             return
         
@@ -269,9 +265,10 @@ class Juego:
         
         self.actualizar_rooks_recursivo(indice + 1)
 
-    # En la función actualizar_avatares_recursivo, modifica la llamada a mover:
-    # En la función actualizar_avatares_recursivo, modifica la llamada a mover:
     def actualizar_avatares_recursivo(self, indice=0):
+        if self.juego_pausado:
+            return
+            
         if indice >= len(self.avatares_activos):
             return
         
@@ -284,22 +281,18 @@ class Juego:
             if fila_objetivo != fila_actual and not avatar.en_movimiento:
                 if not self.casilla_ocupada_por_avatar(fila_objetivo, avatar.x_columna) and \
                 not self.casilla_ocupada_por_rook(fila_objetivo, avatar.x_columna):
-                    # Pasar self (juego) como parámetro para verificar movimiento
                     llego_a_cero = avatar.mover(self)
                 else:
                     avatar.y_fila_objetivo = avatar.y_fila
                     avatar.en_movimiento = False
                     llego_a_cero = False
             else:
-                # Pasar self (juego) como parámetro para verificar movimiento
                 llego_a_cero = avatar.mover(self)
             
-            # Verificar si el avatar llegó al final (fila 0 o menos)
-            if avatar.y_fila < 0:
+            if avatar.y_fila <= 0:
                 self.game_over = True
                 return
             
-            # Pasar self (juego) como parámetro para verificar ataque
             avatar.disparar(self)
             avatar.actualizar_balas()
         
@@ -477,8 +470,7 @@ class Juego:
             
         if self.juego_iniciado and self.tiempo_restante > 0:
             tiempo_actual = time.time()
-            # Ajustar el tiempo transcurrido restando el tiempo en pausa
-            tiempo_transcurrido = int(tiempo_actual - self.tiempo_inicio - self.tiempo_acumulado_pausa)
+            tiempo_transcurrido = int(tiempo_actual - self.tiempo_inicio)
         
             self.tiempo_restante = max(0, self.tiempo_total - tiempo_transcurrido)
 
@@ -535,8 +527,6 @@ class Juego:
 
         # Reiniciar estado de pausa
         self.juego_pausado = False
-        self.tiempo_pausa_inicio = 0
-        self.tiempo_acumulado_pausa = 0
         
         # Reiniciar último spawn
         tiempo_actual = time.time()
