@@ -8,6 +8,11 @@ from Animaciones.animacion_game_over import VentanaGameOver
 from Animaciones.animacion_salon_fama import VentanaSalonFama
 from Animaciones.animacion_win import VentanaWin
 import sys
+import serial
+
+
+#PRUEBA DE BOTON CON LA LOGICA
+ser = serial.Serial("COM3", 115200, timeout = 0.01)
 
 
 # Constantes visuales
@@ -718,6 +723,20 @@ class Interfaz:
                         elif event.button == 3:
                             if self.juego.remover_rook(fila, columna):
                                 print(f"Rook removido de ({fila}, {columna})")
+            #PRUEBA DE BOTONES EN LA LOGICA
+            if ser.in_waiting:
+                line = ser.readline().decode().strip()
+                # Esperamos líneas del tipo: BOTON:0 o BOTON:1
+                if line.startswith("BOTON:"):
+                    try:
+                        valor = int(line.split(":")[1])
+                        if valor == 0:
+                            # ACCIÓN CUANDO EL BOTÓN ESTÁ PRESIONADO
+                            # Por ejemplo, mover el cuadrado a la derecha
+                           
+                            print("Botón físico presionado")
+                    except ValueError:
+                        print("Línea extraña desde la Raspi:", line)
 
             # Actualizar lógica del juego
             self.juego.actualizar()
