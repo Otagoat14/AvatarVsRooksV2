@@ -37,7 +37,9 @@ class Juego:
         self.tiempo_pausa_total = 0 
 
         # PUNTAJE ACUMULADO entre niveles
-        self.puntaje_acumulado = puntaje_acumulado
+        self.puntos_acumulados_avatars = 0
+        self.total_avatars_matados = 0
+        self.puntaje_acumulado = puntaje_acumulado 
 
         # Sistema de monedas en el tablero
         self.monedas_en_tablero = []
@@ -193,7 +195,7 @@ class Juego:
         """Configura los modificadores según la dificultad"""
         if self.dificultad == "facil":
             self.modificador_spawn = 1.0    # Spawn normal
-            self.tiempo_total = 600          # 60 segundos
+            self.tiempo_total = 60          # 60 segundos
         elif self.dificultad == "medio":
             self.modificador_spawn = 1.25   # 25% más rápido
             self.tiempo_total = 75          # 60 + 25% = 75 segundos
@@ -598,7 +600,17 @@ class Juego:
     #Funciones para lo que es el puntaje 
 
     def obtener_puntaje_actual(self):
-        return self.calculador_puntaje.calcular_puntaje()
+        """Calcula el puntaje actual del nivel (sin el acumulado)"""
+        # Puntaje base por avatares eliminados
+        puntaje_avatars = self.puntos_acumulados_avatars
+        
+        # Bonificación por tiempo restante (si hay victoria)
+        if self.victoria and self.tiempo_restante > 0:
+            bonificacion_tiempo = self.tiempo_restante * 2  # 2 puntos por segundo restante
+            puntaje_avatars += bonificacion_tiempo
+        
+        # Asegurarse de que el puntaje no sea negativo
+        return max(0, puntaje_avatars)
 
     def obtener_detalles_puntaje(self):
         return self.calculador_puntaje.obtener_detalles()

@@ -766,15 +766,16 @@ class Interfaz:
         puntaje_actual = self.juego.obtener_puntaje_actual()
         puntaje_total = self.puntaje_acumulado + puntaje_actual
         
-        # Puntaje del nivel actual
+        # Puntaje del nivel actual (debe empezar en 0)
         texto_puntaje_nivel = f"Puntaje Nivel: {puntaje_actual}"
         superficie_puntaje_nivel = self.fuente_texto.render(texto_puntaje_nivel, False, (255, 215, 0))
         self.pantalla.blit(superficie_puntaje_nivel, (50, 180))
         
-        # Puntaje acumulado total
-        texto_puntaje_total = f"Puntaje Total: {puntaje_total}"
-        superficie_puntaje_total = self.fuente_texto.render(texto_puntaje_total, False, (200, 200, 255))
-        self.pantalla.blit(superficie_puntaje_total, (50, 210))
+        # Puntaje acumulado total (solo si hay niveles anteriores)
+        if self.puntaje_acumulado > 0:
+            texto_puntaje_total = f"Puntaje Total: {puntaje_total}"
+            superficie_puntaje_total = self.fuente_texto.render(texto_puntaje_total, False, (200, 200, 255))
+            self.pantalla.blit(superficie_puntaje_total, (50, 210))
         
         # Estadísticas adicionales
         fuente_pequena = pygame.font.Font("Fuentes/super_sliced.otf", 16)
