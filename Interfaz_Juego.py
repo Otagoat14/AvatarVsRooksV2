@@ -57,6 +57,7 @@ class Interfaz:
 
         # Cargar imágenes de monedas
         self.cargar_imagenes_monedas()
+        self.verificar_archivos_imagenes()
 
         # Usuario actual (preferir el que viene desde la dificultad/login)
         self.usuario_actual = usuario
@@ -127,9 +128,12 @@ class Interfaz:
                 imagen = pygame.image.load(ruta)
                 imagen = imagen.convert_alpha()
                 return pygame.transform.scale(imagen, (tamaño, tamaño))
-            except:
-                print(f"No se pudo cargar la imagen: {ruta}")
-                return None
+            except Exception as e:
+                print(f"No se pudo cargar la imagen: {ruta} - Error: {e}")
+                # Crear una imagen de fallback
+                fallback = pygame.Surface((tamaño, tamaño), pygame.SRCALPHA)
+                pygame.draw.circle(fallback, (255, 215, 0), (tamaño//2, tamaño//2), tamaño//2)
+                return fallback
         
         tamaño_moneda = TAMAÑO_CELDA - 20
         self.imagenes_monedas = {
@@ -137,6 +141,13 @@ class Interfaz:
             "25y50": cargar_imagen("Imagenes/25y50.png", tamaño_moneda),
             "100": cargar_imagen("Imagenes/100.png", tamaño_moneda)
         }
+        
+        # Verificar que todas las imágenes se cargaron
+        for tipo, img in self.imagenes_monedas.items():
+            if img:
+                print(f"Imagen de moneda {tipo} cargada correctamente")
+            else:
+                print(f"Error: No se pudo cargar la imagen para moneda {tipo}")
     
     def dibujar_monedas(self):
         """Dibuja las monedas en el tablero"""
@@ -148,6 +159,7 @@ class Interfaz:
                 x = int(moneda.columna * TAMAÑO_CELDA) + matriz_x
                 y = int(moneda.fila * TAMAÑO_CELDA) + matriz_y
                 
+                # Obtener la imagen correspondiente al tipo de moneda
                 imagen = self.imagenes_monedas.get(moneda.tipo_imagen)
                 if imagen:
                     # Centrar la imagen en la celda
@@ -155,9 +167,21 @@ class Interfaz:
                     pos_y = y + (TAMAÑO_CELDA - imagen.get_height()) // 2
                     self.pantalla.blit(imagen, (pos_x, pos_y))
                 else:
-                    # Fallback: dibujar círculo amarillo
-                    pygame.draw.circle(self.pantalla, (255, 215, 0), 
-                                     (x + TAMAÑO_CELDA // 2, y + TAMAÑO_CELDA // 2), 15)
+                    # Fallback: dibujar círculo con el valor
+                    color = {
+                        "25": (255, 215, 0),      # Oro
+                        "25y50": (192, 192, 192), # Plata  
+                        "100": (205, 127, 50)     # Bronce
+                    }.get(moneda.tipo_imagen, (255, 215, 0))
+                    
+                    pygame.draw.circle(self.pantalla, color, 
+                                    (x + TAMAÑO_CELDA // 2, y + TAMAÑO_CELDA // 2), 15)
+                    
+                    # Mostrar el valor como texto
+                    fuente_pequena = pygame.font.Font("Fuentes/super_sliced.otf", 12)
+                    texto = fuente_pequena.render(str(moneda.valor), True, (0, 0, 0))
+                    texto_rect = texto.get_rect(center=(x + TAMAÑO_CELDA // 2, y + TAMAÑO_CELDA // 2))
+                    self.pantalla.blit(texto, texto_rect)
                     
     def _crear_boton_iniciar(self):
         """Crea el botón para iniciar la ronda"""
@@ -1120,10 +1144,11 @@ class Interfaz:
             self.dibujar_rooks_recursivo()
             self.dibujar_avatares_recursivo()
             
-            # DIBUJAR MONEDAS (después de la matriz pero antes del blit final)
-            self.dibujar_monedas()
-            
+            # DIBUJAR LA MATRIZ PRIMERO
             self.pantalla.blit(self.campo_matriz, (matriz_x, matriz_y))
+            
+            # LUEGO DIBUJAR LAS MONEDAS DIRECTAMENTE EN LA PANTALLA PRINCIPAL
+            self.dibujar_monedas()
 
             # Dibujar tienda
             self.dibujar_tienda()
@@ -1234,6 +1259,17 @@ class Interfaz:
         atajo = fuente_mediana.render("(También puedes usar la Barra Espaciadora)", True, (200, 200, 200))
         atajo_rect = atajo.get_rect(center=(self.ANCHO_PANTALLA // 2, self.ALTO_PANTALLA // 2 + 60))
         self.pantalla.blit(atajo, atajo_rect)
+    
+    def verificar_archivos_imagenes(self):
+        """Verifica que los archivos de imágenes existan"""
+        import os
+        archivos_necesarios = ["25.png", "25y50.png", "100.png"]
+        for archivo in archivos_necesarios:
+            ruta = os.path.join("Imagenes", archivo)
+            if os.path.exists(ruta):
+                print(f"✓ {ruta} existe")
+            else:
+                print(f"✗ {ruta} NO existe")
 
 if __name__ == "__main__":
    

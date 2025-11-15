@@ -193,7 +193,7 @@ class Juego:
         """Configura los modificadores según la dificultad"""
         if self.dificultad == "facil":
             self.modificador_spawn = 1.0    # Spawn normal
-            self.tiempo_total = 60          # 60 segundos
+            self.tiempo_total = 600          # 60 segundos
         elif self.dificultad == "medio":
             self.modificador_spawn = 1.25   # 25% más rápido
             self.tiempo_total = 75          # 60 + 25% = 75 segundos
@@ -228,7 +228,7 @@ class Juego:
                 "precio": 150, 
                 "tipo": ROOK_TIPO_4, 
                 "nombre": "Rook Fuego",
-                "vida": 12, "daño": 16, "velocidad_ataque": 12.0
+                "vida": 12, "daño": 16, "velocidad_ataque": 1.0 #12.0
             }
         ]
     
