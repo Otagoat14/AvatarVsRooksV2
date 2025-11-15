@@ -55,6 +55,9 @@ class Interfaz:
         # PUNTAJE ACUMULADO
         self.puntaje_acumulado = puntaje_acumulado
 
+        # Cargar imágenes de monedas
+        self.cargar_imagenes_monedas()
+
         # Usuario actual (preferir el que viene desde la dificultad/login)
         self.usuario_actual = usuario
         if not self.usuario_actual:
@@ -117,6 +120,45 @@ class Interfaz:
         self.boton_reanudar = None
         self._crear_botones_pausa()
     
+    def cargar_imagenes_monedas(self):
+        """Carga las imágenes de las monedas"""
+        def cargar_imagen(ruta, tamaño):
+            try:
+                imagen = pygame.image.load(ruta)
+                imagen = imagen.convert_alpha()
+                return pygame.transform.scale(imagen, (tamaño, tamaño))
+            except:
+                print(f"No se pudo cargar la imagen: {ruta}")
+                return None
+        
+        tamaño_moneda = TAMAÑO_CELDA - 20
+        self.imagenes_monedas = {
+            "25": cargar_imagen("Imagenes/25.png", tamaño_moneda),
+            "25y50": cargar_imagen("Imagenes/25y50.png", tamaño_moneda),
+            "100": cargar_imagen("Imagenes/100.png", tamaño_moneda)
+        }
+    
+    def dibujar_monedas(self):
+        """Dibuja las monedas en el tablero"""
+        matriz_x = (self.ANCHO_PANTALLA - ANCHO) // 2
+        matriz_y = (self.ALTO_PANTALLA - ALTO) // 2
+        
+        for moneda in self.juego.monedas_en_tablero:
+            if moneda.activa:
+                x = int(moneda.columna * TAMAÑO_CELDA) + matriz_x
+                y = int(moneda.fila * TAMAÑO_CELDA) + matriz_y
+                
+                imagen = self.imagenes_monedas.get(moneda.tipo_imagen)
+                if imagen:
+                    # Centrar la imagen en la celda
+                    pos_x = x + (TAMAÑO_CELDA - imagen.get_width()) // 2
+                    pos_y = y + (TAMAÑO_CELDA - imagen.get_height()) // 2
+                    self.pantalla.blit(imagen, (pos_x, pos_y))
+                else:
+                    # Fallback: dibujar círculo amarillo
+                    pygame.draw.circle(self.pantalla, (255, 215, 0), 
+                                     (x + TAMAÑO_CELDA // 2, y + TAMAÑO_CELDA // 2), 15)
+                    
     def _crear_boton_iniciar(self):
         """Crea el botón para iniciar la ronda"""
         ancho_boton = 200
@@ -371,13 +413,16 @@ class Interfaz:
         self.juego = Juego(dificultad=self.dificultad_actual, 
                         usuario=self.usuario_actual, 
                         puntaje_acumulado=self.puntaje_acumulado)
-        # Cambiar esta línea:
-        self.juego.iniciar_juego(preparacion=True)  # Agregar preparacion=True
+        self.juego.iniciar_juego(preparacion=True)
         self.puntaje_registrado = False
         self.info_resultado = None
         # También reiniciar el estado del botón
         self.ronda_iniciada = False
+        self.juego_pausado = False
         self.boton_iniciar_ronda["activo"] = True
+        self.boton_pausa["visible"] = True
+        self.boton_reanudar["visible"] = False
+
 
     def cargar_personalizacion(self):
         try:
@@ -1017,6 +1062,12 @@ class Interfaz:
                             self.pausar_juego()
                         else:
                             self.reanudar_juego()
+                    
+                    # ATAJO SECRETO PARA RECOGER MONEDAS (Barra Espaciadora cuando el juego está activo)
+                    elif event.key == pygame.K_SPACE and self.ronda_iniciada and not self.juego_pausado:
+                        monedas_recogidas = self.juego.recoger_monedas()
+                        if monedas_recogidas > 0:
+                            print(f"Monedas recogidas secretamente: {monedas_recogidas}")
 
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     mouse_x, mouse_y = pygame.mouse.get_pos()
@@ -1068,6 +1119,9 @@ class Interfaz:
             # Dibujar personajes recursivamente
             self.dibujar_rooks_recursivo()
             self.dibujar_avatares_recursivo()
+            
+            # DIBUJAR MONEDAS (después de la matriz pero antes del blit final)
+            self.dibujar_monedas()
             
             self.pantalla.blit(self.campo_matriz, (matriz_x, matriz_y))
 

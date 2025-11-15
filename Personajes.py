@@ -225,3 +225,29 @@ class Avatar(Personaje):
         
         pygame.draw.rect(pantalla, (100, 0, 0), (x + 10, y + 5, barra_ancho, barra_alto))
         pygame.draw.rect(pantalla, (0, 255, 0), (x + 10, y + 5, int(barra_ancho * porcentaje_vida), barra_alto))
+
+class Moneda:
+    def __init__(self, fila, columna, valor, tipo_imagen):
+        self.fila = fila
+        self.columna = columna
+        self.valor = valor
+        self.tipo_imagen = tipo_imagen  # "25", "25y50", "100"
+        self.activa = True
+        
+    def recoger(self):
+        if self.activa:
+            self.activa = False
+            return self.valor
+        return 0
+    
+    def dibujar(self, pantalla, offset_x=0, offset_y=0):
+        if not self.activa:
+            return
+            
+        x = int(self.columna * TAMAÑO_CELDA) + offset_x
+        y = int(self.fila * TAMAÑO_CELDA) + offset_y
+        
+        # El dibujo se manejará en Interfaz_Juego.py con las imágenes reales
+        # Aquí solo un placeholder
+        pygame.draw.circle(pantalla, (255, 215, 0), 
+                         (x + TAMAÑO_CELDA // 2, y + TAMAÑO_CELDA // 2), 15)

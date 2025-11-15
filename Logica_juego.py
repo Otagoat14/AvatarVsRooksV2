@@ -1,6 +1,6 @@
 import time
 import random
-from Personajes import Rooks, Avatar, FILAS, COLUMNAS
+from Personajes import Rooks, Avatar, FILAS, COLUMNAS, Moneda
 from Puntaje import CalculadorPuntaje
 
 # Constantes lógicas
@@ -38,6 +38,9 @@ class Juego:
 
         # PUNTAJE ACUMULADO entre niveles
         self.puntaje_acumulado = puntaje_acumulado
+
+        # Sistema de monedas en el tablero
+        self.monedas_en_tablero = []
         
         #Para lo que es el puntaje
         self.calculador_puntaje = CalculadorPuntaje(usuario)
@@ -125,7 +128,63 @@ class Juego:
         # Ajustar últimos spawns
         for tipo_avatar in self.ultimo_spawn:
             self.ultimo_spawn[tipo_avatar] += tiempo_pausa
+    
+    def generar_monedas_bonificacion(self):
+        """Genera monedas en el tablero cuando se completa la bonificación de 3 flecheros"""
+        opciones = [
+            [("25", 25), ("25", 25), ("25", 25), ("25", 25)],  # 4 monedas de 25
+            [("25y50", 100)],  # 1 moneda combinada de 100
+            [("100", 100)]     # 1 moneda de 100
+        ]
+        
+        combinacion = random.choice(opciones)
+        posiciones_disponibles = []
+        
+        # Buscar posiciones disponibles en el tablero
+        for fila in range(FILAS):
+            for columna in range(COLUMNAS):
+                if (self.casilla_libre(fila, columna) and 
+                    not any(moneda.fila == fila and moneda.columna == columna 
+                           for moneda in self.monedas_en_tablero)):
+                    posiciones_disponibles.append((fila, columna))
+        
+        # Mezclar posiciones disponibles
+        random.shuffle(posiciones_disponibles)
+        
+        # Colocar las monedas
+        for i, (tipo_imagen, valor) in enumerate(combinacion):
+            if i < len(posiciones_disponibles):
+                fila, columna = posiciones_disponibles[i]
+                nueva_moneda = Moneda(fila, columna, valor, tipo_imagen)
+                self.monedas_en_tablero.append(nueva_moneda)
+                print(f"Moneda de {valor} colocada en ({fila}, {columna})")
+        
+        print(f"¡Bonificación de 100 monedas generada en el tablero! Combinación: {len(combinacion)} moneda(s)")
+    
+    def recoger_monedas(self):
+        """Recoge todas las monedas activas en el tablero"""
+        total_recogido = 0
+        monedas_recogidas = []
+        
+        for moneda in self.monedas_en_tablero:
+            if moneda.activa:
+                valor = moneda.recoger()
+                total_recogido += valor
+                monedas_recogidas.append(moneda)
+                print(f"Moneda de {valor} recogida en ({moneda.fila}, {moneda.columna})")
+        
+        # Remover monedas recogidas de la lista
+        self.monedas_en_tablero = [m for m in self.monedas_en_tablero if m.activa]
+        
+        if total_recogido > 0:
+            self.monedas_jugador += total_recogido
+            print(f"¡Recogidas {total_recogido} monedas! Total: {self.monedas_jugador}")
+        
+        return total_recogido
 
+    def limpiar_monedas(self):
+        """Limpia todas las monedas del tablero (al final de la ronda)"""
+        self.monedas_en_tablero.clear()
 
     def obtener_puntaje_acumulado(self):
         return self.puntaje_acumulado + self.calculador_puntaje.calcular_puntaje()
@@ -377,23 +436,17 @@ class Juego:
                         self.flecheros_muertos += 1
                         print(f"Flechero muerto! Total: {self.flecheros_muertos}/3")
                     
-                        
-                        # Cada 3 flecheros muertos, dar 100 monedas
-                        #Hay que cambiar esto por que aparezcan las monedas en la matriz con denominaciones raandom que sumen 100
+                        # MODIFICACIÓN AQUÍ: En lugar de dar monedas automáticamente, generar en el tablero
                         if self.flecheros_muertos >= 3:
-                            self.monedas_jugador += 100
-                            self.ultima_notificacion = "¡Bonus! +100 monedas por 3 flecheros eliminados"
+                            self.generar_monedas_bonificacion()
+                            self.ultima_notificacion = "¡Bonus! Monedas aparecieron en el tablero"
                             self.tiempo_notificacion = time.time()
                             self.flecheros_muertos = 0 
                             print(self.ultima_notificacion)
                     
-                    # ELIMINAR ESTA LÍNEA: self.agregar_monedas(avatar.valor_monedas)
-                    # Ya no se agregan monedas por avatar normal
-                
                     self.total_avatars_matados += 1
                     self.puntos_acumulados_avatars += avatar.vida_maxima
                     
-                    # Actualizar el calculador de puntaje
                     self.calculador_puntaje.actualizar_avatars(
                         self.total_avatars_matados,
                         self.puntos_acumulados_avatars)
@@ -573,6 +626,9 @@ class Juego:
         
         # Reiniciar estado de preparación
         self.en_preparacion = True  
+
+        # Limpiar monedas al reiniciar
+        self.monedas_en_tablero = []
 
         # Reiniciar estado de pausa
         self.juego_pausado = False
