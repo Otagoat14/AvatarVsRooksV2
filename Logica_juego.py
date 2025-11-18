@@ -408,6 +408,14 @@ class Juego:
             return True
         return False
     
+    #DISPARO MANUAL ROOKS
+    def disparo_manual_rooks(self):
+        for rook in self.rooks_activos:
+            if rook.personaje_vivo:
+                rook.disparar_manual()
+
+
+    
     def actualizar_tiempo(self):
             if self.juego_iniciado and self.tiempo_restante > 0:
                 tiempo_actual = time.time()

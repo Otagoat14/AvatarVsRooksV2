@@ -86,6 +86,13 @@ class Rooks(Personaje):
 
     def disparar(self):
         return super().disparar(direccion='abajo')
+    
+    #DISPARO MANUAAL
+    def disparar_manual(self):
+        nueva_bala = Bala(self.y_fila, self.x_columna, direccion='abajo')
+        self.balas.append(nueva_bala)
+        return nueva_bala
+
 
     def dibujar(self, pantalla, offset_x=0, offset_y=0):
         x = int(self.x_columna * TAMAÑO_CELDA) + offset_x

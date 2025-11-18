@@ -100,6 +100,19 @@ class Interfaz:
         # fondo de la matriz
         self.fondo_matriz = pygame.image.load("Imagenes/fondo.png").convert_alpha()
         self.fondo_matriz = pygame.transform.scale(self.fondo_matriz, (ANCHO, ALTO))
+
+        #IMPLEMENTANDO HARSWARE CON JUEGO
+        self.cursor_fila = FILAS // 2
+        self.cursisor_columna = COLUMNAS // 2
+
+        self.prev_click = 0
+        self.prev_select = 0
+        self.prev_pause = 0
+
+        # Pausa del juego
+        self.pausado = False
+
+
     
     def reproducir_cancion_usuario(self):
         try:
@@ -260,6 +273,17 @@ class Interfaz:
         for f in range(FILAS + 1):
             y = f * TAMAÑO_CELDA
             pygame.draw.line(self.campo_matriz, LINEA, (0, y), (ANCHO, y), 1)
+
+        # Dibujar cursor del joystick, aver que se cambiaria
+        cursor_x = self.cursor_columna * TAMAÑO_CELDA
+        cursor_y = self.cursor_fila * TAMAÑO_CELDA
+        pygame.draw.rect(
+            self.campo_matriz,
+            (255, 255, 0),  
+            (cursor_x, cursor_y, TAMAÑO_CELDA, TAMAÑO_CELDA),
+            3             
+        )
+
 
     def dibujar_rook(self, rook):
         x = int(rook.x_columna * TAMAÑO_CELDA)
@@ -724,23 +748,85 @@ class Interfaz:
                             if self.juego.remover_rook(fila, columna):
                                 print(f"Rook removido de ({fila}, {columna})")
             #PRUEBA DE BOTONES EN LA LOGICA
+
+                        # Leer datos desde la Raspberry (joystick + botones)
             if ser.in_waiting:
-                line = ser.readline().decode().strip()
-                # Esperamos líneas del tipo: BOTON:0 o BOTON:1
-                if line.startswith("BOTON:"):
-                    try:
-                        valor = int(line.split(":")[1])
-                        if valor == 0:
-                            # ACCIÓN CUANDO EL BOTÓN ESTÁ PRESIONADO
-                            # Por ejemplo, mover el cuadrado a la derecha
-                           
-                            print("Botón físico presionado")
-                    except ValueError:
-                        print("Línea extraña desde la Raspi:", line)
+                line = ser.readline().decode(errors="ignore").strip()
+                # Ejemplo: JOY:ARRIBA,C:1,B1:0,B2:0,B3:0,B4:1,BS:0,BP:0
+                try:
+                    partes = line.split(",")
+
+                    dir_part = partes[0].split(":")[1]      # ARRIBA, ABAJO, ...
+                    click = int(partes[1].split(":")[1])    # C:0/1
+                    b1 = int(partes[2].split(":")[1])       # B1:0/1
+                    b2 = int(partes[3].split(":")[1])       # B2:0/1
+                    b3 = int(partes[4].split(":")[1])       # B3:0/1
+                    b4 = int(partes[5].split(":")[1])       # B4:0/1
+                    b_select = int(partes[6].split(":")[1]) # BS:0/1
+                    b_pause = int(partes[7].split(":")[1])  # BP:0/1
+
+                    #MOVER EL CURSOR CON EL JOYSTICK 
+                    if dir_part == "ARRIBA":
+                        self.cursor_fila = max(0, self.cursor_fila - 1)
+                    elif dir_part == "ABAJO":
+                        self.cursor_fila = min(FILAS - 1, self.cursor_fila + 1)
+                    elif dir_part == "IZQUIERDA":
+                        self.cursor_columna = max(0, self.cursor_columna - 1)
+                    elif dir_part == "DERECHA":
+                        self.cursor_columna = min(COLUMNAS - 1, self.cursor_columna + 1)
+                    
+                    
+                    
+                    #ELEGIR TIPO DE ROOK 
+                    if b1 == 1:
+                        self.item_seleccionado = 0  # arena
+                    elif b2 == 1:
+                        self.item_seleccionado = 1  # agua
+                    elif b3 == 1:
+                        self.item_seleccionado = 2  # fuego
+                    elif b4 == 1:
+                        self.item_seleccionado = 3  # roca
+
+                    #COLOCAR ROOK CON BOTÓN SELECT 
+                    if b_select == 1 and self.prev_select == 0 and self.item_seleccionado is not None:
+                        fila = self.cursor_fila
+                        columna = self.cursor_columna
+                        success, message = self.juego.colocar_rook(
+                            fila,
+                            columna,
+                            self.item_seleccionado
+                        )
+                        if success:
+                            print(f"Rook colocada en ({fila}, {columna})")
+                        else:
+                            print("No se pudo colocar rook:", message)
+
+                    # DISPARO MANUAL CON CLICK DEL JOYSTICK (una vez por click)
+                    if click == 1 and self.prev_click == 0:
+                        self.juego.disparo_manual_rooks()
+
+                    # PAUSA CON BOTÓN PAUSE
+                    if b_pause == 1 and self.prev_pause == 0:
+                        self.pausado = not self.pausado
+                        print("Pausa:", self.pausado)
+
+                    # Actualizar estados anteriores
+                    self.prev_click = click
+                    self.prev_select = b_select
+                    self.prev_pause = b_pause
+
+                except Exception as e:
+                    print("Línea rara desde la Raspi:", line, "| Error:", e)
+
+           
 
             # Actualizar lógica del juego
-            self.juego.actualizar()
+            if not self.pausado:
+                self.juego.actualizar()
 
+            
+
+    
             # Dibujar
             self.pantalla.fill(COLOR_FONDO)
 
