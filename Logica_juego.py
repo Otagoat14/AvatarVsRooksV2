@@ -240,30 +240,30 @@ class Juego:
         avatares_base = [
             {
                 "tipo": "Flechero",
-                "vida": 5, "daño": 2, "velocidad": 12.0, #12.0, si está en otro valor es para probar
-                "velocidad_ataque": 10.0, "probabilidad_spawn": 0.3,
-                "intervalo_spawn_base": 4.0, 
+                "vida": 5, "daño": 2, "velocidad": 5.0,
+                "velocidad_ataque": 4.0, "probabilidad_spawn": 0.3,
+                "intervalo_spawn_base": 2.0, 
                 "valor_monedas": 5
             },
             {
                 "tipo": "Escudero", 
-                "vida": 10, "daño": 3, "velocidad": 10.0,
-                "velocidad_ataque": 15.0, "probabilidad_spawn": 0.2,
-                "intervalo_spawn_base": 6.0,  #
+                "vida": 10, "daño": 3, "velocidad": 8.0,
+                "velocidad_ataque": 6.0, "probabilidad_spawn": 0.2,
+                "intervalo_spawn_base": 4.0,  #
                 "valor_monedas": 10
             },
             {
                 "tipo": "Leñador",
-                "vida": 20, "daño": 9, "velocidad": 13.0,
+                "vida": 20, "daño": 9, "velocidad": 3.0,
                 "velocidad_ataque": 5.0, "probabilidad_spawn": 0.15,
-                "intervalo_spawn_base": 8.0,  
+                "intervalo_spawn_base": 6.0,  
                 "valor_monedas": 20
             },
             {
                 "tipo": "Caníbal",
-                "vida": 25, "daño": 12, "velocidad": 14.0,
-                "velocidad_ataque": 3.0, "probabilidad_spawn": 0.1,
-                "intervalo_spawn_base": 10.0, 
+                "vida": 25, "daño": 12, "velocidad": 5.0,
+                "velocidad_ataque": 9.0, "probabilidad_spawn": 0.1,
+                "intervalo_spawn_base": 8.0, 
                 "valor_monedas": 25
             }
         ]
