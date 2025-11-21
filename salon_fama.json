@@ -1,5 +1,10 @@
 [
     {
+        "nombre": "Jugador",
+        "puntaje": 700,
+        "fecha": "2025-11-21 15:52:51"
+    },
+    {
         "nombre": "otagoat14",
         "puntaje": 415,
         "fecha": "2025-11-13 16:37:36"
@@ -8,11 +13,6 @@
         "nombre": "Pepe",
         "puntaje": 355,
         "fecha": "2025-11-17 22:28:27"
-    },
-    {
-        "nombre": "Jugador",
-        "puntaje": 115,
-        "fecha": "2025-11-10 20:51:18"
     },
     {
         "nombre": "sjsldlldkl",

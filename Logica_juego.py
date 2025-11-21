@@ -52,6 +52,9 @@ class Juego:
         # Configurar dificultad
         self.dificultad = dificultad
         self._configurar_modificador_dificultad()
+
+        self.rook_herida = False
+
         
         # Inicializar último spawn
         for avatar_info in self.obtener_avatares_info():
@@ -187,6 +190,15 @@ class Juego:
     def limpiar_monedas(self):
         """Limpia todas las monedas del tablero (al final de la ronda)"""
         self.monedas_en_tablero.clear()
+
+    def disparar_rooks_manual(self):
+        for rook in self.rooks_activos:
+            if rook.personaje_vivo:
+                try:
+                    rook.disparar_manual()
+                except AttributeError:
+                    pass
+
 
     def obtener_puntaje_acumulado(self):
         return self.puntaje_acumulado + self.calculador_puntaje.calcular_puntaje()
@@ -483,6 +495,7 @@ class Juego:
                 
                 rook.recibir_daño(avatar.daño)
                 bala.bala_activa = False
+                self.rook_herida = True
 
                 if not rook.personaje_vivo:
                     self.matriz[int(rook.y_fila)][rook.x_columna] = VACIO

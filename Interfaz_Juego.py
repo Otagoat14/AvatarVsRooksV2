@@ -1,5 +1,6 @@
 import pygame
 import time
+import socket
 from sys import exit
 from Logica_juego import Juego, FILAS, COLUMNAS, VACIO, OCUPADA
 from Personajes import TAMAÑO_CELDA
@@ -10,9 +11,14 @@ from Animaciones.animacion_win import VentanaWin
 import sys
 from Animaciones.animacion_final_juego import VentanaFinalJuego
 
+PICO_IP = "192.168.151.216"   # <-- pon aquí la IP que imprime la Pico
+PICO_PORT_MOTOR = 6000        # puerto para los motores
+
+
 # Constantes visuales
 ANCHO = COLUMNAS * TAMAÑO_CELDA
 ALTO = FILAS * TAMAÑO_CELDA
+
 
 
 
@@ -79,6 +85,28 @@ class Interfaz:
         self.juego = Juego(dificultad=self.dificultad_actual, 
                           usuario=self.usuario_actual, 
                           puntaje_acumulado=self.puntaje_acumulado)
+        
+
+                # ===============================
+        # CONTROL PICO (SOCKET UDP)
+        # ===============================
+        self.sock_control = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.sock_control.bind(("0.0.0.0", 5006))   # Debe coincidir con PC_PORT de la Pico
+        self.sock_control.setblocking(False)
+
+        self.sock_motor = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+        # Para saber cómo están los botones "en reposo" (0 ó 1)
+        self.control_base = None    # dict con valores de reposo
+        self.control_prev = None    # dict con último estado
+        self.ultima_dir = None
+        self.ultimo_mov_dir = 0
+
+        # Cursor del joystick en la matriz (fila, columna)
+        # Empiezo en la esquina inferior izquierda (ajusta a tu gusto)
+        self.cursor_fila = 0
+        self.cursor_col = COLUMNAS - 1
+
 
         # Al abrir la pantalla de juego, sonar su canción
         self.reproducir_cancion_usuario()
@@ -447,6 +475,16 @@ class Interfaz:
         self.boton_pausa["visible"] = True
         self.boton_reanudar["visible"] = False
 
+        # 🔹 RESET ESTADO DEL CONTROL / JOYSTICK
+        self.control_base = None
+        self.control_prev = None
+        self.ultima_dir = None
+        self.ultimo_mov_dir = 0
+
+        # Opcional: devolver el cursor a la posición inicial
+        self.cursor_fila = FILAS - 1
+        self.cursor_col = 0
+
 
     def cargar_personalizacion(self):
         try:
@@ -573,6 +611,166 @@ class Interfaz:
         for f in range(FILAS + 1):
             y = f * TAMAÑO_CELDA
             pygame.draw.line(self.campo_matriz, LINEA, (0, y), (ANCHO, y), 1)
+
+                # === DIBUJAR CURSOR DEL JOYSTICK ===
+        if 0 <= self.cursor_fila < FILAS and 0 <= self.cursor_col < COLUMNAS:
+            x_cursor = self.cursor_col * TAMAÑO_CELDA
+            y_cursor = self.cursor_fila * TAMAÑO_CELDA
+            # Rectángulo amarillo para marcar la celda seleccionada
+            pygame.draw.rect(
+                self.campo_matriz,
+                (255, 255, 0),
+                (x_cursor + 2, y_cursor + 2, TAMAÑO_CELDA - 4, TAMAÑO_CELDA - 4),
+                width=3
+            )
+
+
+    def _leer_estado_control(self):
+        ultimo_estado = None
+
+        while True:
+            try:
+                data, addr = self.sock_control.recvfrom(1024)
+            except BlockingIOError:
+                # No hay más paquetes pendientes
+                break
+
+            try:
+                texto = data.decode().strip()
+                # Ej: "JOY:ARRIBA,C:1,B1:0,B2:0,B3:0,B4:0,BS:0,BP:0"
+                partes = texto.split(",")
+                estado = {}
+                for p in partes:
+                    if ":" in p:
+                        k, v = p.split(":", 1)
+                        estado[k] = v
+                # Nos aseguramos de que tenga al menos JOY
+                if "JOY" in estado:
+                    ultimo_estado = estado
+            except Exception as e:
+                print("Error al parsear control:", e)
+                continue
+
+        return ultimo_estado
+
+        
+
+    def _mover_cursor(self, df, dc):
+        """Mueve el cursor en la matriz respetando los límites."""
+        nueva_f = self.cursor_fila + df
+        nueva_c = self.cursor_col + dc
+
+        if 0 <= nueva_f < FILAS:
+            self.cursor_fila = nueva_f
+        if 0 <= nueva_c < COLUMNAS:
+            self.cursor_col = nueva_c
+
+    def _procesar_direccion(self, dir_joy, dt):
+        """
+        Aplica la dirección del joystick al cursor.
+        Corrige el mapeo raro del hardware y limita la velocidad de movimiento.
+        """
+        # Corregir mapeo físico -> lógico
+        if dir_joy == "IZQUIERDA":
+            dir_logica = "ARRIBA"     # Físico arriba
+        elif dir_joy == "DERECHA":
+            dir_logica = "ABAJO"      # Físico abajo
+        elif dir_joy == "ARRIBA":
+            dir_logica = "DERECHA"    # Físico derecha
+        elif dir_joy == "ABAJO":
+            dir_logica = "IZQUIERDA"  # Físico izquierda
+        else:
+            dir_logica = "CENTRO"
+
+        # Si está en el centro no movemos nada
+        if dir_logica == "CENTRO":
+            self.ultima_dir = None
+            return
+
+        # Para no moverse demasiado rápido: solo cada 0.15s si mantiene la dirección
+        ahora = time.time()
+        if self.ultima_dir == dir_logica and (ahora - self.ultimo_mov_dir) < 0.15:
+            return
+
+        self.ultima_dir = dir_logica
+        self.ultimo_mov_dir = ahora
+
+        if dir_logica == "ARRIBA":
+            self._mover_cursor(-1, 0)
+        elif dir_logica == "ABAJO":
+            self._mover_cursor(+1, 0)
+        elif dir_logica == "IZQUIERDA":
+            self._mover_cursor(0, -1)
+        elif dir_logica == "DERECHA":
+            self._mover_cursor(0, +1)
+
+    def _procesar_botones(self, estado):
+
+        # Inicializar estados base y prev la primera vez
+        if self.control_base is None:
+            self.control_base = estado.copy()
+            self.control_prev = estado.copy()
+            return
+
+        # Para cada botón, vemos si cambió respecto a control_prev
+        def cambio_boton(clave):
+            return estado.get(clave) != self.control_prev.get(clave)
+
+        # Helper: botón "presionado" = distinto a estado de reposo
+        def esta_presionado(clave):
+            return estado.get(clave) != self.control_base.get(clave)
+
+        # === Botones de rooks (1-4) ===
+        # B1 – arena, B2 – agua, B3 – piedra, B4 – fuego
+        if cambio_boton("B1") and esta_presionado("B1"):
+            self._colocar_rook_desde_control(tipo_index=0)  # arena
+        if cambio_boton("B2") and esta_presionado("B2"):
+            self._colocar_rook_desde_control(tipo_index=1)  # agua
+        if cambio_boton("B3") and esta_presionado("B3"):
+            self._colocar_rook_desde_control(tipo_index=2)  # piedra
+        if cambio_boton("B4") and esta_presionado("B4"):
+            self._colocar_rook_desde_control(tipo_index=3)  # fuego
+
+        # === Click del joystick: disparo manual de todas las rooks ===
+        if cambio_boton("C") and esta_presionado("C"):
+            # Un disparo manual por click
+            self.juego.disparar_rooks_manual()
+
+        # === SELECT: recoger monedas en todo el tablero ===
+        if cambio_boton("BS") and esta_presionado("BS"):
+            self.juego.recoger_monedas()
+
+        # === PAUSA: pausar / reanudar ===
+        if cambio_boton("BP") and esta_presionado("BP"):
+            if not self.juego_pausado:
+                self.pausar_juego()
+            else:
+                self.reanudar_juego()
+
+        # Actualizar estado anterior
+        self.control_prev = estado.copy()
+
+    def _colocar_rook_desde_control(self, tipo_index):
+        # Solo bloqueo si el juego está en pausa o ya terminó
+        if self.juego_pausado or self.juego.game_over or self.juego.victoria:
+            return
+
+        fila = self.cursor_fila
+        col = self.cursor_col
+
+        # tipo_index: 0=arena, 1=agua, 2=piedra, 3=fuego
+        success, message = self.juego.colocar_rook(fila, col, tipo_index)
+
+        if success:
+            info = self.juego.obtener_rooks_info()[tipo_index]
+            print(f"Rook colocada ({info['nombre']}) en ({fila}, {col})")
+        else:
+            print("No se pudo colocar la rook:", message)
+
+
+
+
+
 
     def dibujar_rook(self, rook):
         x = int(rook.x_columna * TAMAÑO_CELDA)
@@ -1047,6 +1245,7 @@ class Interfaz:
         self.juego.iniciar_juego(preparacion=True)
 
         while True:
+            dt = self.reloj.tick(60) / 1000.0  # Delta time en segundos
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
@@ -1131,9 +1330,28 @@ class Interfaz:
                             if self.juego.remover_rook(fila, columna):
                                 print(f"Rook removido de ({fila}, {columna})")
 
+            estado = self._leer_estado_control()
+            if estado:
+                # Procesar dirección del joystick
+                self._procesar_direccion(estado.get("JOY", "CENTRO"), dt)
+
+                # Procesar botones (rooks, disparo, select, pausa)
+                self._procesar_botones(estado)
+
+
             # Actualizar lógica del juego SOLO si la ronda está iniciada y NO está pausada
             if self.ronda_iniciada and not self.juego_pausado:
                 self.juego.actualizar()
+
+                if getattr(self.juego, "rook_herida", False):
+                    try:
+                        self.sock_motor.sendto(b"HIT", (PICO_IP, PICO_PORT_MOTOR))
+                        # opcional: print para depurar
+                        print("Enviando HIT a Pico para vibrar motor")
+                    except Exception as e:
+                        print("Error enviando HIT a Pico:", e)
+                    # resetear el flag
+                    self.juego.rook_herida = False
 
             # Dibujar (siempre se dibuja, incluso cuando está pausado)
             self.pantalla.fill(COLOR_FONDO)

@@ -125,6 +125,21 @@ class Rooks(Personaje):
 
     def disparar(self, juego=None):
         return super().disparar(direccion='abajo', juego=juego)
+    
+    def disparar_manual(self):
+        if not self.personaje_vivo:
+            return
+
+        direccion_bala = "abajo"
+
+        nueva_bala = Bala(
+            y_fila=self.y_fila,
+            x_columna=self.x_columna,
+            direccion=direccion_bala,
+            rango=self.rango_ataque
+        )
+        self.balas.append(nueva_bala)
+
 
     def dibujar(self, pantalla, offset_x=0, offset_y=0):
         x = int(self.x_columna * TAMAÑO_CELDA) + offset_x
