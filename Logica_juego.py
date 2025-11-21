@@ -1,6 +1,6 @@
 import time
 import random
-from Personajes import Rooks, Avatar, FILAS, COLUMNAS
+from Personajes import Rooks, Avatar, FILAS, COLUMNAS, Moneda
 from Puntaje import CalculadorPuntaje
 
 # Constantes lógicas
@@ -13,7 +13,7 @@ ROOK_TIPO_4 = 5
 
 
 class Juego:
-    def __init__(self, dificultad="facil", usuario = "None"):
+    def __init__(self, dificultad="facil", usuario="None", puntaje_acumulado=0):
         self.matriz = [[VACIO for c in range(COLUMNAS)] for f in range(FILAS)]
         self.monedas_jugador = 350
         self.rooks_activos = []     
@@ -27,6 +27,23 @@ class Juego:
         self.tiempo_inicio = 0
         self.ultima_notificacion = ""
         self.tiempo_notificacion = 0
+
+        self.en_preparacion = True
+        
+        # Estado de pausa
+        self.juego_pausado = False
+        self.tiempo_pausa_inicio = 0
+        self.tiempo_acumulado_pausa = 0
+        self.tiempo_pausa_total = 0 
+
+        # PUNTAJE ACUMULADO entre niveles
+        self.puntos_acumulados_avatars = 0
+        self.total_avatars_matados = 0
+        self.puntaje_acumulado = puntaje_acumulado 
+
+        # Sistema de monedas en el tablero
+        self.monedas_en_tablero = []
+        
         #Para lo que es el puntaje
         self.calculador_puntaje = CalculadorPuntaje(usuario)
         self.total_avatars_matados = 0  
@@ -35,10 +52,156 @@ class Juego:
         # Configurar dificultad
         self.dificultad = dificultad
         self._configurar_modificador_dificultad()
+
+        self.rook_herida = False
+
         
         # Inicializar último spawn
         for avatar_info in self.obtener_avatares_info():
             self.ultimo_spawn[avatar_info["tipo"]] = 0
+        
+        # Inicializar último spawn
+        for avatar_info in self.obtener_avatares_info():
+            self.ultimo_spawn[avatar_info["tipo"]] = 0
+    
+    def iniciar_juego(self, preparacion=False):
+        """Inicia el juego, opcionalmente en modo preparación"""
+        self.juego_iniciado = True
+        self.game_over = False
+        self.victoria = False
+        self.en_preparacion = preparacion
+        
+        # Reiniciar contadores de pausa
+        self.juego_pausado = False
+        self.tiempo_pausa_inicio = 0
+        self.tiempo_acumulado_pausa = 0
+        self.tiempo_pausa_total = 0
+        
+        # Usar el tiempo total configurado por dificultad
+        self.tiempo_restante = self.tiempo_total
+        self.tiempo_inicio = time.time() if not preparacion else 0
+        
+        tiempo_actual = time.time()
+        for avatar_info in self.obtener_avatares_info():
+            self.ultimo_spawn[avatar_info["tipo"]] = tiempo_actual
+
+    def iniciar_ronda(self):
+        """Inicia la ronda (comienza el tiempo y los spawns)"""
+        self.en_preparacion = False
+        self.tiempo_inicio = time.time()
+        # Reiniciar contadores de pausa al iniciar ronda
+        self.tiempo_pausa_inicio = 0
+        self.tiempo_acumulado_pausa = 0
+        self.tiempo_pausa_total = 0
+        print("¡Ronda iniciada! Los avatares comenzarán a aparecer.")
+    
+    def pausar(self):
+        """Pausa el juego"""
+        if not self.juego_pausado:
+            self.juego_pausado = True
+            self.tiempo_pausa_inicio = time.time()
+            print("Juego pausado")
+
+    def reanudar(self):
+        """Reanuda el juego"""
+        if self.juego_pausado:
+            tiempo_actual = time.time()
+            # Calcular cuánto tiempo estuvo pausado
+            tiempo_en_pausa = tiempo_actual - self.tiempo_pausa_inicio
+            self.tiempo_pausa_total += tiempo_en_pausa
+            
+            # Ajustar los tiempos de los personajes
+            self._ajustar_tiempos_personajes(tiempo_en_pausa)
+            
+            self.juego_pausado = False
+            print(f"Juego reanudado. Tiempo en pausa: {tiempo_en_pausa:.2f}s")
+    
+    def _ajustar_tiempos_personajes(self, tiempo_pausa):
+        """Ajusta los tiempos de los personajes después de una pausa"""
+        # Ajustar rooks
+        for rook in self.rooks_activos:
+            if hasattr(rook, 'ultimo_ataque'):
+                rook.ultimo_ataque += tiempo_pausa
+        
+        # Ajustar avatares
+        for avatar in self.avatares_activos:
+            if hasattr(avatar, 'ultimo_ataque'):
+                avatar.ultimo_ataque += tiempo_pausa
+            if hasattr(avatar, 'ultimo_movimiento'):
+                avatar.ultimo_movimiento += tiempo_pausa
+        
+        # Ajustar últimos spawns
+        for tipo_avatar in self.ultimo_spawn:
+            self.ultimo_spawn[tipo_avatar] += tiempo_pausa
+    
+    def generar_monedas_bonificacion(self):
+        """Genera monedas en el tablero cuando se completa la bonificación de 3 flecheros"""
+        opciones = [
+            [("25", 25), ("25", 25), ("25", 25), ("25", 25)],  # 4 monedas de 25
+            [("25y50", 100)],  # 1 moneda combinada de 100
+            [("100", 100)]     # 1 moneda de 100
+        ]
+        
+        combinacion = random.choice(opciones)
+        posiciones_disponibles = []
+        
+        # Buscar posiciones disponibles en el tablero
+        for fila in range(FILAS):
+            for columna in range(COLUMNAS):
+                if (self.casilla_libre(fila, columna) and 
+                    not any(moneda.fila == fila and moneda.columna == columna 
+                           for moneda in self.monedas_en_tablero)):
+                    posiciones_disponibles.append((fila, columna))
+        
+        # Mezclar posiciones disponibles
+        random.shuffle(posiciones_disponibles)
+        
+        # Colocar las monedas
+        for i, (tipo_imagen, valor) in enumerate(combinacion):
+            if i < len(posiciones_disponibles):
+                fila, columna = posiciones_disponibles[i]
+                nueva_moneda = Moneda(fila, columna, valor, tipo_imagen)
+                self.monedas_en_tablero.append(nueva_moneda)
+                print(f"Moneda de {valor} colocada en ({fila}, {columna})")
+        
+        print(f"¡Bonificación de 100 monedas generada en el tablero! Combinación: {len(combinacion)} moneda(s)")
+    
+    def recoger_monedas(self):
+        """Recoge todas las monedas activas en el tablero"""
+        total_recogido = 0
+        monedas_recogidas = []
+        
+        for moneda in self.monedas_en_tablero:
+            if moneda.activa:
+                valor = moneda.recoger()
+                total_recogido += valor
+                monedas_recogidas.append(moneda)
+                print(f"Moneda de {valor} recogida en ({moneda.fila}, {moneda.columna})")
+        
+        # Remover monedas recogidas de la lista
+        self.monedas_en_tablero = [m for m in self.monedas_en_tablero if m.activa]
+        
+        if total_recogido > 0:
+            self.monedas_jugador += total_recogido
+            print(f"¡Recogidas {total_recogido} monedas! Total: {self.monedas_jugador}")
+        
+        return total_recogido
+
+    def limpiar_monedas(self):
+        """Limpia todas las monedas del tablero (al final de la ronda)"""
+        self.monedas_en_tablero.clear()
+
+    def disparar_rooks_manual(self):
+        for rook in self.rooks_activos:
+            if rook.personaje_vivo:
+                try:
+                    rook.disparar_manual()
+                except AttributeError:
+                    pass
+
+
+    def obtener_puntaje_acumulado(self):
+        return self.puntaje_acumulado + self.calculador_puntaje.calcular_puntaje()
 
     def _configurar_modificador_dificultad(self):
         """Configura los modificadores según la dificultad"""
@@ -79,7 +242,7 @@ class Juego:
                 "precio": 150, 
                 "tipo": ROOK_TIPO_4, 
                 "nombre": "Rook Fuego",
-                "vida": 12, "daño": 16, "velocidad_ataque": 12.0
+                "vida": 12, "daño": 16, "velocidad_ataque": 1.0 #12.0
             }
         ]
     
@@ -89,30 +252,30 @@ class Juego:
         avatares_base = [
             {
                 "tipo": "Flechero",
-                "vida": 5, "daño": 2, "velocidad": 12.0,
-                "velocidad_ataque": 10.0, "probabilidad_spawn": 0.3,
-                "intervalo_spawn_base": 4.0, 
+                "vida": 5, "daño": 2, "velocidad": 5.0,
+                "velocidad_ataque": 4.0, "probabilidad_spawn": 0.3,
+                "intervalo_spawn_base": 2.0, 
                 "valor_monedas": 5
             },
             {
                 "tipo": "Escudero", 
-                "vida": 10, "daño": 3, "velocidad": 10.0,
-                "velocidad_ataque": 15.0, "probabilidad_spawn": 0.2,
-                "intervalo_spawn_base": 6.0,  #
+                "vida": 10, "daño": 3, "velocidad": 8.0,
+                "velocidad_ataque": 6.0, "probabilidad_spawn": 0.2,
+                "intervalo_spawn_base": 4.0,  #
                 "valor_monedas": 10
             },
             {
                 "tipo": "Leñador",
-                "vida": 20, "daño": 9, "velocidad": 13.0,
+                "vida": 20, "daño": 9, "velocidad": 3.0,
                 "velocidad_ataque": 5.0, "probabilidad_spawn": 0.15,
-                "intervalo_spawn_base": 8.0,  
+                "intervalo_spawn_base": 6.0,  
                 "valor_monedas": 20
             },
             {
                 "tipo": "Caníbal",
-                "vida": 25, "daño": 12, "velocidad": 14.0,
-                "velocidad_ataque": 3.0, "probabilidad_spawn": 0.1,
-                "intervalo_spawn_base": 10.0, 
+                "vida": 25, "daño": 12, "velocidad": 5.0,
+                "velocidad_ataque": 9.0, "probabilidad_spawn": 0.1,
+                "intervalo_spawn_base": 8.0, 
                 "valor_monedas": 25
             }
         ]
@@ -155,20 +318,21 @@ class Juego:
 
 
     def spawn_avatares_recursivo(self, indice=0):
+        """Solo spawnea avatares si no está en preparación ni pausado"""
+        if self.en_preparacion or self.juego_pausado:
+            return
+            
         if indice >= len(self.obtener_avatares_info()):
             return
         
         avatar_info = self.obtener_avatares_info()[indice]
         tiempo_actual = time.time()
-        tiempo_desde_ultimo = tiempo_actual - self.ultimo_spawn[avatar_info["tipo"]]
         
-        # DEBUG: Mostrar información de spawn
-        if indice == 0 and random.random() < 0.01:  # Solo ocasionalmente para no spammear
-            print(f"Dificultad: {self.dificultad}, Modificador: {self.modificador_spawn}")
-            print(f"Flechero - Intervalo: {avatar_info['intervalo_spawn']:.2f}s")
+        # Asegurarse de que el último spawn esté ajustado
+        tiempo_ultimo_spawn = self.ultimo_spawn[avatar_info["tipo"]]
+        tiempo_desde_ultimo = tiempo_actual - tiempo_ultimo_spawn
         
         if tiempo_desde_ultimo >= avatar_info["intervalo_spawn"]:
-            # AUMENTAR probabilidad de spawn según dificultad
             probabilidad_base = avatar_info["probabilidad_spawn"]
             probabilidad_modificada = probabilidad_base * self.modificador_spawn
             
@@ -208,6 +372,9 @@ class Juego:
 
 
     def actualizar_rooks_recursivo(self, indice=0):
+        if self.juego_pausado:
+            return
+            
         if indice >= len(self.rooks_activos):
             return
         
@@ -220,6 +387,9 @@ class Juego:
         self.actualizar_rooks_recursivo(indice + 1)
 
     def actualizar_avatares_recursivo(self, indice=0):
+        if self.juego_pausado:
+            return
+            
         if indice >= len(self.avatares_activos):
             return
         
@@ -231,20 +401,20 @@ class Juego:
             
             if fila_objetivo != fila_actual and not avatar.en_movimiento:
                 if not self.casilla_ocupada_por_avatar(fila_objetivo, avatar.x_columna) and \
-                   not self.casilla_ocupada_por_rook(fila_objetivo, avatar.x_columna):
-                    llego_a_cero = avatar.mover()
+                not self.casilla_ocupada_por_rook(fila_objetivo, avatar.x_columna):
+                    llego_a_cero = avatar.mover(self)
                 else:
                     avatar.y_fila_objetivo = avatar.y_fila
                     avatar.en_movimiento = False
                     llego_a_cero = False
             else:
-                llego_a_cero = avatar.mover()
+                llego_a_cero = avatar.mover(self)
             
-            if llego_a_cero:
+            if avatar.y_fila <= 0:
                 self.game_over = True
                 return
             
-            avatar.disparar()
+            avatar.disparar(self)
             avatar.actualizar_balas()
         
         self.actualizar_avatares_recursivo(indice + 1)
@@ -280,23 +450,17 @@ class Juego:
                         self.flecheros_muertos += 1
                         print(f"Flechero muerto! Total: {self.flecheros_muertos}/3")
                     
-                        
-                        # Cada 3 flecheros muertos, dar 100 monedas
-                        #Hay que cambiar esto por que aparezcan las monedas en la matriz con denominaciones raandom que sumen 100
+                        # MODIFICACIÓN AQUÍ: En lugar de dar monedas automáticamente, generar en el tablero
                         if self.flecheros_muertos >= 3:
-                            self.monedas_jugador += 100
-                            self.ultima_notificacion = "¡Bonus! +100 monedas por 3 flecheros eliminados"
+                            self.generar_monedas_bonificacion()
+                            self.ultima_notificacion = "¡Bonus! Monedas aparecieron en el tablero"
                             self.tiempo_notificacion = time.time()
                             self.flecheros_muertos = 0 
                             print(self.ultima_notificacion)
                     
-                    # ELIMINAR ESTA LÍNEA: self.agregar_monedas(avatar.valor_monedas)
-                    # Ya no se agregan monedas por avatar normal
-                
                     self.total_avatars_matados += 1
                     self.puntos_acumulados_avatars += avatar.vida_maxima
                     
-                    # Actualizar el calculador de puntaje
                     self.calculador_puntaje.actualizar_avatars(
                         self.total_avatars_matados,
                         self.puntos_acumulados_avatars)
@@ -331,6 +495,7 @@ class Juego:
                 
                 rook.recibir_daño(avatar.daño)
                 bala.bala_activa = False
+                self.rook_herida = True
 
                 if not rook.personaje_vivo:
                     self.matriz[int(rook.y_fila)][rook.x_columna] = VACIO
@@ -361,7 +526,13 @@ class Juego:
         self.limpiar_entidades_muertas_recursivo_avatares(indice + 1)
 
     def verificar_victoria(self):
-        return len([r for r in self.rooks_activos if r.personaje_vivo]) > 0
+        # Verificar si ningún avatar llegó al final (fila 0 o menos)
+        for avatar in self.avatares_activos:
+            if avatar.personaje_vivo and avatar.y_fila <= 0:
+                return False  # Derrota: algún avatar llegó al final
+        
+        # Victoria: ningún avatar llegó al final
+        return True
 
     def gastar_monedas(self, cantidad):
         if self.monedas_jugador >= cantidad:
@@ -409,40 +580,53 @@ class Juego:
         return False
     
     def actualizar_tiempo(self):
-            if self.juego_iniciado and self.tiempo_restante > 0:
-                tiempo_actual = time.time()
-                tiempo_transcurrido = int(tiempo_actual - self.tiempo_inicio)
+        """Solo actualiza el tiempo si la ronda está activa y no está pausada"""
+        if self.en_preparacion or self.juego_pausado:
+            return
             
-                self.tiempo_restante = max(0, self.tiempo_total - tiempo_transcurrido)
+        if self.juego_iniciado and self.tiempo_restante > 0:
+            tiempo_actual = time.time()
+            # Calcular tiempo transcurrido restando el tiempo en pausa
+            tiempo_transcurrido = int(tiempo_actual - self.tiempo_inicio - self.tiempo_pausa_total)
+        
+            self.tiempo_restante = max(0, self.tiempo_total - tiempo_transcurrido)
 
-                if self.tiempo_restante == 0 and not self.game_over:
-                    if self.verificar_victoria():
-                        self.victoria = True
-                        print(f"¡VICTORIA! Sobreviviste {self.tiempo_total} segundos con rooks vivos")
-                    else:
-                        self.game_over = True
-                        print("DERROTA - No quedan rooks vivos")
+            if self.tiempo_restante == 0 and not self.game_over:
+                # Verificar si algún avatar llegó al final
+                avatar_en_final = False
+                for avatar in self.avatares_activos:
+                    if avatar.personaje_vivo and avatar.y_fila <= 0:
+                        avatar_en_final = True
+                        break
+                
+                if avatar_en_final:
+                    # Derrota: algún avatar llegó al final
+                    self.game_over = True
+                    print("DERROTA - Los avatares llegaron a la base")
+                else:
+                    # Victoria: tiempo acabó y ningún avatar llegó al final
+                    self.victoria = True
+                    print(f"¡VICTORIA! Sobreviviste {self.tiempo_total} segundos")
+
 
    
     #Funciones para lo que es el puntaje 
 
     def obtener_puntaje_actual(self):
-        return self.calculador_puntaje.calcular_puntaje()
+        """Calcula el puntaje actual del nivel (sin el acumulado)"""
+        # Puntaje base por avatares eliminados
+        puntaje_avatars = self.puntos_acumulados_avatars
+        
+        # Bonificación por tiempo restante (si hay victoria)
+        if self.victoria and self.tiempo_restante > 0:
+            bonificacion_tiempo = self.tiempo_restante * 2  # 2 puntos por segundo restante
+            puntaje_avatars += bonificacion_tiempo
+        
+        # Asegurarse de que el puntaje no sea negativo
+        return max(0, puntaje_avatars)
 
     def obtener_detalles_puntaje(self):
         return self.calculador_puntaje.obtener_detalles()
-
-    def iniciar_juego(self):
-        self.juego_iniciado = True
-        self.game_over = False
-        self.victoria = False
-        # Usar el tiempo total configurado por dificultad
-        self.tiempo_restante = self.tiempo_total
-        self.tiempo_inicio = time.time()
-        
-        tiempo_actual = time.time()
-        for avatar_info in self.obtener_avatares_info():
-            self.ultimo_spawn[avatar_info["tipo"]] = tiempo_actual
 
     def reiniciar_juego(self):
         self.matriz = [[VACIO for c in range(COLUMNAS)] for f in range(FILAS)]
@@ -456,19 +640,44 @@ class Juego:
         # Usar el tiempo total configurado por dificultad
         self.tiempo_restante = self.tiempo_total
         self.tiempo_inicio = time.time()
+        
+        # NO reiniciar el puntaje acumulado entre niveles
+        # self.puntaje_acumulado se mantiene
+        
+        # Reiniciar solo los contadores del nivel actual, mantener el acumulado
         self.total_avatars_matados = 0
         self.puntos_acumulados_avatars = 0
-        self.calculador_puntaje = CalculadorPuntaje()
+        self.calculador_puntaje = CalculadorPuntaje(self.calculador_puntaje.usuario)
         
+        # Reiniciar estado de preparación
+        self.en_preparacion = True  
+
+        # Limpiar monedas al reiniciar
+        self.monedas_en_tablero = []
+
+        # Reiniciar estado de pausa
+        self.juego_pausado = False
+        self.tiempo_pausa_inicio = 0
+        self.tiempo_acumulado_pausa = 0
+        self.tiempo_pausa_total = 0 
+        
+        # Reiniciar último spawn
         tiempo_actual = time.time()
         for avatar_info in self.obtener_avatares_info():
             self.ultimo_spawn[avatar_info["tipo"]] = tiempo_actual
+        
+        # Reiniciar notificaciones
+        self.ultima_notificacion = ""
+        self.tiempo_notificacion = 0
 
     def actualizar(self):
+        """Actualiza la lógica del juego solo si no está en preparación ni pausado"""
+        if self.en_preparacion or self.juego_pausado:
+            return
+            
         if self.juego_iniciado and not self.game_over and not self.victoria:
             self.actualizar_tiempo()  
             
-    
             if not self.game_over and not self.victoria:
                 self.spawn_avatares_recursivo()
                 self.actualizar_rooks_recursivo()

@@ -1,0 +1,45 @@
+{
+  "colores": {
+    "fondo": {
+      "hex": "#F1E6E7",
+      "rgb": [
+        241,
+        230,
+        231
+      ]
+    },
+    "texto": {
+      "hex": "#F5F5F5",
+      "rgb": [
+        245,
+        245,
+        245
+      ]
+    },
+    "ventana": {
+      "hex": "#DEC2C3",
+      "rgb": [
+        222,
+        194,
+        195
+      ]
+    },
+    "btn_primario": {
+      "hex": "#7C0D0F",
+      "rgb": [
+        124,
+        13,
+        15
+      ]
+    },
+    "btn_secundario": {
+      "hex": "#A35557",
+      "rgb": [
+        163,
+        85,
+        87
+      ]
+    }
+  },
+  "musica": "spotify:track:demo123"
+}

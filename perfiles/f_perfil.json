@@ -1,0 +1,47 @@
+{
+  "usuario": "f",
+  "personalizado": true,
+  "tema": {
+    "fondo": {
+      "hex": "#F1E8E6",
+      "rgb": [
+        241,
+        232,
+        230
+      ]
+    },
+    "texto": {
+      "hex": "#F5F5F5",
+      "rgb": [
+        245,
+        245,
+        245
+      ]
+    },
+    "ventana": {
+      "hex": "#DEC5C2",
+      "rgb": [
+        222,
+        197,
+        194
+      ]
+    },
+    "btn_primario": {
+      "hex": "#7C1A0B",
+      "rgb": [
+        124,
+        26,
+        11
+      ]
+    },
+    "btn_secundario": {
+      "hex": "#A35E54",
+      "rgb": [
+        163,
+        94,
+        84
+      ]
+    }
+  },
+  "musica": "spotify:track:demo123"
+}

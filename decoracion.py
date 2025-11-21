@@ -13,7 +13,7 @@ funciones para mantener coherencia visual y evitar duplicación.
 No se modifica ninguna función existente: sólo añadimos esta nota de uso.
 """
 
-
+"prueba"
 
 import os
 import customtkinter as ctk

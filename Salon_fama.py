@@ -112,6 +112,11 @@ class SalonFama:
     def limpiar_datos(self):
         self.puntajes = []
         return self.guardar_puntajes()
+    def es_nuevo_record(self, puntaje):
+        """Verifica si el puntaje es un nuevo récord"""
+        if not self.puntajes:
+            return True
+        return puntaje > self.puntajes[0]["puntaje"]
 
 
 class InterfazSalonFama:
@@ -198,33 +203,26 @@ class InterfazSalonFama:
 
 
 class IntegradorJuego:
-  
     @staticmethod
-    def registrar_partida(salon_fama, usuario_actual, juego):
-        # Obtener puntaje y detalles del juego
-        puntaje_final = juego.obtener_puntaje_actual()
-        detalles = juego.obtener_detalles_puntaje()
-
-        # Agregar info extra
-        detalles.update({
-            "avatars_matados": juego.total_avatars_matados,
-            "victoria": juego.victoria,
-            "tiempo_jugado": 60 - juego.tiempo_restante
-        })
-
-        # Verificar si es récord antes de agregar
-        es_record = salon_fama.es_nuevo_record(puntaje_final)
-
-        # Guardar solo si mejora (la lógica está dentro de SalonFama.agregar_puntaje)
-        posicion, es_top = salon_fama.agregar_puntaje(
-            nombre_usuario=usuario_actual,
-            puntaje=puntaje_final,
-            detalles=detalles
-        )
-
-        return {
-            "posicion": posicion,
-            "es_top": es_top,
-            "es_record": es_record,
-            "puntaje": puntaje_final
+    def registrar_partida(salon_fama, usuario, juego, puntaje_manual=None):
+        """
+        Registra una partida en el salón de la fama
+        Si se proporciona puntaje_manual, usa ese en lugar de calcularlo
+        """
+        if puntaje_manual is not None:
+            puntaje_final = puntaje_manual
+        else:
+            puntaje_final = juego.obtener_puntaje_actual()
+        
+        # CORRECCIÓN: Usar agregar_puntaje en lugar de agregar_registro
+        posicion, es_top = salon_fama.agregar_puntaje(usuario, puntaje_final)
+        
+        # Crear el objeto de resultado
+        resultado = {
+            'posicion': posicion,
+            'es_top': es_top,
+            'es_record': salon_fama.es_nuevo_record(puntaje_final),
+            'puntaje': puntaje_final
         }
+        
+        return resultado

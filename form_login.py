@@ -8,6 +8,7 @@ from Ayuda import VentanaAyuda
 from creditos import VentanaCreditos
 from Clases_auxiliares.musica import MUSICA
 from Traductor import dic_idiomas
+from perfiles import es_primer_inicio
 from decoracion import (
     PALETA,
     crear_fila_entrada_con_boton_derecha,
@@ -24,7 +25,6 @@ from Clases_auxiliares.credenciales import (
     guardar_credenciales,
     guardar_preferencias,
 )
-from perfiles import personalizacion_ya_hecha
 
 class PantallaLogin:
     def __init__(self, lang: str = None):
@@ -140,22 +140,31 @@ class PantallaLogin:
         threading.Thread(target=lambda: login_with_face_gui(callback_exito=on_face_ok), daemon=True).start()
 
     def _post_login(self, username: str):
-        try: 
+        """Acciones posteriores al inicio de sesión exitoso."""
+        try:
             self.ventana_login.destroy()
         except Exception:
             pass
+
+        # Detener música de fondo
         MUSICA.detener()
-        
-        # Si NO ha hecho personalización, ir a esa pantalla
-        if not personalizacion_ya_hecha(username):
-            import personalizacion_GUI
-            personalizacion_GUI.main(username, self.lang)
-        else:
-            # Si YA personalizó, ir directo a dificultad
-            import dificultad
-            dificultad_seleccionada = dificultad.main(username, self.lang)
-            # Aquí puedes continuar con tu aplicación principal
-            print(f"Usuario {username} continuará con dificultad: {dificultad_seleccionada}")
+
+        try:
+            # ✅ Si es la primera vez, abrir la ventana de personalización
+            if es_primer_inicio(username):
+                import personalizacion_GUI
+                personalizacion_GUI.main(username, self.lang)
+            else:
+                # ✅ Si ya tiene personalización, abrir directamente la dificultad
+                import dificultad
+                dificultad.main(username, self.lang)
+
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            messagebox.showerror("Error", f"Ocurrió un error al continuar: {e}")
+
+
 
     def t(self, key): 
         return dic_idiomas.get(self.lang, dic_idiomas["es"]).get(key, key)

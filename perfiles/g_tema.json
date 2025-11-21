@@ -1,0 +1,45 @@
+{
+  "colores": {
+    "fondo": {
+      "hex": "#FFE9E6",
+      "rgb": [
+        255,
+        233,
+        230
+      ]
+    },
+    "texto": {
+      "hex": "#F5F5F5",
+      "rgb": [
+        245,
+        245,
+        245
+      ]
+    },
+    "ventana": {
+      "hex": "#FFC9C2",
+      "rgb": [
+        255,
+        201,
+        194
+      ]
+    },
+    "btn_primario": {
+      "hex": "#FF2A0D",
+      "rgb": [
+        255,
+        42,
+        13
+      ]
+    },
+    "btn_secundario": {
+      "hex": "#FF6955",
+      "rgb": [
+        255,
+        105,
+        85
+      ]
+    }
+  },
+  "musica": null
+}

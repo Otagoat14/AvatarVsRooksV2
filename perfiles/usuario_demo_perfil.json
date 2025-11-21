@@ -1,0 +1,42 @@
+{
+  "usuario": "usuario_demo",
+  "personalizado": true,
+  "tema": {
+    "fondo": {
+      "rgb": [
+        236,
+        230,
+        241
+      ]
+    },
+    "texto": {
+      "rgb": [
+        245,
+        245,
+        245
+      ]
+    },
+    "ventana": {
+      "rgb": [
+        209,
+        194,
+        222
+      ]
+    },
+    "btn_primario": {
+      "rgb": [
+        74,
+        13,
+        124
+      ]
+    },
+    "btn_secundario": {
+      "rgb": [
+        128,
+        85,
+        163
+      ]
+    }
+  },
+  "musica": "spotify:track:demo123"
+}

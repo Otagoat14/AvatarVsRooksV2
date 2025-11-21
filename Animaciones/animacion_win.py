@@ -24,10 +24,51 @@ VENT_ANCHO, VENT_ALTO = 800, 500
 
 
 class VentanaWin:
-    def __init__(self, main_surface):
+    def __init__(self, main_surface, paleta=None, username=None):
         pygame.init()
+        # === Aplicar personalización ===
+        # === Aplicar personalización (MEJORADO) ===
+        self.username = username
+        self.paleta = paleta
+
+        try:
+            # Si no recibimos paleta, intentamos obtenerla por username (si vino)
+            if self.paleta is None and self.username:
+                from perfiles import obtener_paleta_personalizada
+                self.paleta = obtener_paleta_personalizada(self.username)
+        except Exception as e:
+            # Si algo falla, seguimos con defaults
+            print(f"No se pudo obtener paleta del usuario: {e}")
+            self.paleta = None
+
+        # Establecer colores por defecto primero
+        global FONDO_PANTALLA, CARD_BG, CARD_BORDER, COLOR_TEXT_TITU, COLOR_TEXT_CUER, COLOR_BOTONES, HOVER
+        FONDO_PANTALLA = PALETA["charcoal"]
+        CARD_BG = PALETA["ruby"]
+        CARD_BORDER = PALETA["snow"]
+        COLOR_TEXT_TITU = PALETA["snow"]
+        COLOR_TEXT_CUER = PALETA["taupe"]
+        COLOR_BOTONES = PALETA["vermilion"]
+        HOVER = (50, 55, 60)
+
+        # Si hay paleta válida, sobrescribimos
+        if isinstance(self.paleta, dict) and self.paleta:
+            FONDO_PANTALLA = self.paleta.get("FONDO_PANTALLA", FONDO_PANTALLA)
+            CARD_BG = self.paleta.get("CARD_BG", CARD_BG)
+            CARD_BORDER = self.paleta.get("CARD_BORDER", CARD_BORDER)
+            COLOR_TEXT_TITU = self.paleta.get("COLOR_TEXT_TITU", COLOR_TEXT_TITU)
+            COLOR_TEXT_CUER = self.paleta.get("COLOR_TEXT_CUER", COLOR_TEXT_CUER)
+            COLOR_BOTONES = self.paleta.get("COLOR_BOTONES", COLOR_BOTONES)
+
+        # Hover dinámico (20% más claro que el botón), ahora que ya sabemos COLOR_BOTONES
+        try:
+            HOVER = tuple(min(255, int(c * 1.2)) for c in COLOR_BOTONES)
+        except Exception:
+            HOVER = (50, 55, 60)
+
+
         pygame.mixer.init()
-        
+
         # === Guardar referencia a la ventana principal ===
         self.main_surface = main_surface
         self.original_caption = pygame.display.get_caption()
@@ -60,9 +101,9 @@ class VentanaWin:
         self.accion_usuario = None
 
         # === Botones ===
-        self.btn_w, self.btn_h = 260, 55
-        self.btn_continuar = pygame.Rect(VENT_ANCHO // 2 - self.btn_w - 20, 350, self.btn_w, self.btn_h)
-        self.btn_menu = pygame.Rect(VENT_ANCHO // 2 + 20, 350, self.btn_w, self.btn_h)
+        self.btn_w, self.btn_h = 200, 55
+        self.btn_continuar = pygame.Rect(VENT_ANCHO // 2 - 200 - 130, 350, 350, 55)
+        self.btn_menu = pygame.Rect(VENT_ANCHO // 2 + 130, 350, 200, 55)
 
         # === Partículas ===
         self.particulas = [self.Particula() for _ in range(80)]
@@ -127,7 +168,7 @@ class VentanaWin:
                         self.running = False
 
             # === Dibujar en la superficie modal ===
-            self.modal_surface.fill((0, 0, 0, 0))  # Limpiar con transparencia
+            self.modal_surface.fill(FONDO_PANTALLA)  # ← usa color personalizado
 
             # === Partículas ===
             for p in self.particulas:
@@ -182,7 +223,10 @@ class VentanaWin:
         modal_mouse_x = mouse_x - self.modal_x
         modal_mouse_y = mouse_y - self.modal_y
         
-        for idx, (rect, texto) in enumerate([(self.btn_continuar, "Continuar al Siguiente Nivel"), (self.btn_menu, "Menú Principal")]):
+        for idx, (rect, texto) in enumerate([
+            (self.btn_continuar, "Continuar al Siguiente Nivel"),
+            (self.btn_menu, "Menú Principal")
+        ]):
             hover = rect.collidepoint(modal_mouse_x, modal_mouse_y)
             color = HOVER if hover else COLOR_BOTONES
             scale_btn = 1.06 if hover else 1
@@ -200,7 +244,8 @@ class VentanaWin:
                 rect.centery - btn_scaled.get_height() // 2
             ))
 
-            label = self.font_boton.render(texto, True, COLOR_TEXT_TITU)
+            label_color = COLOR_TEXT_TITU if not hover else COLOR_TEXT_CUER
+            label = self.font_boton.render(texto, True, label_color)
             self.modal_surface.blit(label, (
                 rect.centerx - label.get_width() // 2,
                 rect.centery - label.get_height() // 2

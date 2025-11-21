@@ -1,16 +1,27 @@
 [
     {
         "nombre": "Jugador",
-        "puntaje": 79,
-        "fecha": "2025-10-30 10:56:07",
-        "detalles": {
-            "puntaje_final": 79,
-            "tempo": 120,
-            "popularidad": 50,
-            "avatars_matados": 5,
-            "puntos_avatars": 45,
-            "victoria": true,
-            "tiempo_jugado": 60
-        }
+        "puntaje": 700,
+        "fecha": "2025-11-21 15:52:51"
+    },
+    {
+        "nombre": "otagoat14",
+        "puntaje": 415,
+        "fecha": "2025-11-13 16:37:36"
+    },
+    {
+        "nombre": "Pepe",
+        "puntaje": 355,
+        "fecha": "2025-11-17 22:28:27"
+    },
+    {
+        "nombre": "sjsldlldkl",
+        "puntaje": 114,
+        "fecha": "2025-11-12 13:42:09"
+    },
+    {
+        "nombre": "usuario_test",
+        "puntaje": 38,
+        "fecha": "2025-11-12 13:51:33"
     }
 ]
