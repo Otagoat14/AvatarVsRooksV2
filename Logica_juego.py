@@ -225,19 +225,19 @@ class Juego:
                 "precio": 50, 
                 "tipo": ROOK_TIPO_1, 
                 "nombre": "Rook Arena",
-                "vida": 4, "daño": 2, "velocidad_ataque": 8.0
+                "vida": 4, "daño": 2, "velocidad_ataque": 4.0
             },
             {
                 "precio": 100, 
                 "tipo": ROOK_TIPO_2, 
                 "nombre": "Rook Roca",
-                "vida": 6, "daño": 4, "velocidad_ataque": 10.0
+                "vida": 6, "daño": 4, "velocidad_ataque": 6.0
             },
             {
                 "precio": 150, 
                 "tipo": ROOK_TIPO_3, 
                 "nombre": "Rook Agua",
-                "vida": 9, "daño": 17, "velocidad_ataque": 15.0
+                "vida": 9, "daño": 17, "velocidad_ataque": 11.0
             },
             {
                 "precio": 150, 
@@ -253,29 +253,29 @@ class Juego:
         avatares_base = [
             {
                 "tipo": "Flechero",
-                "vida": 5, "daño": 2, "velocidad": 5.0,
-                "velocidad_ataque": 4.0, "probabilidad_spawn": 0.3,
+                "vida": 5, "daño": 2, "velocidad": 2.0,
+                "velocidad_ataque": 4.0, "probabilidad_spawn": 0.8,
                 "intervalo_spawn_base": 2.0, 
                 "valor_monedas": 5
             },
             {
                 "tipo": "Escudero", 
-                "vida": 10, "daño": 3, "velocidad": 8.0,
-                "velocidad_ataque": 6.0, "probabilidad_spawn": 0.2,
+                "vida": 10, "daño": 3, "velocidad": 4.0,
+                "velocidad_ataque": 6.0, "probabilidad_spawn": 0.6,
                 "intervalo_spawn_base": 4.0,  #
                 "valor_monedas": 10
             },
             {
                 "tipo": "Leñador",
-                "vida": 20, "daño": 9, "velocidad": 3.0,
-                "velocidad_ataque": 5.0, "probabilidad_spawn": 0.15,
+                "vida": 20, "daño": 9, "velocidad": 1.0,
+                "velocidad_ataque": 5.0, "probabilidad_spawn": 0.3,
                 "intervalo_spawn_base": 6.0,  
                 "valor_monedas": 20
             },
             {
                 "tipo": "Caníbal",
-                "vida": 25, "daño": 12, "velocidad": 5.0,
-                "velocidad_ataque": 9.0, "probabilidad_spawn": 0.1,
+                "vida": 25, "daño": 12, "velocidad": 2.0,
+                "velocidad_ataque": 9.0, "probabilidad_spawn": 0.2,
                 "intervalo_spawn_base": 8.0, 
                 "valor_monedas": 25
             }
