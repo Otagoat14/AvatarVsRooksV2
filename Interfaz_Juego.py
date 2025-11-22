@@ -12,6 +12,7 @@ import sys
 from Animaciones.animacion_final_juego import VentanaFinalJuego
 from perfiles import obtener_musica_usuario
 from Clases_auxiliares.integracion_spotify import reproducir_uri
+from Clases_auxiliares import musica
 
 
 PICO_IP = "192.168.151.216"   # <-- pon aquí la IP que imprime la Pico
@@ -684,6 +685,8 @@ class Interfaz:
         elif dir_logica == "DERECHA":
             self._mover_cursor(0, +1)
 
+        musica.reproducir_seleccionar_campo()
+
     def _procesar_botones(self, estado):
 
         # Inicializar estados base y prev la primera vez
@@ -742,6 +745,7 @@ class Interfaz:
         success, message = self.juego.colocar_rook(fila, col, tipo_index)
 
         if success:
+            musica.reproducir_poner_rook
             info = self.juego.obtener_rooks_info()[tipo_index]
             print(f"Rook colocada ({info['nombre']}) en ({fila}, {col})")
         else:

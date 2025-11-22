@@ -2,6 +2,7 @@ import time
 import random
 from Personajes import Rooks, Avatar, FILAS, COLUMNAS, Moneda
 from Puntaje import CalculadorPuntaje
+from Clases_auxiliares import musica
 
 # Constantes lógicas
 VACIO = 0
@@ -381,8 +382,11 @@ class Juego:
         rook = self.rooks_activos[indice]
         
         if rook.personaje_vivo:
-            rook.disparar()
+            bala = rook.disparar(self)  # pasamos self para el juego
+            if bala:
+                musica.reproducir_disparo_rooks()
             rook.actualizar_balas()
+
         
         self.actualizar_rooks_recursivo(indice + 1)
 
@@ -414,7 +418,11 @@ class Juego:
                 self.game_over = True
                 return
             
-            avatar.disparar(self)
+            bala_avatar = avatar.disparar(self)
+            if bala_avatar and avatar.rango_ataque > 1.0:
+                # Solo los de ataque a distancia: Flechero y Escudero
+                musica.reproducir_disparo_avatars()
+
             avatar.actualizar_balas()
         
         self.actualizar_avatares_recursivo(indice + 1)
@@ -446,6 +454,7 @@ class Juego:
                 bala.bala_activa = False
                 
                 if not avatar.personaje_vivo:
+                    musica.reproducir_avatar_derrumbado()
                     if avatar.tipo_avatar == "Flechero":
                         self.flecheros_muertos += 1
                         print(f"Flechero muerto! Total: {self.flecheros_muertos}/3")
@@ -498,6 +507,7 @@ class Juego:
                 self.rook_herida = True
 
                 if not rook.personaje_vivo:
+                    musica.reproducir_torre_derrumbada()
                     self.matriz[int(rook.y_fila)][rook.x_columna] = VACIO
             
                 return self.colision_balas_avatares_recursivo(i_avatar, 0, i_bala + 1)
