@@ -97,3 +97,86 @@ class MusicaAmbiental:
 
 
 MUSICA = MusicaAmbiental()
+
+
+#EFECTOS DE SONIDO
+
+# Clases_auxiliares/sonidos.py
+import pygame
+
+# Rutas de los archivos de sonido
+RUTA_PONER_ROOK = "musica/poner_rook.mp3"
+RUTA_TORRE_DERRUMBADA = "musica/torre_derrumbada.mp3"
+RUTA_DISPARO_ROOKS = "musica/disparo_rooks.mp3"
+RUTA_DISPARO_AVATARS = "musica/disparo_avatars.mp3"
+RUTA_AVATAR_DERRUMBADO = "musica/avatar_derrumbado.mp3"
+RUTA_SELECCIONAR_CAMPO = "musica/seleccionar_campo.mp3"
+
+
+# Variables globales para los sonidos (se cargan perezosamente)
+_sonido_poner_rook = None
+_sonido_torre_derrumbada = None
+_sonido_disparo_rooks = None
+_sonido_disparo_avatars = None
+_sonido_avatar_derrumbado = None
+_sonido_seleccionar_campo = None
+
+
+def _cargar_sonidos_si_no():
+    """Carga los sonidos solo la primera vez que se usan."""
+    global _sonido_poner_rook, _sonido_torre_derrumbada
+    global _sonido_disparo_rooks, _sonido_disparo_avatars, _sonido_avatar_derrumbado
+    global _sonido_seleccionar_campo
+
+    try:
+        if _sonido_poner_rook is None:
+            _sonido_poner_rook = pygame.mixer.Sound(RUTA_PONER_ROOK)
+        if _sonido_torre_derrumbada is None:
+            _sonido_torre_derrumbada = pygame.mixer.Sound(RUTA_TORRE_DERRUMBADA)
+        if _sonido_disparo_rooks is None:
+            _sonido_disparo_rooks = pygame.mixer.Sound(RUTA_DISPARO_ROOKS)
+        if _sonido_disparo_avatars is None:
+            _sonido_disparo_avatars = pygame.mixer.Sound(RUTA_DISPARO_AVATARS)
+        if _sonido_avatar_derrumbado is None:
+            _sonido_avatar_derrumbado = pygame.mixer.Sound(RUTA_AVATAR_DERRUMBADO)
+        if _sonido_seleccionar_campo is None:                
+            _sonido_seleccionar_campo = pygame.mixer.Sound(RUTA_SELECCIONAR_CAMPO)
+
+    except Exception as e:
+        print("[SONIDOS] Error cargando sonidos:", e)
+
+
+def reproducir_poner_rook():
+    _cargar_sonidos_si_no()
+    if _sonido_poner_rook:
+        _sonido_poner_rook.play()
+
+
+def reproducir_torre_derrumbada():
+    _cargar_sonidos_si_no()
+    if _sonido_torre_derrumbada:
+        _sonido_torre_derrumbada.play()
+
+
+def reproducir_disparo_rooks():
+    _cargar_sonidos_si_no()
+    if _sonido_disparo_rooks:
+        _sonido_disparo_rooks.play()
+
+
+def reproducir_disparo_avatars():
+    _cargar_sonidos_si_no()
+    if _sonido_disparo_avatars:
+        _sonido_disparo_avatars.play()
+
+
+def reproducir_avatar_derrumbado():
+    _cargar_sonidos_si_no()
+    if _sonido_avatar_derrumbado:
+        _sonido_avatar_derrumbado.play()
+
+def reproducir_seleccionar_campo():
+    _cargar_sonidos_si_no()
+    if _sonido_seleccionar_campo:
+        _sonido_seleccionar_campo.play()
+

@@ -2,6 +2,7 @@ import time
 import random
 from Personajes import Rooks, Avatar, FILAS, COLUMNAS, Moneda
 from Puntaje import CalculadorPuntaje
+from Clases_auxiliares import musica
 
 # Constantes lógicas
 VACIO = 0
@@ -224,19 +225,19 @@ class Juego:
                 "precio": 50, 
                 "tipo": ROOK_TIPO_1, 
                 "nombre": "Rook Arena",
-                "vida": 4, "daño": 2, "velocidad_ataque": 8.0
+                "vida": 4, "daño": 2, "velocidad_ataque": 4.0
             },
             {
                 "precio": 100, 
                 "tipo": ROOK_TIPO_2, 
                 "nombre": "Rook Roca",
-                "vida": 6, "daño": 4, "velocidad_ataque": 10.0
+                "vida": 6, "daño": 4, "velocidad_ataque": 6.0
             },
             {
                 "precio": 150, 
                 "tipo": ROOK_TIPO_3, 
                 "nombre": "Rook Agua",
-                "vida": 9, "daño": 17, "velocidad_ataque": 15.0
+                "vida": 9, "daño": 17, "velocidad_ataque": 11.0
             },
             {
                 "precio": 150, 
@@ -252,29 +253,29 @@ class Juego:
         avatares_base = [
             {
                 "tipo": "Flechero",
-                "vida": 5, "daño": 2, "velocidad": 5.0,
-                "velocidad_ataque": 4.0, "probabilidad_spawn": 0.3,
+                "vida": 5, "daño": 2, "velocidad": 2.0,
+                "velocidad_ataque": 4.0, "probabilidad_spawn": 0.8,
                 "intervalo_spawn_base": 2.0, 
                 "valor_monedas": 5
             },
             {
                 "tipo": "Escudero", 
-                "vida": 10, "daño": 3, "velocidad": 8.0,
-                "velocidad_ataque": 6.0, "probabilidad_spawn": 0.2,
+                "vida": 10, "daño": 3, "velocidad": 4.0,
+                "velocidad_ataque": 6.0, "probabilidad_spawn": 0.6,
                 "intervalo_spawn_base": 4.0,  #
                 "valor_monedas": 10
             },
             {
                 "tipo": "Leñador",
-                "vida": 20, "daño": 9, "velocidad": 3.0,
-                "velocidad_ataque": 5.0, "probabilidad_spawn": 0.15,
+                "vida": 20, "daño": 9, "velocidad": 1.0,
+                "velocidad_ataque": 5.0, "probabilidad_spawn": 0.3,
                 "intervalo_spawn_base": 6.0,  
                 "valor_monedas": 20
             },
             {
                 "tipo": "Caníbal",
-                "vida": 25, "daño": 12, "velocidad": 5.0,
-                "velocidad_ataque": 9.0, "probabilidad_spawn": 0.1,
+                "vida": 25, "daño": 12, "velocidad": 2.0,
+                "velocidad_ataque": 9.0, "probabilidad_spawn": 0.2,
                 "intervalo_spawn_base": 8.0, 
                 "valor_monedas": 25
             }
@@ -381,8 +382,11 @@ class Juego:
         rook = self.rooks_activos[indice]
         
         if rook.personaje_vivo:
-            rook.disparar()
+            bala = rook.disparar(self)  # pasamos self para el juego
+            if bala:
+                musica.reproducir_disparo_rooks()
             rook.actualizar_balas()
+
         
         self.actualizar_rooks_recursivo(indice + 1)
 
@@ -414,7 +418,11 @@ class Juego:
                 self.game_over = True
                 return
             
-            avatar.disparar(self)
+            bala_avatar = avatar.disparar(self)
+            if bala_avatar and avatar.rango_ataque > 1.0:
+                # Solo los de ataque a distancia: Flechero y Escudero
+                musica.reproducir_disparo_avatars()
+
             avatar.actualizar_balas()
         
         self.actualizar_avatares_recursivo(indice + 1)
@@ -446,6 +454,7 @@ class Juego:
                 bala.bala_activa = False
                 
                 if not avatar.personaje_vivo:
+                    musica.reproducir_avatar_derrumbado()
                     if avatar.tipo_avatar == "Flechero":
                         self.flecheros_muertos += 1
                         print(f"Flechero muerto! Total: {self.flecheros_muertos}/3")
@@ -498,6 +507,7 @@ class Juego:
                 self.rook_herida = True
 
                 if not rook.personaje_vivo:
+                    musica.reproducir_torre_derrumbada()
                     self.matriz[int(rook.y_fila)][rook.x_columna] = VACIO
             
                 return self.colision_balas_avatares_recursivo(i_avatar, 0, i_bala + 1)

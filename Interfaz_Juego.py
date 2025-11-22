@@ -10,17 +10,17 @@ from Animaciones.animacion_salon_fama import VentanaSalonFama
 from Animaciones.animacion_win import VentanaWin
 import sys
 from Animaciones.animacion_final_juego import VentanaFinalJuego
+from perfiles import obtener_musica_usuario
+from Clases_auxiliares.integracion_spotify import reproducir_uri
+from Clases_auxiliares import musica
+
 
 PICO_IP = "192.168.151.216"   # <-- pon aquí la IP que imprime la Pico
 PICO_PORT_MOTOR = 6000        # puerto para los motores
 
-
 # Constantes visuales
 ANCHO = COLUMNAS * TAMAÑO_CELDA
 ALTO = FILAS * TAMAÑO_CELDA
-
-
-
 
 # Colores
 COLOR_FONDO = (18, 18, 18)
@@ -96,6 +96,8 @@ class Interfaz:
 
         self.sock_motor = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
+        self.sockets_cerrados = False
+
         # Para saber cómo están los botones "en reposo" (0 ó 1)
         self.control_base = None    # dict con valores de reposo
         self.control_prev = None    # dict con último estado
@@ -147,6 +149,8 @@ class Interfaz:
         self.juego_pausado = False
         self.boton_pausa = None
         self.boton_reanudar = None
+
+        self.accion_pausa = None
         self._crear_botones_pausa()
     
     def cargar_imagenes_monedas(self):
@@ -269,111 +273,205 @@ class Interfaz:
             self.boton_iniciar_ronda["hover"] = self.boton_iniciar_ronda["rect"].collidepoint(mouse_pos)
 
     def _crear_botones_pausa(self):
-        """Crea los botones de pausa y reanudar"""
-        ancho_boton = 180
-        alto_boton = 50
-        x = 50  # Posición en la esquina superior izquierda
-        y_pausa = 380  # Debajo del botón iniciar
-        y_reanudar = 440  # Debajo del botón pausa
-        
+        """Crea los botones de pausa/reanudar y los de la pantalla de pausa."""
+        # --- Botones laterales (barra izquierda) ---
+        ancho = 180
+        alto = 50
+        x = 40
+        y = 260
+
         self.boton_pausa = {
-            "rect": pygame.Rect(x, y_pausa, ancho_boton, alto_boton),
-            "texto": "⏸️ PAUSAR",
+            "rect": pygame.Rect(x, y, ancho, alto),
+            "texto": "PAUSAR",
             "hover": False,
             "activo": True,
             "visible": True
         }
-        
+
         self.boton_reanudar = {
-            "rect": pygame.Rect(x, y_reanudar, ancho_boton, alto_boton),
-            "texto": "▶️ REANUDAR",
+            "rect": pygame.Rect(x, y, ancho, alto),
+            "texto": "REANUDAR",
             "hover": False,
             "activo": True,
-            "visible": False  # Inicialmente oculto
+            "visible": False
         }
 
-    def dibujar_botones_pausa(self):
-        """Dibuja los botones de pausa y reanudar según el estado del juego"""
-        # Botón de pausa (solo visible cuando el juego está activo y no pausado)
-        if (self.ronda_iniciada and not self.juego_pausado and 
-            self.boton_pausa["activo"] and self.boton_pausa["visible"]):
-            
+        # --- Botones centrales que aparecen SOLO cuando el juego está en pausa ---
+        ancho_centro = 260
+        alto_centro = 60
+        cx = self.ANCHO_PANTALLA // 2 - ancho_centro // 2
+        base_y = self.ALTO_PANTALLA // 2 + 40
+
+        self.boton_pausa_reanudar_centro = {
+            "rect": pygame.Rect(cx, base_y, ancho_centro, alto_centro),
+            "texto": "REANUDAR",
+            "hover": False,
+            "activo": True,
+            "visible": False
+        }
+
+        self.boton_menu_pausa = {
+            "rect": pygame.Rect(cx, base_y + 80, ancho_centro, alto_centro),
+            "texto": "VOLVER AL MENÚ",
+            "hover": False,
+            "activo": True,
+            "visible": False
+        }
+
+        self.boton_salir_pausa = {
+            "rect": pygame.Rect(cx, base_y + 160, ancho_centro, alto_centro),
+            "texto": "SALIR DEL JUEGO",
+            "hover": False,
+            "activo": True,
+            "visible": False
+        }
+
+
+
+    def dibujar_botones_pausa(self, juego_pausado):
+        """Dibuja los botones de pausa/reanudar.
+
+        - Lateral izquierdo: PAUSAR / REANUDAR
+        - Centro de la pantalla (cuando está pausado): REANUDAR, VOLVER AL MENÚ, SALIR
+        """
+        # ---------------- Botones laterales ----------------
+        if self.boton_pausa["activo"] and self.boton_pausa["visible"]:
             boton = self.boton_pausa
             rect = boton["rect"]
-            
-            # Color según estado
             if boton["hover"]:
-                color = (180, 120, 80)  # Naranja más claro al hover
+                color = (180, 80, 80)   # rojo más claro
             else:
-                color = (160, 100, 60)  # Naranja normal
-            
-            # Dibujar botón
+                color = (160, 60, 60)   # rojo normal
+
             pygame.draw.rect(self.pantalla, color, rect, border_radius=8)
-            pygame.draw.rect(self.pantalla, (200, 200, 200), rect, width=2, border_radius=8)
-            
-            # Dibujar texto
+            pygame.draw.rect(self.pantalla, (200, 200, 200), rect, 2, border_radius=8)
+
             try:
                 fuente_boton = pygame.font.Font("Fuentes/super_sliced.otf", 18)
             except:
                 fuente_boton = pygame.font.SysFont("segoeui", 18, bold=True)
-            
-            texto_surface = fuente_boton.render(boton["texto"], True, (255, 255, 255))
-            texto_rect = texto_surface.get_rect(center=rect.center)
-            self.pantalla.blit(texto_surface, texto_rect)
-        
-        # Botón de reanudar (solo visible cuando el juego está pausado)
-        if (self.juego_pausado and self.boton_reanudar["activo"] and 
-            self.boton_reanudar["visible"]):
-            
-            boton = self.boton_reanudar
-            rect = boton["rect"]
-            
-            # Color según estado
-            if boton["hover"]:
-                color = (80, 160, 80)  # Verde más claro al hover
-            else:
-                color = (60, 140, 60)  # Verde normal
-            
-            # Dibujar botón
-            pygame.draw.rect(self.pantalla, color, rect, border_radius=8)
-            pygame.draw.rect(self.pantalla, (200, 200, 200), rect, width=2, border_radius=8)
-            
-            # Dibujar texto
-            try:
-                fuente_boton = pygame.font.Font("Fuentes/super_sliced.otf", 18)
-            except:
-                fuente_boton = pygame.font.SysFont("segoeui", 18, bold=True)
-            
+
             texto_surface = fuente_boton.render(boton["texto"], True, (255, 255, 255))
             texto_rect = texto_surface.get_rect(center=rect.center)
             self.pantalla.blit(texto_surface, texto_rect)
 
+        if (juego_pausado and self.boton_reanudar["activo"] and
+                self.boton_reanudar["visible"]):
+
+            boton = self.boton_reanudar
+            rect = boton["rect"]
+
+            if boton["hover"]:
+                color = (80, 160, 80)
+            else:
+                color = (60, 140, 60)
+
+            pygame.draw.rect(self.pantalla, color, rect, border_radius=8)
+            pygame.draw.rect(self.pantalla, (200, 200, 200), rect, 2, border_radius=8)
+
+            try:
+                fuente_boton = pygame.font.Font("Fuentes/super_sliced.otf", 18)
+            except:
+                fuente_boton = pygame.font.SysFont("segoeui", 18, bold=True)
+
+            texto_surface = fuente_boton.render(boton["texto"], True, (255, 255, 255))
+            texto_rect = texto_surface.get_rect(center=rect.center)
+            self.pantalla.blit(texto_surface, texto_rect)
+
+        # ---------------- Botones centrales (solo en pausa) ----------------
+        if juego_pausado:
+            try:
+                fuente_boton_centro = pygame.font.Font("Fuentes/super_sliced.otf", 22)
+            except:
+                fuente_boton_centro = pygame.font.SysFont("segoeui", 22, bold=True)
+
+            for boton in (self.boton_pausa_reanudar_centro,
+                        self.boton_menu_pausa,
+                        self.boton_salir_pausa):
+
+                if not boton["visible"]:
+                    continue
+
+                rect = boton["rect"]
+                if boton["hover"]:
+                    color = (90, 90, 160)
+                else:
+                    color = (60, 60, 130)
+
+                pygame.draw.rect(self.pantalla, color, rect, border_radius=10)
+                pygame.draw.rect(self.pantalla, (230, 230, 230), rect, 2, border_radius=10)
+
+                texto_surface = fuente_boton_centro.render(boton["texto"], True, (255, 255, 255))
+                texto_rect = texto_surface.get_rect(center=rect.center)
+                self.pantalla.blit(texto_surface, texto_rect)
+
+
     def verificar_click_botones_pausa(self, mouse_pos):
-        """Verifica si se hizo click en los botones de pausa/reanudar"""
-        # Botón de pausa
-        if (self.ronda_iniciada and not self.juego_pausado and 
+        """
+        Verifica si se hizo click en los botones de pausa/reanudar o en los
+        botones centrales de la pantalla de pausa.
+
+        Retorna:
+            - False / None  -> no hizo nada
+            - True          -> solo pausar/reanudar
+            - "menu"        -> volver al menú principal
+            - "salir"       -> salir del juego
+        """
+        # Botón de pausa (lateral)
+        if (self.ronda_iniciada and not self.juego_pausado and
             self.boton_pausa["activo"] and self.boton_pausa["visible"] and
             self.boton_pausa["rect"].collidepoint(mouse_pos)):
-            
+
             self.pausar_juego()
             return True
-        
-        # Botón de reanudar
-        if (self.juego_pausado and self.boton_reanudar["activo"] and 
+
+        # Botón de reanudar (lateral)
+        if (self.juego_pausado and self.boton_reanudar["activo"] and
             self.boton_reanudar["visible"] and
             self.boton_reanudar["rect"].collidepoint(mouse_pos)):
-            
+
             self.reanudar_juego()
             return True
-        
+
+        # --- Botones centrales (solo cuando está pausado) ---
+        if self.juego_pausado:
+            # REANUDAR (centro)
+            if (self.boton_pausa_reanudar_centro["activo"] and
+                self.boton_pausa_reanudar_centro["visible"] and
+                self.boton_pausa_reanudar_centro["rect"].collidepoint(mouse_pos)):
+
+                self.reanudar_juego()
+                return True
+
+            # VOLVER AL MENÚ
+            if (self.boton_menu_pausa["activo"] and
+                self.boton_menu_pausa["visible"] and
+                self.boton_menu_pausa["rect"].collidepoint(mouse_pos)):
+
+                self.accion_pausa = "menu"
+                return "menu"
+
+            # SALIR DEL JUEGO
+            if (self.boton_salir_pausa["activo"] and
+                self.boton_salir_pausa["visible"] and
+                self.boton_salir_pausa["rect"].collidepoint(mouse_pos)):
+
+                self.accion_pausa = "salir"
+                return "salir"
+
         return False
+
 
     def pausar_juego(self):
         """Pausa el juego"""
         self.juego_pausado = True
         self.boton_pausa["visible"] = False
         self.boton_reanudar["visible"] = True
-        self.juego.pausar()  # Método que agregaremos en Logica_juego.py
+        # Mostrar también los botones centrales
+        self.boton_pausa_reanudar_centro["visible"] = True
+        self.boton_menu_pausa["visible"] = True
+        self.boton_salir_pausa["visible"] = True
+        self.juego.pausar()
         print("Juego pausado")
 
     def reanudar_juego(self):
@@ -381,67 +479,64 @@ class Interfaz:
         self.juego_pausado = False
         self.boton_pausa["visible"] = True
         self.boton_reanudar["visible"] = False
-        self.juego.reanudar()  # Método que agregaremos en Logica_juego.py
+        # Ocultar botones centrales
+        self.boton_pausa_reanudar_centro["visible"] = False
+        self.boton_menu_pausa["visible"] = False
+        self.boton_salir_pausa["visible"] = False
+        self.juego.reanudar()
         print("Juego reanudado")
+
 
     def actualizar_estado_botones_pausa(self, mouse_pos):
         """Actualiza el estado hover de los botones de pausa/reanudar"""
-        # Botón de pausa
+        # Botón de pausa lateral
         if self.boton_pausa["activo"] and self.boton_pausa["visible"]:
             self.boton_pausa["hover"] = self.boton_pausa["rect"].collidepoint(mouse_pos)
-        
-        # Botón de reanudar
+
+        # Botón de reanudar lateral
         if self.boton_reanudar["activo"] and self.boton_reanudar["visible"]:
             self.boton_reanudar["hover"] = self.boton_reanudar["rect"].collidepoint(mouse_pos)
+
+        # Botones centrales (solo cuando está pausado)
+        for boton in (self.boton_pausa_reanudar_centro,
+                    self.boton_menu_pausa,
+                    self.boton_salir_pausa):
+            if boton["activo"] and boton["visible"]:
+                boton["hover"] = boton["rect"].collidepoint(mouse_pos)
+
     
     def mostrar_mensaje_pausa(self):
         """Muestra mensaje indicando que el juego está pausado"""
         fuente_grande = pygame.font.Font("Fuentes/super_sliced.otf", 48)
         fuente_mediana = pygame.font.Font("Fuentes/super_sliced.otf", 24)
-        
+
         # Fondo semitransparente
         overlay = pygame.Surface((self.ANCHO_PANTALLA, self.ALTO_PANTALLA))
         overlay.set_alpha(150)
         overlay.fill((0, 0, 0))
         self.pantalla.blit(overlay, (0, 0))
-        
+
         # Texto principal
         texto_pausa = fuente_grande.render("JUEGO EN PAUSA", True, (255, 255, 100))
-        texto_rect = texto_pausa.get_rect(center=(self.ANCHO_PANTALLA // 2, self.ALTO_PANTALLA // 2 - 50))
+        texto_rect = texto_pausa.get_rect(center=(self.ANCHO_PANTALLA // 2, self.ALTO_PANTALLA // 2 - 80))
         self.pantalla.blit(texto_pausa, texto_rect)
-        
+
         # Instrucciones
-        instrucciones = fuente_mediana.render("Presiona P o el botón REANUDAR para continuar", True, (255, 255, 255))
-        inst_rect = instrucciones.get_rect(center=(self.ANCHO_PANTALLA // 2, self.ALTO_PANTALLA // 2 + 20))
+        instrucciones = fuente_mediana.render(
+            "Usa los botones para reanudar, volver al menú o salir",
+            True, (255, 255, 255)
+        )
+        inst_rect = instrucciones.get_rect(center=(self.ANCHO_PANTALLA // 2, self.ALTO_PANTALLA // 2 - 20))
         self.pantalla.blit(instrucciones, inst_rect)
-    
+
     def reproducir_cancion_usuario(self):
+        """
+        Reproduce la canción que el usuario tiene guardada en su perfil (si hay).
+        """
         try:
-            from perfiles import ruta_tema_json
-            import json, os
-            ruta = ruta_tema_json(self.usuario_actual)
-            if os.path.exists(ruta):
-                with open(ruta, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                uri = data.get("musica")
-                if uri:
-                    # Reutilizar spotipy rápidamente aquí
-                    import spotipy
-                    from spotipy.oauth2 import SpotifyOAuth
-                    sp = spotipy.Spotify(auth_manager=SpotifyOAuth(
-                        client_id="37141bd00fde487fb1dbf3b8d2fdf6f4",
-                        client_secret="87a87eb30ee5418f9f07c0c1800e0905",
-                        redirect_uri="http://127.0.0.1:8888/callback",
-                        scope="user-modify-playback-state user-read-playback-state"
-                    ))
-                    devices = sp.devices().get("devices", [])
-                    if devices:
-                        device_id = devices[0]["id"]
-                        try:
-                            sp.transfer_playback(device_id, force_play=True)
-                        except Exception:
-                            pass
-                        sp.start_playback(device_id=device_id, uris=[uri])
+            uri = obtener_musica_usuario(self.usuario_actual)
+            if uri:
+                reproducir_uri(uri)
         except Exception as e:
             print("No se pudo reproducir la canción del usuario:", e)
 
@@ -704,6 +799,8 @@ class Interfaz:
         elif dir_logica == "DERECHA":
             self._mover_cursor(0, +1)
 
+        musica.reproducir_seleccionar_campo()
+
     def _procesar_botones(self, estado):
 
         # Inicializar estados base y prev la primera vez
@@ -737,8 +834,15 @@ class Interfaz:
             self.juego.disparar_rooks_manual()
 
         # === SELECT: recoger monedas en todo el tablero ===
+        
         if cambio_boton("BS") and esta_presionado("BS"):
-            self.juego.recoger_monedas()
+            if not self.ronda_iniciada and self.boton_iniciar_ronda["activo"]:
+                self.ronda_iniciada = True
+                self.boton_iniciar_ronda["activo"] = False
+                self.juego.iniciar_ronda()
+            else:
+                self.juego.recoger_monedas()
+
 
         # === PAUSA: pausar / reanudar ===
         if cambio_boton("BP") and esta_presionado("BP"):
@@ -762,6 +866,7 @@ class Interfaz:
         success, message = self.juego.colocar_rook(fila, col, tipo_index)
 
         if success:
+            musica.reproducir_poner_rook
             info = self.juego.obtener_rooks_info()[tipo_index]
             print(f"Rook colocada ({info['nombre']}) en ({fila}, {col})")
         else:
@@ -959,28 +1064,30 @@ class Interfaz:
                 daño_y = vida_y
                 self.campo_tienda.blit(texto_daño, (daño_x, daño_y))
     
-    #Funcion para que se vea el puntaje
+
     def dibujar_puntaje(self):
-        puntaje_actual = self.juego.obtener_puntaje_actual()
-        puntaje_total = self.puntaje_acumulado + puntaje_actual
-        
-        # Puntaje del nivel actual (debe empezar en 0)
-        texto_puntaje_nivel = f"Puntaje Nivel: {puntaje_actual}"
+        # Obtener detalles desde el CalculadorPuntaje (algoritmo del banquero)
+        detalles = self.juego.obtener_detalles_puntaje()
+        puntaje_banquero = detalles["puntaje_final"]
+
+        # Puntaje del nivel actual según el algoritmo del banquero
+        texto_puntaje_nivel = f"Puntaje Nivel: {puntaje_banquero}"
         superficie_puntaje_nivel = self.fuente_texto.render(texto_puntaje_nivel, False, (255, 215, 0))
         self.pantalla.blit(superficie_puntaje_nivel, (50, 180))
-        
-        # Puntaje acumulado total (solo si hay niveles anteriores)
+
+        # Puntaje acumulado total (si hay niveles anteriores)
+        puntaje_total = self.puntaje_acumulado + puntaje_banquero
         if self.puntaje_acumulado > 0:
             texto_puntaje_total = f"Puntaje Total: {puntaje_total}"
             superficie_puntaje_total = self.fuente_texto.render(texto_puntaje_total, False, (200, 200, 255))
             self.pantalla.blit(superficie_puntaje_total, (50, 210))
-        
+
         # Estadísticas adicionales
         fuente_pequena = pygame.font.Font("Fuentes/super_sliced.otf", 16)
-        
         stats_text = f"Avatars eliminados: {self.juego.total_avatars_matados}"
         stats_surface = fuente_pequena.render(stats_text, False, (200, 200, 200))
         self.pantalla.blit(stats_surface, (50, 240))
+
 
     def dibujar_ui(self):
         # Título
@@ -1248,6 +1355,7 @@ class Interfaz:
             dt = self.reloj.tick(60) / 1000.0  # Delta time en segundos
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
+                    self.cerrar_conexiones()
                     pygame.quit()
                     exit()
 
@@ -1258,6 +1366,7 @@ class Interfaz:
 
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_r and (self.juego.game_over or self.juego.victoria):
+                        self.cerrar_conexiones()
                         self.reiniciar_nivel_actual()
                         # Reiniciar también el estado de los botones
                         self.ronda_iniciada = False
@@ -1272,6 +1381,7 @@ class Interfaz:
                         if self.mostrar_salon:
                             self.mostrar_salon = False
                         else:
+                            self.cerrar_conexiones()
                             pygame.quit()
                             exit()
                     # Atajo de teclado para iniciar ronda (Barra Espaciadora)
@@ -1300,9 +1410,22 @@ class Interfaz:
                     if self.verificar_click_boton_iniciar((mouse_x, mouse_y)):
                         continue
 
-                    # Verificar click en botones de pausa/reanudar
-                    if self.verificar_click_botones_pausa((mouse_x, mouse_y)):
-                        continue
+                    # Verificar click en botones de pausa / menú / salir
+                    resultado_pausa = self.verificar_click_botones_pausa((mouse_x, mouse_y))
+                    if resultado_pausa:
+                        if resultado_pausa == "menu":
+                            # Cerrar pygame y devolver control al que llamó a ejecutar()
+                            self.cerrar_conexiones()
+                            pygame.quit()
+                            return "menu"
+                        elif resultado_pausa == "salir":
+                            self.cerrar_conexiones()
+                            pygame.quit()
+                            sys.exit()
+                        else:
+                            # Solo estaba pausando o reanudando
+                            continue
+
 
                     # Seleccionar item de tienda
                     item_clickeado = self.obtener_item_clickeado(mouse_x, mouse_y)
@@ -1380,7 +1503,6 @@ class Interfaz:
             self.dibujar_boton_iniciar()
             
             # Dibujar botones de pausa/reanudar
-            self.dibujar_botones_pausa()
 
             # Mostrar mensaje de preparación si la ronda no ha iniciado
             if not self.ronda_iniciada:
@@ -1390,6 +1512,7 @@ class Interfaz:
             if self.juego_pausado:
                 self.mostrar_mensaje_pausa()
 
+            self.dibujar_botones_pausa(self.juego_pausado)
             # Verificar fin del juego y mostrar animaciones
             if self.juego.victoria:
                 accion = self.mostrar_animacion_fin("victoria")
@@ -1398,6 +1521,7 @@ class Interfaz:
                     continue  # Continuar con el siguiente nivel
                 elif accion == "menu":
                     from dificultad import main as main_dificultad
+                    self.cerrar_conexiones()
                     pygame.display.quit()
                     try:
                         from Clases_auxiliares.credenciales import cargar_preferencias
@@ -1413,6 +1537,7 @@ class Interfaz:
                     # Mostrar victoria final con la ventana win normal
                     ventana_final = VentanaWin(self.pantalla, paleta=self._paleta_usuario(), username=self.usuario_actual)
                     ventana_final.run()
+                    self.cerrar_conexiones()
                     pygame.quit()
                     return
 
@@ -1420,6 +1545,7 @@ class Interfaz:
                 accion = self.mostrar_animacion_fin("derrota")
                 
                 if accion == "reiniciar":
+                    self.cerrar_conexiones()
                     self.reiniciar_nivel_actual()
                     # Reiniciar estado del botón al reiniciar nivel
                     self.ronda_iniciada = False
@@ -1429,6 +1555,7 @@ class Interfaz:
                     self.boton_reanudar["visible"] = False
                 elif accion == "menu":
                     from dificultad import main as main_dificultad
+                    self.cerrar_conexiones()
                     pygame.display.quit()
                     try:
                         from Clases_auxiliares.credenciales import cargar_preferencias
@@ -1440,6 +1567,7 @@ class Interfaz:
                     main_dificultad(self.usuario_actual, lang_actual)
                     return
                 elif accion == "salir":
+                    self.cerrar_conexiones()
                     pygame.quit()
                     exit()
 
@@ -1452,6 +1580,30 @@ class Interfaz:
 
             pygame.display.update()
             self.reloj.tick(60)  # Limitar a 60 FPS
+
+    
+    def cerrar_conexiones(self):
+        """Cierra los sockets UDP de la Pico (si existen)."""
+        if getattr(self, "_sockets_cerrados", False):
+            return
+
+        self._sockets_cerrados = True
+
+        try:
+            if hasattr(self, "sock_control") and self.sock_control:
+                self.sock_control.close()
+                self.sock_control = None
+        except Exception as e:
+            print("Error cerrando sock_control:", e)
+
+        try:
+            if hasattr(self, "sock_motor") and self.sock_motor:
+                self.sock_motor.close()
+                self.sock_motor = None
+        except Exception as e:
+            print("Error cerrando sock_motor:", e)
+
+
     
     def mostrar_mensaje_preparacion(self):
         """Muestra mensaje indicando que está en fase de preparación"""

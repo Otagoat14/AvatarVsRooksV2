@@ -5,9 +5,9 @@ import sys
 # Agregar el directorio actual al path para importar módulos
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from perfiles import cargar_perfil
-from perfiles import obtener_colores
+from perfiles import cargar_perfil, obtener_colores, obtener_musica_usuario
 from Clases_auxiliares.musica import MUSICA
+from Clases_auxiliares.integracion_spotify import reproducir_uri
 from Traductor import dic_idiomas
 
 class PantallaDificultad:
@@ -86,19 +86,25 @@ class PantallaDificultad:
     
     def _configurar_musica(self):
         try:
+            # Detener lo que estuviera sonando antes
             MUSICA.detener()
-            
-            # Verificar si el usuario tiene música personalizada
-            perfil = cargar_perfil(self.username)
-            if perfil and perfil.get('musica'):
-                # TODO: Integrar reproducción de Spotify aquí
-                if MUSICA.cargar_musica("./musica/menu_ambiental.mp3"):
-                    MUSICA.reproducir(loops=-1)
-            else:
-                # Música por defecto
-                if MUSICA.cargar_musica("./musica/menu_ambiental.mp3"):
-                    MUSICA.reproducir(loops=-1)
-                    
+        except Exception:
+            pass
+
+        try:
+            # 1) Intentar reproducir la canción personalizada del usuario (Spotify)
+            uri = obtener_musica_usuario(self.username)
+            if uri:
+                ok = reproducir_uri(uri)
+                if ok:
+                    # Ya está sonando en Spotify, no cargamos música local
+                    return
+
+            # 2) Si no hay música personalizada o falló Spotify,
+            #    usar la música por defecto local
+            if MUSICA.cargar_musica("./musica/menu_ambiental.mp3"):
+                MUSICA.reproducir(loops=-1)
+
         except Exception as e:
             print(f"Error configurando música: {e}")
             # Fallback a música por defecto
@@ -107,6 +113,7 @@ class PantallaDificultad:
                     MUSICA.reproducir(loops=-1)
             except:
                 pass
+
     
     def _cargar_fuentes(self):
         try:
@@ -451,68 +458,84 @@ class PantallaDificultad:
         return self.dificultad_seleccionada
 
 def main(username: str, lang: str = "es"):
-    pantalla = PantallaDificultad(username, lang)
-    dificultad = pantalla.run()
-    
-    def _aplicar_tema_desde_perfiles():
-        """
-        Lee el tema del usuario y pisa los colores globales de esta ventana.
-        Ajusta aquí los nombres de tus variables de color locales.
-        """
-        global COLOR_FONDO, COLOR_TEXTO, BTN_BG, BTN_HOVER, SUBTEXTO  # o las que uses en dificultad.py
-        col = obtener_colores(username)
-        if not col:
-            return
-        # Mapa clave->variable_local
-        mapeo = {
-            "fondo": "COLOR_FONDO",
-            "ventana": "SUBTEXTO",        # si tienes un color para panel/fondo de tarjetas
-            "btn_primario": "BTN_BG",
-            "btn_secundario": "BTN_HOVER",
-            "texto": "COLOR_TEXTO",
-        }
-        for k, var in mapeo.items():
-            if k in col and "rgb" in col[k]:
-                rgb = tuple(col[k]["rgb"])
-                globals()[var] = rgb
+    corriendo = True
+    dificultad = None
 
-    # === LLÁMALA ANTES DE DIBUJAR NADA ===
-    _aplicar_tema_desde_perfiles()
+    while corriendo:
+        # 1) Mostrar pantalla de dificultad
+        pantalla = PantallaDificultad(username, lang)
+        dificultad = pantalla.run()
 
-    if dificultad and dificultad != "salir":
-        # Iniciar el juego después de seleccionar dificultad
+        # Si el usuario sale desde la pantalla de dificultad
+        if not dificultad or dificultad == "salir":
+            corriendo = False
+            break
+
+        # 2) Aplicar tema desde perfiles (como ya lo tenías)
+        def _aplicar_tema_desde_perfiles():
+            """
+            Lee el tema del usuario y pisa los colores globales de esta ventana.
+            Ajusta aquí los nombres de tus variables de color locales.
+            """
+            global COLOR_FONDO, COLOR_TEXTO, BTN_BG, BTN_HOVER, SUBTEXTO
+            col = obtener_colores(username)
+            if not col:
+                return
+            mapeo = {
+                "fondo": "COLOR_FONDO",
+                "ventana": "SUBTEXTO",
+                "btn_primario": "BTN_BG",
+                "btn_secundario": "BTN_HOVER",
+                "texto": "COLOR_TEXTO",
+            }
+            for k, var in mapeo.items():
+                if k in col and "rgb" in col[k]:
+                    rgb = tuple(col[k]["rgb"])
+                    globals()[var] = rgb
+
+        _aplicar_tema_desde_perfiles()
+
+        # 3) Iniciar el juego
         try:
             # Detener música del menú
             MUSICA.detener()
-            
-            # Importar y ejecutar el juego
+
             from Interfaz_Juego import Interfaz
-            juego = Interfaz(dificultad=dificultad, puntaje_acumulado=0, usuario=username)
-            juego.ejecutar()
+            juego = Interfaz(dificultad=dificultad,
+                             puntaje_acumulado=0,
+                             usuario=username)
+            resultado = juego.ejecutar()
+
+            # Si desde el juego se pidió volver al menú,
+            # simplemente continúa el while y se vuelve a crear PantallaDificultad.
+            if resultado == "menu":
+                continue
+
+            # Si en algún momento quieres manejar otras salidas especiales,
+            # podrías hacerlo aquí (por ahora, no hace falta).
 
         except Exception as e:
             print(f"Error al iniciar el juego: {e}")
-            
+
             try:
                 import tkinter as tk
                 from tkinter import messagebox
-                
+
                 def t(key):
                     return dic_idiomas.get(lang, dic_idiomas["es"]).get(key, key)
-                
+
                 root = tk.Tk()
                 root.withdraw()
                 messagebox.showerror(
-                    t("Error"), 
+                    t("Error"),
                     f"{t('No se pudo iniciar el juego')}: {str(e)}"
                 )
                 root.destroy()
             except:
                 pass
-    
-    # Cerrar pygame solo después de que termine el juego
-    pygame.quit()
+
     return dificultad
+
 
 if __name__ == "__main__":
     # Para testing

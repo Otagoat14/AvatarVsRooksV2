@@ -91,7 +91,7 @@ class Bala:
         self.y_fila = float(y_fila)
         self.x_columna = x_columna
         self.direccion = direccion
-        self.velocidad_bala = 0.15 
+        self.velocidad_bala = 0.30 
         self.color = COLOR_BALA
         self.bala_activa = True
         self.rango_maximo = rango  # Rango máximo de la bala
