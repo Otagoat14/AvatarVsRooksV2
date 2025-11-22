@@ -5,9 +5,9 @@ import sys
 # Agregar el directorio actual al path para importar módulos
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from perfiles import cargar_perfil
-from perfiles import obtener_colores
+from perfiles import cargar_perfil, obtener_colores, obtener_musica_usuario
 from Clases_auxiliares.musica import MUSICA
+from Clases_auxiliares.integracion_spotify import reproducir_uri
 from Traductor import dic_idiomas
 
 class PantallaDificultad:
@@ -86,19 +86,25 @@ class PantallaDificultad:
     
     def _configurar_musica(self):
         try:
+            # Detener lo que estuviera sonando antes
             MUSICA.detener()
-            
-            # Verificar si el usuario tiene música personalizada
-            perfil = cargar_perfil(self.username)
-            if perfil and perfil.get('musica'):
-                # TODO: Integrar reproducción de Spotify aquí
-                if MUSICA.cargar_musica("./musica/menu_ambiental.mp3"):
-                    MUSICA.reproducir(loops=-1)
-            else:
-                # Música por defecto
-                if MUSICA.cargar_musica("./musica/menu_ambiental.mp3"):
-                    MUSICA.reproducir(loops=-1)
-                    
+        except Exception:
+            pass
+
+        try:
+            # 1) Intentar reproducir la canción personalizada del usuario (Spotify)
+            uri = obtener_musica_usuario(self.username)
+            if uri:
+                ok = reproducir_uri(uri)
+                if ok:
+                    # Ya está sonando en Spotify, no cargamos música local
+                    return
+
+            # 2) Si no hay música personalizada o falló Spotify,
+            #    usar la música por defecto local
+            if MUSICA.cargar_musica("./musica/menu_ambiental.mp3"):
+                MUSICA.reproducir(loops=-1)
+
         except Exception as e:
             print(f"Error configurando música: {e}")
             # Fallback a música por defecto
@@ -107,6 +113,7 @@ class PantallaDificultad:
                     MUSICA.reproducir(loops=-1)
             except:
                 pass
+
     
     def _cargar_fuentes(self):
         try:

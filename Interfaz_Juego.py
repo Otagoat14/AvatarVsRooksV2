@@ -10,17 +10,16 @@ from Animaciones.animacion_salon_fama import VentanaSalonFama
 from Animaciones.animacion_win import VentanaWin
 import sys
 from Animaciones.animacion_final_juego import VentanaFinalJuego
+from perfiles import obtener_musica_usuario
+from Clases_auxiliares.integracion_spotify import reproducir_uri
+
 
 PICO_IP = "192.168.151.216"   # <-- pon aquí la IP que imprime la Pico
 PICO_PORT_MOTOR = 6000        # puerto para los motores
 
-
 # Constantes visuales
 ANCHO = COLUMNAS * TAMAÑO_CELDA
 ALTO = FILAS * TAMAÑO_CELDA
-
-
-
 
 # Colores
 COLOR_FONDO = (18, 18, 18)
@@ -416,32 +415,13 @@ class Interfaz:
         self.pantalla.blit(instrucciones, inst_rect)
     
     def reproducir_cancion_usuario(self):
+        """
+        Reproduce la canción que el usuario tiene guardada en su perfil (si hay).
+        """
         try:
-            from perfiles import ruta_tema_json
-            import json, os
-            ruta = ruta_tema_json(self.usuario_actual)
-            if os.path.exists(ruta):
-                with open(ruta, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                uri = data.get("musica")
-                if uri:
-                    # Reutilizar spotipy rápidamente aquí
-                    import spotipy
-                    from spotipy.oauth2 import SpotifyOAuth
-                    sp = spotipy.Spotify(auth_manager=SpotifyOAuth(
-                        client_id="37141bd00fde487fb1dbf3b8d2fdf6f4",
-                        client_secret="87a87eb30ee5418f9f07c0c1800e0905",
-                        redirect_uri="http://127.0.0.1:8888/callback",
-                        scope="user-modify-playback-state user-read-playback-state"
-                    ))
-                    devices = sp.devices().get("devices", [])
-                    if devices:
-                        device_id = devices[0]["id"]
-                        try:
-                            sp.transfer_playback(device_id, force_play=True)
-                        except Exception:
-                            pass
-                        sp.start_playback(device_id=device_id, uris=[uri])
+            uri = obtener_musica_usuario(self.usuario_actual)
+            if uri:
+                reproducir_uri(uri)
         except Exception as e:
             print("No se pudo reproducir la canción del usuario:", e)
 

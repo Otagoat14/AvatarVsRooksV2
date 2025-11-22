@@ -136,3 +136,30 @@ def obtener_paleta_personalizada(username):
         "COLOR_TEXT_CUER": rgb("btn_secundario", (210, 200, 190)),
         "COLOR_BOTONES": rgb("btn_primario", (227, 66, 52))
     }
+
+def obtener_musica_usuario(username):
+    """
+    Devuelve la URI de Spotify guardada para el usuario (o None si no tiene).
+    Primero intenta leerla del <usuario>_tema.json y luego del <usuario>_perfil.json.
+    """
+    try:
+        # 1) Intentar en <usuario>_tema.json
+        ruta_tema = ruta_tema_json(username)
+        if os.path.exists(ruta_tema):
+            with open(ruta_tema, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            uri = data.get("musica")
+            if uri:
+                return uri
+
+        # 2) Intentar en <usuario>_perfil.json
+        perfil = cargar_personalizacion(username)
+        if perfil:
+            return perfil.get("musica")
+
+    except Exception as e:
+        print(f"[obtener_musica_usuario] Error: {e}")
+
+    return None
+
+
