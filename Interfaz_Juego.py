@@ -216,18 +216,18 @@ class Interfaz:
                     self.pantalla.blit(texto, texto_rect)
                     
     def _crear_boton_iniciar(self):
-        """Crea el botón para iniciar la ronda"""
-        ancho_boton = 200
-        alto_boton = 60
-        x = 50  # Posición en la esquina superior izquierda
-        y = 300  # Debajo del puntaje
-        
+        ancho_boton = 180
+        alto_boton = 50
+        x = 40   # mismo x que el botón de PAUSAR
+        y = 330  # más abajo para que no se monten
+
         self.boton_iniciar_ronda = {
             "rect": pygame.Rect(x, y, ancho_boton, alto_boton),
             "texto": "INICIAR RONDA",
             "hover": False,
             "activo": True
         }
+
 
     def dibujar_boton_iniciar(self):
         """Dibuja el botón de iniciar ronda"""
@@ -1258,20 +1258,25 @@ class Interfaz:
     
     def mostrar_animacion_fin(self, tipo="derrota"):
         self.juego.juego_iniciado = False 
-        
+
+        # =======================
+        # VICTORIA
+        # =======================
         if tipo == "victoria":
-            # Calcular puntaje total acumulado
-            puntaje_final_total = self.puntaje_acumulado + self.juego.obtener_puntaje_actual()
-            
-            # Verificar si es el nivel difícil (último nivel)
+            # Puntaje del nivel actual
+            puntaje_nivel_actual = self.juego.obtener_puntaje_actual()
+            # Puntaje acumulado (se usa para difícil)
+            puntaje_final_total = self.puntaje_acumulado + puntaje_nivel_actual
+
+            # ---------- NIVEL DIFÍCIL (final) ----------
             if self.dificultad_actual == "dificil":
-                # REGISTRAR EN SALÓN DE LA FAMA con puntaje acumulado
+                # REGISTRAR EN SALÓN DE LA FAMA con puntaje acumulado total
                 if not self.puntaje_registrado:
                     # Crear un juego temporal con el puntaje acumulado total para el registro
                     juego_temp = Juego(dificultad="dificil", usuario=self.usuario_actual)
                     juego_temp.total_avatars_matados = self.juego.total_avatars_matados
                     juego_temp.puntos_acumulados_avatars = self.juego.puntos_acumulados_avatars
-                    
+
                     self.info_resultado = IntegradorJuego.registrar_partida(
                         self.salon_fama,
                         self.usuario_actual,
@@ -1279,17 +1284,20 @@ class Interfaz:
                         puntaje_manual=puntaje_final_total  # Pasar puntaje acumulado
                     )
                     self.puntaje_registrado = True
-                
-                # Verificar si llegó al salón de la fama
+
+                # Si llegó al TOP 10 / récord, mostrar animación del salón de la fama,
+                # si no, animación final normal.
                 if self.puntaje_registrado and self.info_resultado and self.info_resultado['es_top']:
-                    # Usar animación de salón de la fama
-                    ventana_fama = VentanaSalonFama(self.pantalla, paleta=self._paleta_usuario(), username=self.usuario_actual)
-                    accion = ventana_fama.run()  # ✅ ASIGNAR accion AQUÍ
+                    ventana_fama = VentanaSalonFama(
+                        self.pantalla,
+                        paleta=self._paleta_usuario(),
+                        username=self.usuario_actual
+                    )
+                    accion = ventana_fama.run()
                 else:
-                    # Usar animación final del juego sin salón de la fama
-                    accion = VentanaFinalJuego(self.pantalla).run()  # ✅ ASIGNAR accion AQUÍ
-                
-                # ✅ AHORA accion SIEMPRE ESTÁ DEFINIDA
+                    accion = VentanaFinalJuego(self.pantalla).run()
+
+                # Manejo de la decisión del jugador al final del juego
                 if accion == "reiniciar":
                     # Reiniciar desde el nivel difícil con puntaje en 0
                     self.puntaje_acumulado = 0
@@ -1298,25 +1306,54 @@ class Interfaz:
                 elif accion == "menu":
                     return "menu"
                 else:  # salir
-                    return "salir"
+                    pygame.quit()
+                    sys.exit()
+
+            # ---------- NIVELES FÁCIL y MEDIO ----------
             else:
-                # Nivel no difícil - progresión normal
-                accion = self.mostrar_ventana_victoria()
-                
+                # Registrar SIEMPRE la partida en el salón de la fama
+                if not self.puntaje_registrado:
+                    self.info_resultado = IntegradorJuego.registrar_partida(
+                        self.salon_fama,
+                        self.usuario_actual,
+                        self.juego  # aquí se usa el puntaje del nivel actual
+                    )
+                    self.puntaje_registrado = True
+
+                # Si es TOP 10 en esa dificultad, mostrar animación del salón de la fama;
+                # si no, la animación de victoria normal.
+                if self.info_resultado and self.info_resultado.get("es_top"):
+                    ventana_fama = VentanaSalonFama(
+                        self.pantalla,
+                        paleta=self._paleta_usuario(),
+                        username=self.usuario_actual
+                    )
+                    accion = ventana_fama.run()
+                else:
+                    accion = self.mostrar_ventana_victoria()
+
+                # Después de la animación (win o salón), se decide qué hacer:
                 if accion == "continuar":
                     if self.avanzar_nivel():
                         self.reiniciar_nivel_actual()
                         return "continuar"
                     else:
+                        # Por si en algún momento se juega sólo un nivel
                         return "victoria_final"
                 elif accion == "menu":
                     return "menu"
                 else:  # salir
                     return "salir"
-            
+
+        # =======================
+        # DERROTA
+        # =======================
         else:
-            # PARA DERROTA
-            accion = VentanaGameOver(self.pantalla, paleta=self._paleta_usuario(), username=self.usuario_actual).run()
+            accion = VentanaGameOver(
+                self.pantalla,
+                paleta=self._paleta_usuario(),
+                username=self.usuario_actual
+            ).run()
 
             if accion == "reiniciar":
                 # Reiniciar nivel actual manteniendo el puntaje acumulado
@@ -1329,6 +1366,7 @@ class Interfaz:
             elif accion == "salir":
                 pygame.quit()
                 sys.exit()
+
 
     def _paleta_usuario(self):
         try:
@@ -1575,7 +1613,8 @@ class Interfaz:
                 self.interfaz_salon.dibujar_salon_completo(
                     self.ANCHO_PANTALLA,
                     self.ALTO_PANTALLA,
-                    self.usuario_actual
+                    self.usuario_actual,
+                    self.dificultad_actual
                 )
 
             pygame.display.update()
