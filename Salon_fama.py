@@ -146,6 +146,16 @@ class SalonFama:
         if not self.puntajes:
             return True
         return puntaje > self.puntajes[0]["puntaje"]
+    
+    def obtener_top_por_dificultad(self, dificultad, cantidad=10):
+        registros = [
+            r for r in self.puntajes
+            if r.get("dificultad", "desconocida") == dificultad
+        ]
+        registros.sort(key=lambda x: x.get("puntaje", 0), reverse=True)
+        return registros[:cantidad]
+
+
 
 
 class InterfazSalonFama:
@@ -289,6 +299,11 @@ class InterfazSalonFama:
 class IntegradorJuego:
     @staticmethod
     def registrar_partida(salon_fama, usuario, juego, puntaje_manual=None):
+        """
+        Registra el puntaje de una partida en el salón de la fama,
+        respetando la dificultad del juego (facil / medio / dificil).
+        """
+        # 1. Obtener puntaje final
         if puntaje_manual is not None:
             puntaje_final = puntaje_manual
         else:
@@ -296,22 +311,23 @@ class IntegradorJuego:
         
         posicion, es_top = salon_fama.agregar_puntaje(usuario, puntaje_final)
 
-        dificultad = getattr(juego, "dificultad", None)
+        # 2. Obtener dificultad del juego
+        dificultad = getattr(juego, "dificultad", None) or "desconocida"
 
+        # 3. Guardar puntaje indicando también la dificultad
+        posicion, es_top = salon_fama.agregar_puntaje(
+            nombre_usuario=usuario,
+            puntaje=puntaje_final,
+            dificultad=dificultad
+        )
+
+        # 4. Intentar publicar en Twitter (opcional)
         try:
-            
             if es_top:
                 publicar_resultado(usuario, puntaje_final, dificultad)
-
         except Exception as e:
-            print(f"⚠️ Error al publicar el resultado en Twitter: {e}")
-        
-        resultado = {
-            "posicion": posicion,
-            "es_top": es_top,
-            "es_record": salon_fama.es_nuevo_record(puntaje_final),
-            "puntaje": puntaje_final,
-            "dificultad": dificultad,
-        }
-        return resultado
+            print("Error publicando resultado en Twitter:", e)
+
+        # 5. Devolver info útil al juego
+        return puntaje_final, posicion, es_top
 

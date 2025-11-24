@@ -12,19 +12,14 @@ client = tweepy.Client(
     access_token_secret=ACCESS_TOKEN_SECRET,
 )
 
-def publicar_resultado(usuario, puntaje, dificultad=None):
+def publicar_resultado(usuario, puntaje, dificultad=None, top=None):
 
-    if dificultad:
-        texto = (
-            f"🎮 {usuario} acaba de conseguir {puntaje} puntos en Avatar vs Rooks "
-            f"jugando en modo {dificultad} 💥 #AvatarVsRooks"
-        )
-    else:
-        texto = (
-            f"🎮 {usuario} acaba de conseguir {puntaje} puntos en Avatar vs Rooks 💥 "
-            f"#AvatarVsRooks"
-        )
+    texto = f"🎮 {usuario} logró {puntaje} pts en Avatar vs Rooks ({dificultad}).\n"
 
+    if top:
+        texto += "🏆 Top 10 del nivel:\n"
+        for pos, r in enumerate(top, start=1):
+            texto += f"{pos}. {r['nombre']} - {r['puntaje']} pts\n"
     try:
         resp = client.create_tweet(text=texto)
         print("✅ Tweet enviado con éxito. ID del tweet:", resp.data["id"])
