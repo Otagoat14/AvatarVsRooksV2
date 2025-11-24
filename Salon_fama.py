@@ -308,6 +308,8 @@ class IntegradorJuego:
             puntaje_final = puntaje_manual
         else:
             puntaje_final = juego.obtener_puntaje_actual()
+        
+        posicion, es_top = salon_fama.agregar_puntaje(usuario, puntaje_final)
 
         # 2. Obtener dificultad del juego
         dificultad = getattr(juego, "dificultad", None) or "desconocida"
