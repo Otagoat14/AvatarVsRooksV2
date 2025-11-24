@@ -2,6 +2,7 @@
 import json
 import os
 import pygame
+from twiter import publicar_resultado
 from datetime import datetime
 
 
@@ -205,19 +206,23 @@ class InterfazSalonFama:
 class IntegradorJuego:
     @staticmethod
     def registrar_partida(salon_fama, usuario, juego, puntaje_manual=None):
-        """
-        Registra una partida en el salón de la fama
-        Si se proporciona puntaje_manual, usa ese en lugar de calcularlo
-        """
         if puntaje_manual is not None:
             puntaje_final = puntaje_manual
         else:
             puntaje_final = juego.obtener_puntaje_actual()
         
-        # CORRECCIÓN: Usar agregar_puntaje en lugar de agregar_registro
         posicion, es_top = salon_fama.agregar_puntaje(usuario, puntaje_final)
+
+        dificultad = getattr(juego, "dificultad", None)
+
+        try:
+            
+            if es_top:
+                publicar_resultado(usuario, puntaje_final, dificultad)
+
+        except Exception as e:
+            print(f"⚠️ Error al publicar el resultado en Twitter: {e}")
         
-        # Crear el objeto de resultado
         resultado = {
             'posicion': posicion,
             'es_top': es_top,
