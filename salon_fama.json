@@ -1,27 +1,14 @@
 [
     {
-        "nombre": "Jugador",
-        "puntaje": 700,
-        "fecha": "2025-11-21 15:52:51"
-    },
-    {
-        "nombre": "otagoat14",
-        "puntaje": 415,
-        "fecha": "2025-11-13 16:37:36"
+        "nombre": "Pepe",
+        "puntaje": 1005,
+        "dificultad": "dificil",
+        "fecha": "2025-11-24 00:27:16"
     },
     {
         "nombre": "Pepe",
-        "puntaje": 355,
-        "fecha": "2025-11-17 22:28:27"
-    },
-    {
-        "nombre": "sjsldlldkl",
-        "puntaje": 114,
-        "fecha": "2025-11-12 13:42:09"
-    },
-    {
-        "nombre": "usuario_test",
-        "puntaje": 38,
-        "fecha": "2025-11-12 13:51:33"
+        "puntaje": 295,
+        "dificultad": "facil",
+        "fecha": "2025-11-24 01:01:33"
     }
 ]
