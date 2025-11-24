@@ -1291,7 +1291,8 @@ class Interfaz:
                     ventana_fama = VentanaSalonFama(
                         self.pantalla,
                         paleta=self._paleta_usuario(),
-                        username=self.usuario_actual
+                        username=self.usuario_actual,
+                        dificultad=self.dificultad_actual
                     )
                     accion = ventana_fama.run()
                 else:
@@ -1326,7 +1327,8 @@ class Interfaz:
                     ventana_fama = VentanaSalonFama(
                         self.pantalla,
                         paleta=self._paleta_usuario(),
-                        username=self.usuario_actual
+                        username=self.usuario_actual,
+                        dificultad=self.dificultad_actual
                     )
                     accion = ventana_fama.run()
                 else:

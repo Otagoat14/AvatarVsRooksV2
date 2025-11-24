@@ -2,6 +2,7 @@ import pygame
 import sys
 import math
 import random
+from Salon_fama import SalonFama,InterfazSalonFama
 
 # ===== Colores =====
 PALETA = {
@@ -24,7 +25,7 @@ VENT_ANCHO, VENT_ALTO = 800, 500
 
 
 class VentanaSalonFama:
-    def __init__(self, main_surface, paleta=None, username=None):
+    def __init__(self, main_surface, paleta=None, username=None, dificultad= None):
         pygame.init()
         pygame.mixer.init()
 
@@ -32,6 +33,7 @@ class VentanaSalonFama:
         # === Aplicar personalización (MEJORADO) ===
         self.username = username
         self.paleta = paleta
+        self.dificultad = dificultad
 
         try:
             if self.paleta is None and self.username:
@@ -154,6 +156,7 @@ class VentanaSalonFama:
             scr.blit(surf, (self.x, self.y))
 
     # ===== Ventana modal superpuesta =====
+        # ===== Ventana modal superpuesta =====
     def run(self):
         while self.running:
             for e in pygame.event.get():
@@ -177,6 +180,7 @@ class VentanaSalonFama:
                         pygame.time.delay(300)
                         self.accion_usuario = "reiniciar"
                         self.running = False
+
                     elif self.btn_menu.collidepoint(modal_mouse_x, modal_mouse_y):
                         try:
                             self.sonido_click.play()
@@ -185,17 +189,21 @@ class VentanaSalonFama:
                         pygame.time.delay(300)
                         self.accion_usuario = "menu"
                         self.running = False
+
                     elif self.btn_ver.collidepoint(modal_mouse_x, modal_mouse_y):
+                        # Ver ranking del nivel actual y luego continuar al siguiente nivel
                         try:
                             self.sonido_click.play()
                         except:
                             pass
-                        pygame.time.delay(300)
-                        self.accion_usuario = "ver"
+                        pygame.time.delay(200)
+                        self._mostrar_ranking_por_dificultad()
+                        # Al volver del ranking, el juego debe avanzar de nivel
+                        self.accion_usuario = "continuar"
                         self.running = False
 
             # === Dibujar en la superficie modal ===
-            self.modal_surface.fill(FONDO_PANTALLA)  # ← color de fondo personalizado
+            self.modal_surface.fill(FONDO_PANTALLA)
 
             # ✨ Fondo partículas
             for p in self.particulas:
@@ -231,13 +239,23 @@ class VentanaSalonFama:
                 titulo_surf,
                 (int(titulo_surf.get_width() * scale), int(titulo_surf.get_height() * scale))
             )
-            self.modal_surface.blit(titulo_surf, (card_rect.centerx - titulo_surf.get_width()//2, self.panel_y + 35))
+            self.modal_surface.blit(
+                titulo_surf,
+                (card_rect.centerx - titulo_surf.get_width()//2, self.panel_y + 35)
+            )
 
-            # Subtítulo
+            # Subtítulo + nivel
             subt_surf = self.font_texto.render("¡¡¡Has entrado al SALÓN DE LA FAMA!!!", True, COLOR_TEXT_CUER)
             subt_x = card_rect.centerx - subt_surf.get_width()//2
             subt_y = self.panel_y + 145
             self.modal_surface.blit(subt_surf, (subt_x, subt_y))
+
+            if hasattr(self, "dificultad") and self.dificultad:
+                txt_dif = self.font_texto.render(f"Nivel: {self.dificultad}", True, COLOR_TEXT_CUER)
+                self.modal_surface.blit(
+                    txt_dif,
+                    (VENT_ANCHO//2 - txt_dif.get_width()//2, self.panel_y + 110)
+                )
 
             # Botón "Ver"
             self._dibujar_boton_ver(subt_y + 60)
@@ -260,6 +278,46 @@ class VentanaSalonFama:
         pygame.display.set_caption(self.original_caption[0])
         
         return self.accion_usuario
+
+    def _mostrar_ranking_por_dificultad(self):
+        """
+        Muestra el salón de la fama solo para la dificultad actual.
+        Se cierra con ESC y luego se regresa al flujo normal (continuar siguiente nivel).
+        """
+        try:
+            salon = SalonFama()
+            interfaz = InterfazSalonFama(
+                self.main_surface,
+                self.font_titulo,
+                self.font_texto,
+                salon
+            )
+        except Exception as e:
+            print(f"Error creando interfaz de salón de la fama: {e}")
+            return
+
+        clock = pygame.time.Clock()
+        viendo = True
+        while viendo and self.running:
+            for ev in pygame.event.get():
+                if ev.type == pygame.QUIT:
+                    self.accion_usuario = "salir"
+                    self.running = False
+                    viendo = False
+                    return
+                elif ev.type == pygame.KEYDOWN and ev.key == pygame.K_ESCAPE:
+                    viendo = False
+
+            ancho, alto = self.main_surface.get_size()
+            interfaz.dibujar_salon_completo(
+                ancho,
+                alto,
+                usuario_actual=self.username,
+                dificultad=getattr(self, "dificultad", None)
+            )
+            pygame.display.flip()
+            clock.tick(60)
+
 
     # ===== Funciones auxiliares =====
     def _dibujar_confetti(self):

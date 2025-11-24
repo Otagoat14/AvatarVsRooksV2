@@ -245,7 +245,7 @@ class PantallaDificultad:
             self.screen.blit(desc_surface, desc_rect)
     
     def _dibujar_salon_fama(self):
-        # Fondo
+        # Fondo semitransparente
         overlay = pygame.Surface((self.WIN_W, self.WIN_H))
         overlay.set_alpha(230)
         overlay.fill(self.col_fondo)
@@ -255,113 +255,123 @@ class PantallaDificultad:
         titulo = self.fuente_titulo.render("SALÓN DE LA FAMA", True, self.col_texto)
         titulo_rect = titulo.get_rect(center=(self.WIN_W // 2, 80))
         self.screen.blit(titulo, titulo_rect)
-        
-        # Cargar datos del salón de la fama
+
         try:
             from Salon_fama import SalonFama
             salon = SalonFama()
-            top_puntajes = salon.obtener_top(10)
-            
-            if not top_puntajes:
-                mensaje = self.fuente_salon.render("No hay puntajes registrados aún", True, self.col_texto)
+
+            # TOP 10 POR NIVEL
+            top_facil   = salon.obtener_top(10, dificultad="facil")
+            top_medio   = salon.obtener_top(10, dificultad="medio")
+            top_dificil = salon.obtener_top(10, dificultad="dificil")
+
+            if not (top_facil or top_medio or top_dificil):
+                mensaje = self.fuente_salon.render(
+                    "No hay puntajes registrados aún", True, self.col_texto
+                )
                 mensaje_rect = mensaje.get_rect(center=(self.WIN_W // 2, self.WIN_H // 2))
                 self.screen.blit(mensaje, mensaje_rect)
             else:
-                # Panel para la lista - Ajustado para mejor espaciado
-                panel_ancho = 800
-                panel_alto = 500
-                panel_rect = pygame.Rect(
-                    (self.WIN_W - panel_ancho) // 2,
-                    150,
-                    panel_ancho,
-                    panel_alto
-                )
-                pygame.draw.rect(self.screen, self.col_ventana, panel_rect, border_radius=15)
-                pygame.draw.rect(self.screen, self._ajustar_color(self.col_ventana, 1.1), 
-                            panel_rect, width=3, border_radius=15)
-                
-                # Definir columnas con posiciones fijas
-                col_pos = panel_rect.x + 60  # Más espacio para la posición
-                col_nombre = panel_rect.x + 120  # Ajustado para dejar espacio para el número
-                col_puntaje = panel_rect.x + 400
-                col_fecha = panel_rect.x + 550
-                
-                # Encabezados - Centrados en sus columnas
-                encabezados_y = panel_rect.y + 25
-                
-                # Encabezado unificado para "JUGADOR" que incluye la posición
-                jugador_text = self.fuente_salon.render("JUGADOR", True, self.col_texto)
-                puntaje_text = self.fuente_salon.render("PUNTAJE", True, self.col_texto)
-                fecha_text = self.fuente_salon.render("FECHA", True, self.col_texto)
-                
-                # Centrar encabezados en sus columnas
-                self.screen.blit(jugador_text, (col_nombre - jugador_text.get_width() // 2, encabezados_y))
-                self.screen.blit(puntaje_text, (col_puntaje - puntaje_text.get_width() // 2, encabezados_y))
-                self.screen.blit(fecha_text, (col_fecha - fecha_text.get_width() // 2, encabezados_y))
-                
-                # Línea separadora
-                pygame.draw.line(self.screen, self.col_texto, 
-                            (panel_rect.x + 20, encabezados_y + 35),
-                            (panel_rect.x + panel_ancho - 20, encabezados_y + 35), 2)
-                
-                # Lista de puntajes
-                for i, registro in enumerate(top_puntajes):
-                    y_pos = panel_rect.y + 75 + (i * 40)
-                    
-                    # Colores según posición
-                    if i == 0:
-                        color = (255, 215, 0)  # Oro
-                        pos_color = (255, 215, 0)
-                    elif i == 1:
-                        color = (192, 192, 192)  # Plata
-                        pos_color = (192, 192, 192)
-                    elif i == 2:
-                        color = (205, 127, 50)  # Bronce
-                        pos_color = (205, 127, 50)
-                    else:
-                        color = self.col_texto
-                        pos_color = self.col_texto
-                    
-                    # Número de posición - más grande y destacado
-                    pos_numero = i + 1
-                    pos_text = self.fuente_salon.render(f"{pos_numero}.", True, pos_color)
-                    
-                    # Dibujar número de posición alineado a la izquierda del nombre
-                    self.screen.blit(pos_text, (col_pos, y_pos - 2))  # -2 para centrar verticalmente
-                    
-                    # Nombre (recortado si es muy largo) - alineado después del número
-                    nombre = registro["nombre"]
-                    if len(nombre) > 15:  # Ajustado por el espacio del número
-                        nombre = nombre[:12] + "..."
-                    nombre_text = self.fuente_desc.render(nombre, True, color)
-                    self.screen.blit(nombre_text, (col_nombre, y_pos))
-                    
-                    # Puntaje - centrado
-                    puntaje_text = self.fuente_desc.render(str(registro["puntaje"]), True, color)
-                    self.screen.blit(puntaje_text, (col_puntaje - puntaje_text.get_width() // 2, y_pos))
-                    
-                    # Fecha (formateada) - centrada
-                    fecha = registro.get("fecha", "N/A")
-                    if len(fecha) > 10:
-                        fecha = fecha[:10]  # Solo fecha, sin hora
-                    fecha_text = self.fuente_desc.render(fecha, True, color)
-                    self.screen.blit(fecha_text, (col_fecha - fecha_text.get_width() // 2, y_pos))
-                    
-                    # Línea separadora entre filas (opcional)
-                    if i < len(top_puntajes) - 1:
-                        pygame.draw.line(self.screen, self._ajustar_color(self.col_texto, 0.3), 
-                                    (panel_rect.x + 20, y_pos + 30),
-                                    (panel_rect.x + panel_ancho - 20, y_pos + 30), 1)
-                        
+                # Posiciones X de cada columna
+                x_facil   = self.WIN_W // 4
+                x_medio   = self.WIN_W // 2
+                x_dificil = 3 * self.WIN_W // 4
+                y_top = 150
+
+                def dibujar_columna(x_centro, titulo_modo, lista):
+                    panel_ancho = 320
+                    panel_alto  = 460
+                    panel_rect = pygame.Rect(0, 0, panel_ancho, panel_alto)
+                    panel_rect.centerx = x_centro
+                    panel_rect.top = y_top
+
+                    # Panel
+                    pygame.draw.rect(self.screen, self.col_ventana, panel_rect, border_radius=15)
+                    pygame.draw.rect(
+                        self.screen,
+                        self._ajustar_color(self.col_ventana, 1.1),
+                        panel_rect,
+                        width=3,
+                        border_radius=15,
+                    )
+
+                    # Título del modo (FÁCIL / MEDIO / DIFÍCIL)
+                    titulo_surf = self.fuente_salon.render(titulo_modo, True, self.col_texto)
+                    titulo_rect = titulo_surf.get_rect(
+                        center=(panel_rect.centerx, panel_rect.y + 30)
+                    )
+                    self.screen.blit(titulo_surf, titulo_rect)
+
+                    # Encabezados
+                    encabezados_y = panel_rect.y + 70
+                    pos_x     = panel_rect.x + 30
+                    nombre_x  = panel_rect.x + 80
+                    puntaje_x = panel_rect.x + panel_ancho - 80
+
+                    jugador_text = self.fuente_desc.render("JUGADOR", True, self.col_texto)
+                    puntaje_text = self.fuente_desc.render("PUNTOS", True, self.col_texto)
+
+                    self.screen.blit(jugador_text, (nombre_x, encabezados_y))
+                    self.screen.blit(
+                        puntaje_text,
+                        (puntaje_x - puntaje_text.get_width() // 2, encabezados_y),
+                    )
+
+                    # Línea separadora
+                    pygame.draw.line(
+                        self.screen,
+                        self.col_texto,
+                        (panel_rect.x + 20, encabezados_y + 25),
+                        (panel_rect.x + panel_ancho - 20, encabezados_y + 25),
+                        2,
+                    )
+
+                    # Filas
+                    for i, registro in enumerate(lista[:10]):
+                        y = panel_rect.y + 110 + i * 32
+
+                        # Color según posición
+                        if i == 0:
+                            color = (255, 215, 0)     # Oro
+                        elif i == 1:
+                            color = (192, 192, 192)   # Plata
+                        elif i == 2:
+                            color = (205, 127, 50)    # Bronce
+                        else:
+                            color = self.col_texto
+
+                        pos_text = self.fuente_desc.render(f"{i+1}.", True, color)
+                        self.screen.blit(pos_text, (pos_x, y))
+
+                        nombre = registro.get("nombre", "")
+                        if len(nombre) > 12:
+                            nombre = nombre[:9] + "..."
+                        nombre_surf = self.fuente_desc.render(nombre, True, color)
+                        self.screen.blit(nombre_surf, (nombre_x, y))
+
+                        puntaje = str(registro.get("puntaje", 0))
+                        puntaje_surf = self.fuente_desc.render(puntaje, True, color)
+                        self.screen.blit(
+                            puntaje_surf,
+                            (puntaje_x - puntaje_surf.get_width() // 2, y),
+                        )
+
+                # Dibujar las tres columnas
+                dibujar_columna(x_facil,   "FÁCIL",   top_facil)
+                dibujar_columna(x_medio,   "MEDIO",   top_medio)
+                dibujar_columna(x_dificil, "DIFÍCIL", top_dificil)
+
         except Exception as e:
             print(f"Error cargando salón de la fama: {e}")
-            error_text = self.fuente_salon.render("Error al cargar el salón de la fama", True, (255, 50, 50))
+            error_text = self.fuente_salon.render(
+                "Error al cargar el salón de la fama", True, (255, 50, 50)
+            )
             error_rect = error_text.get_rect(center=(self.WIN_W // 2, self.WIN_H // 2))
             self.screen.blit(error_text, error_rect)
-        
+
         # Botón Volver
         self._dibujar_boton(self.boton_volver)
-    
+
     def _procesar_eventos(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
