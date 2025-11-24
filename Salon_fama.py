@@ -2,6 +2,7 @@
 import json
 import os
 import pygame
+from twiter import publicar_resultado
 from datetime import datetime
 
 
@@ -292,17 +293,19 @@ class IntegradorJuego:
             puntaje_final = puntaje_manual
         else:
             puntaje_final = juego.obtener_puntaje_actual()
+        
+        posicion, es_top = salon_fama.agregar_puntaje(usuario, puntaje_final)
 
-        # 👉 tomar la dificultad del juego
-        dificultad = getattr(juego, "dificultad", "desconocida")
+        dificultad = getattr(juego, "dificultad", None)
 
-        # Registrar por usuario + dificultad
-        posicion, es_top = salon_fama.agregar_puntaje(
-            nombre_usuario=usuario,
-            puntaje=puntaje_final,
-            dificultad=dificultad
-        )
+        try:
+            
+            if es_top:
+                publicar_resultado(usuario, puntaje_final, dificultad)
 
+        except Exception as e:
+            print(f"⚠️ Error al publicar el resultado en Twitter: {e}")
+        
         resultado = {
             "posicion": posicion,
             "es_top": es_top,
